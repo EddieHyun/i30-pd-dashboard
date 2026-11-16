@@ -56,13 +56,17 @@ public final class SettingsLayoutTest {
             check(k==1,"a 2 x 2 card at 보통 fits the preview at full size");
             check(SettingsLayout.floatHit(x+124+30,y+64+30,2,2,124,64)==SettingsLayout.F_CELL+3,"the bottom right preview cell is cell 4");
             float ws=4*124*1.5f,ks=SettingsLayout.floatPreviewScale(ws,64*1.5f);check(ks<1&&SettingsLayout.floatPreviewX(ws,96)>=SettingsLayout.FW_L,"a wide strip is scaled down to fit");}
-        // the chooser sheet: values and graph buttons apart, graph buttons tall, 취소 / 완료 reachable
-        for(int i=0;i<16;i++){float[] b=SettingsLayout.sheetValue(i);check(b[3]<SettingsLayout.S_GRAPH_Y-10,"value "+i+" above the graph buttons");
-            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,16,4)==SettingsLayout.S_VAL+i,"value "+i+" hits");}
-        for(int g=0;g<4;g++){float[] b=SettingsLayout.sheetGraph(g);check(b[3]-b[1]>=50&&b[2]-b[0]>=100&&b[2]<=SettingsLayout.SH_R-10,"graph button "+g+" big and on the sheet");
-            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,16,4)==SettingsLayout.S_GRAPH+g,"graph button "+g+" hits");}
-        check(SettingsLayout.sheetHit(500,430,16,4)==SettingsLayout.S_CANCEL&&SettingsLayout.sheetHit(620,430,16,4)==SettingsLayout.S_DONE,"취소 and 완료");
-        check(SettingsLayout.sheetHit(30,30,16,4)==-1&&SettingsLayout.sheetHit(110,400,16,4)==SettingsLayout.S_IN,"outside / empty sheet");
+        // the chooser sheet: tabs (자동 + 9 groups) on the left, up to 15 readings, graph buttons under them, 취소 / 완료
+        for(int t=0;t<10;t++){float[] b=SettingsLayout.sheetTab(t);check(b[3]<=SettingsLayout.SH_B-10&&b[2]<SettingsLayout.S_GX,"tab "+t+" on the sheet, left of the readings");
+            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,10,15,4)==SettingsLayout.S_TAB+t,"tab "+t+" hits");}
+        for(int i=0;i<SettingsLayout.S_MAX_VALUES;i++){float[] b=SettingsLayout.sheetValue(i);check(b[3]<SettingsLayout.S_GRAPH_Y-6&&b[1]>SettingsLayout.S_CELL_Y+64,"reading "+i+" between the cell preview and the graph buttons");
+            check(b[2]-b[0]>=140&&b[3]-b[1]>=40,"reading "+i+" at least 140 x 40");
+            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,10,15,4)==SettingsLayout.S_VAL+i,"reading "+i+" hits");}
+        for(int g=0;g<4;g++){float[] b=SettingsLayout.sheetGraph(g);check(b[3]-b[1]>=50&&b[2]-b[0]>=100&&b[2]<=SettingsLayout.SH_R-10&&b[3]<SettingsLayout.S_DONE_BOX[1],"graph button "+g+" big and on the sheet");
+            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,10,15,4)==SettingsLayout.S_GRAPH+g,"graph button "+g+" hits");}
+        check(SettingsLayout.sheetHit(500,430,10,15,4)==SettingsLayout.S_CANCEL&&SettingsLayout.sheetHit(620,430,10,15,4)==SettingsLayout.S_DONE,"취소 and 완료");
+        check(SettingsLayout.sheetHit(30,30,10,15,4)==-1&&SettingsLayout.sheetHit(300,440,10,15,4)==SettingsLayout.S_IN,"outside / empty sheet");
+        check(SettingsLayout.sheetHit(300,124,10,2,4)==SettingsLayout.S_VAL&&SettingsLayout.sheetHit(300,170,10,2,4)==SettingsLayout.S_IN,"only the readings there are hit (2 readings: row 2 is empty)");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

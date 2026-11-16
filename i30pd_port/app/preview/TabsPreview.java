@@ -122,11 +122,11 @@ public final class TabsPreview {
         }
         {   // the 플로팅 pane: on with four cells, then a cell's chooser open (cell 2, the line graph picked)
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=4;FloatPanel.graphs[1]=FloatPanel.LINE;FloatPanel.graphs[2]=FloatPanel.LED;
-            rec.setSettings(SettingsLayout.FLOAT,"auto",-1,targets);rec.setFloatEdit(-1,0,-1,0);save(out,"9_settings_float_on",rec,model,now,false,false);
-            rec.setFloatEdit(1,1,2,FloatPanel.LINE);save(out,"9_settings_float_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0);
+            rec.setSettings(SettingsLayout.FLOAT,"auto",-1,targets);rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_on",rec,model,now,false,false);
+            rec.setFloatEdit(1,1,2,FloatPanel.LINE,1);save(out,"9_settings_float_sheet",rec,model,now,false,false);rec.setFloatEdit(1,1,7,FloatPanel.BAR,4);save(out,"9_settings_float_sheet_drive",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
             FloatPanel.shape=FloatPanel.STRIP;save(out,"9_settings_float_strip",rec,model,now,false,false);FloatPanel.shape=FloatPanel.CARD;
             FloatPanel.shape=FloatPanel.ROUND;save(out,"9_settings_float_round",rec,model,now,false,false);
-            rec.setFloatEdit(0,0,-1,0);save(out,"9_settings_float_round_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0);
+            rec.setFloatEdit(0,0,-1,0,2);save(out,"9_settings_float_round_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
             for(int[] cb:new int[][]{{4,1},{2,2},{1,3}}){int n=cb[0],sz=cb[1];   // round gauges over the 개요 page
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(FloatPanel.ROUND,n,sz),FloatPanel.defaultY(FloatPanel.ROUND,n,sz));
@@ -139,8 +139,11 @@ public final class TabsPreview {
                 FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_corner_"+th+"_"+cn+".png"));}
             Theme.select(keepTheme);FloatPanel.corner=keepCorner;
             // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all
-            if(FloatPanel.choices(VehicleProfile.PETROL_DCT).length!=FloatPanel.CHOICES.length-1)throw new AssertionError("float choices: petrol DCT drops the 2 DPF values");
-            for(int sg:FloatPanel.choices(VehicleProfile.PETROL_DCT))if(sg==Telemetry.DPF_SOOT||sg==Telemetry.DPF_TEMP)throw new AssertionError("float choices: no DPF on a petrol");
+            for(int gg:FloatPanel.groups(VehicleProfile.PETROL_DCT)){int[] vs=FloatPanel.group(gg,VehicleProfile.PETROL_DCT);
+                if(vs.length>SettingsLayout.S_MAX_VALUES)throw new AssertionError("float chooser: group "+gg+" has more readings than the sheet shows");
+                for(int sg:vs)if(sg==Telemetry.DPF_SOOT||sg==Telemetry.DPF_TEMP)throw new AssertionError("float chooser: no DPF on a petrol");}
+            for(int gg:FloatPanel.groups(VehicleProfile.PETROL_MT))for(int sg:FloatPanel.group(gg,VehicleProfile.PETROL_MT))if(sg==Telemetry.CLUTCH_ODD)throw new AssertionError("float chooser: no DCT clutch on a 6MT");
+            for(int gg:FloatPanel.groups(VehicleProfile.DIESEL_DCT))if(FloatPanel.group(gg,VehicleProfile.DIESEL_DCT).length>SettingsLayout.S_MAX_VALUES)throw new AssertionError("float chooser: diesel group too long");
             FloatPanel.cells[0]=Telemetry.DPF_SOOT;if(FloatPanel.signal(0,VehicleProfile.PETROL_DCT)!=Telemetry.BOOST)throw new AssertionError("float: a saved DPF cell falls back to 자동 on a petrol");FloatPanel.cells[0]=-1;
             FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.BAR;FloatPanel.count=2;
         }

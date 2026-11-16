@@ -152,23 +152,29 @@ public final class SettingsLayout {
         return -1;
     }
 
-    /** The cell chooser sheet over the whole screen: the values in a grid (S_COLS across), the graph buttons, 취소 / 완료. */
-    public static final float SH_L=96,SH_T=24,SH_R=704,SH_B=466,S_GX=116,S_GY=100,S_GW=568,S_ROW_H=40,S_VGAP=5,S_HGAP=6;
-    public static final int S_COLS=4,S_VAL=100,S_GRAPH=200,S_CANCEL=300,S_DONE=301,S_IN=0;
-    public static final float S_GRAPH_Y=310,S_GRAPH_H=56,S_GRAPH_X=180,S_GRAPH_W=117,S_GRAPH_GAP=12;
+    /** The cell chooser sheet over the whole screen: a column of tabs on the left (자동, then Tiles.GROUPS that this car
+     *  has), the open group's readings in S_COLS columns, the graph buttons under them, 취소 / 완료. */
+    public static final float SH_L=96,SH_T=24,SH_R=704,SH_B=466;
+    public static final float S_TAB_X=110,S_TAB_W=106,S_TAB_Y=104,S_TAB_H=30,S_TAB_GAP=4;
+    public static final float S_GX=228,S_GY=104,S_GW=460,S_ROW_H=40,S_VGAP=5,S_HGAP=6;
+    public static final int S_COLS=3,S_MAX_VALUES=15,S_VAL=100,S_GRAPH=200,S_CANCEL=300,S_DONE=301,S_TAB=400,S_IN=0;
+    public static final float S_GRAPH_Y=334,S_GRAPH_H=50,S_GRAPH_X=S_GX,S_GRAPH_W=107,S_GRAPH_GAP=10;
     public static final float[] S_CANCEL_BOX={440,410,560,452},S_DONE_BOX={568,410,688,452};
     /** The cell preview at the sheet's top right (one cell at size 1). */
     public static final float S_CELL_X=560,S_CELL_Y=32;
+    public static float[] sheetTab(int i){float y=S_TAB_Y+i*(S_TAB_H+S_TAB_GAP);return new float[]{S_TAB_X,y,S_TAB_X+S_TAB_W,y+S_TAB_H};}
     public static float[] sheetValue(int i){float cw=(S_GW-(S_COLS-1)*S_HGAP)/S_COLS,x=S_GX+(i%S_COLS)*(cw+S_HGAP),y=S_GY+(i/S_COLS)*(S_ROW_H+S_VGAP);return new float[]{x,y,x+cw,y+S_ROW_H};}
     public static float[] sheetGraph(int g){float x=S_GRAPH_X+g*(S_GRAPH_W+S_GRAPH_GAP);return new float[]{x,S_GRAPH_Y,x+S_GRAPH_W,S_GRAPH_Y+S_GRAPH_H};}
-    /** What the sheet has under x,y with n values and graphs graph buttons: S_VAL + i, S_GRAPH + g, S_CANCEL, S_DONE,
-     *  S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
-    public static int sheetHit(float x,float y,int n,int graphs){
+    private static boolean in(float[] b,float x,float y){return x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3];}
+    /** What the sheet has under x,y with tabs tabs, n readings and graphs graph buttons: S_TAB + i, S_VAL + i,
+     *  S_GRAPH + g, S_CANCEL, S_DONE, S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
+    public static int sheetHit(float x,float y,int tabs,int n,int graphs){
         if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -1;
-        for(int i=0;i<n;i++){float[] b=sheetValue(i);if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return S_VAL+i;}
-        for(int g=0;g<graphs;g++){float[] b=sheetGraph(g);if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return S_GRAPH+g;}
-        if(x>=S_CANCEL_BOX[0]&&x<=S_CANCEL_BOX[2]&&y>=S_CANCEL_BOX[1]&&y<=S_CANCEL_BOX[3])return S_CANCEL;
-        if(x>=S_DONE_BOX[0]&&x<=S_DONE_BOX[2]&&y>=S_DONE_BOX[1]&&y<=S_DONE_BOX[3])return S_DONE;
+        for(int i=0;i<tabs;i++)if(in(sheetTab(i),x,y))return S_TAB+i;
+        for(int i=0;i<Math.min(n,S_MAX_VALUES);i++)if(in(sheetValue(i),x,y))return S_VAL+i;
+        for(int g=0;g<graphs;g++)if(in(sheetGraph(g),x,y))return S_GRAPH+g;
+        if(in(S_CANCEL_BOX,x,y))return S_CANCEL;
+        if(in(S_DONE_BOX,x,y))return S_DONE;
         return S_IN;
     }
 

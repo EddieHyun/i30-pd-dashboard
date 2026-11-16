@@ -823,5 +823,6 @@
   "작은 글씨는 지금 값 · 이 차에 없는 값은 뺌": "Small text is the reading now · readings this car lacks are left out",
   "숫자만": "Number only",
   "원형 게이지": "Round gauges",
-  "원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)": "A round gauge fills its ring with the reading (no graph to choose)"
+  "원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)": "A round gauge fills its ring with the reading (no graph to choose)",
+  "작은 글씨는 지금 값 · 이 차에 없는 값은 뺌 · ▲ 최고값은 부스트·RPM·온도 등에만": "Small text is the reading now · readings this car lacks are left out · ▲ peak on boost, rpm, temperatures and the like"
 }

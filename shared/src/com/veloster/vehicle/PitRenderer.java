@@ -350,16 +350,17 @@ public final class PitRenderer {
                 box(c,798,top,800,bot,0xff0c1012);box(c,798,y,800,y+vis,0xff2a3b44);}}
     }
     // --- 플로팅 pane: preview, switches, button rows, and the cell chooser sheet ---
-    private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph;
+    private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph,floatEditTab;
     /** edit: the cell whose chooser is open (-1 none); sel: the cell shown in the right box; sig / graph: the chooser's pick. */
-    public void setFloatEdit(int edit,int sel,int sig,int graph){floatEdit=edit;floatSel=sel;floatEditSig=sig;floatEditGraph=graph;}
+    public void setFloatEdit(int edit,int sel,int sig,int graph,int tab){floatEdit=edit;floatSel=sel;floatEditSig=sig;floatEditGraph=graph;floatEditTab=tab;}
     /** A button with its label centred (and a small second line); on = the chosen one. */
     private void chip(Canvas c,float[] b,String label,String sub,boolean on,boolean dim){
         panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff233b46:0xff111415,on?BLUE:LINE);
         if(on){box(c,b[0]+9,b[3]-3,b[2]-9,b[3]-1,BLUE);}
         float cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2;int ink=dim?MUTED:on?WHITE:0xffc8d3d8;
-        if(sub==null)centered(c,label,cx,cy+5,14,ink,true);
-        else{centered(c,label,cx,cy-1,14,ink,true);centered(c,sub,cx,cy+14,11,on?BLUE:MUTED,false);}
+        float room=b[2]-b[0]-12;paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);float ls=Math.min(14,14*room/Math.max(1,paint.measureText(label)));
+        if(sub==null)centered(c,label,cx,cy+5,ls,ink,true);
+        else{centered(c,label,cx,cy-1,ls,ink,true);paint.setTypeface(Typeface.DEFAULT);paint.setTextSize(11);centered(c,sub,cx,cy+14,Math.min(11,11*room/Math.max(1,paint.measureText(sub))),on?BLUE:MUTED,false);}
     }
     private String floatValue(int sig){
         if(samples==null||sig<0||sig>=samples.length||samples[sig]==null||!samples[sig].valid)return "—";
@@ -405,16 +406,19 @@ public final class PitRenderer {
     private void drawFloatSheet(Canvas c){
         box(c,0,0,800,480,0xc0000000);
         panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
-        text(c,String.format(Locale.US,UiText.t("%d번 칸에 띄울 값"),floatEdit+1),SettingsLayout.S_GX,SettingsLayout.SH_T+32,18,WHITE,true);
-        text(c,UiText.t("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌"),SettingsLayout.S_GX,SettingsLayout.SH_T+52,11,MUTED,false);
+        text(c,String.format(Locale.US,UiText.t("%d번 칸에 띄울 값"),floatEdit+1),SettingsLayout.S_TAB_X,SettingsLayout.SH_T+32,18,WHITE,true);
+        text(c,UiText.t("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌 · ▲ 최고값은 부스트·RPM·온도 등에만"),SettingsLayout.S_TAB_X,SettingsLayout.SH_T+52,11,MUTED,false);
         boolean round=(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND;
         if(samples!=null){c.save();c.translate(SettingsLayout.S_CELL_X+(round?62-34:0),SettingsLayout.S_CELL_Y-(round?6:0));if(round)c.scale(.63f,.63f);
             FloatPanel.drawCell(c,round?FloatPanel.ROUND:FloatPanel.CARD,1,samples,FloatPanel.resolve(floatEditSig,floatEdit,profile),floatEditGraph,floatEdit,frameTime);c.restore();}
-        int[] ch=FloatPanel.choices(profile);
-        for(int i=0;i<ch.length;i++){int sg=ch[i];
-            String name=sg<0?UiText.t("자동"):UiText.t(FloatPanel.name(sg)),sub=sg<0?UiText.t(FloatPanel.name(FloatPanel.resolve(-1,floatEdit,profile))):floatValue(sg);
-            chip(c,SettingsLayout.sheetValue(i),name,sub,sg==floatEditSig,false);}
-        text(c,UiText.t("그래프"),SettingsLayout.S_GX,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,14,MUTED,true);
+        int[] gs=FloatPanel.groups(profile);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));
+        chip(c,SettingsLayout.sheetTab(0),UiText.t("자동"),UiText.t(FloatPanel.name(FloatPanel.resolve(-1,floatEdit,profile))),floatEditSig<0,false);
+        for(int t=0;t<gs.length;t++){float[] b=SettingsLayout.sheetTab(t+1);boolean open=t==tab;   // a group tab: open = its readings are shown
+            box(c,b[0],b[1],b[2],b[3],open?0xff1c303b:0xff101315);if(open)box(c,b[0],b[1],b[0]+3,b[3],BLUE);
+            boolean mine=floatEditSig>=0&&Tiles.groupOf(floatEditSig)==gs[t];
+            fitted(c,UiText.t(Tiles.GROUPS[gs[t]])+(mine?" ●":""),b[0]+10,b[1]+20,13,b[2]-b[0]-14,open?WHITE:MUTED);}
+        int[] vs=gs.length==0?new int[0]:FloatPanel.group(gs[tab],profile);
+        for(int i=0;i<Math.min(vs.length,SettingsLayout.S_MAX_VALUES);i++)chip(c,SettingsLayout.sheetValue(i),UiText.t(FloatPanel.name(vs[i])),floatValue(vs[i])+(FloatPanel.peaks(vs[i])?"  ▲":""),vs[i]==floatEditSig,false);
         if(round){text(c,UiText.t("원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)"),SettingsLayout.S_GRAPH_X,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,13,MUTED,false);}
         else for(int g=0;g<FloatPanel.GRAPH_NAMES.length;g++){float[] b=SettingsLayout.sheetGraph(g);boolean on=g==floatEditGraph;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff233b46:0xff111415,on?BLUE:LINE);

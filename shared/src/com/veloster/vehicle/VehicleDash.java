@@ -54,7 +54,7 @@ public final class VehicleDash extends View implements Runnable {
     private final int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
     private int pickSlot=-1;
     /** 플로팅 pane: the cell whose chooser is open (-1 none), the cell shown on the right, and the chooser's pick. */
-    private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph;
+    private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph,floatEditTab;
     private final HeaderTabs header=renderer.header();
     private final LapTimer lap=new LapTimer();
     private boolean lapHeld;   // the hold already acted; the finger's release is not a tap
@@ -307,8 +307,9 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
-        if(floatEdit>=0){int[] ch=FloatPanel.choices(prof);int g=FloatPanel.GRAPH_NAMES.length;
-            int a=SettingsLayout.sheetHit(x,y,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,ch.length,g))return;
+        if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;
+            int a=SettingsLayout.sheetHit(x,y,gs.length+1,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,gs.length+1,ch.length,g))return;
+            if(a>=SettingsLayout.S_TAB){if(a==SettingsLayout.S_TAB)floatEditSig=-1;else floatEditTab=a-SettingsLayout.S_TAB-1;return;}   // 자동, or open a group
             if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND)a=SettingsLayout.S_IN;   // no graph on a round gauge
             if(a>=SettingsLayout.S_GRAPH)floatEditGraph=a<SettingsLayout.S_CANCEL?a-SettingsLayout.S_GRAPH:floatEditGraph;
             if(a>=SettingsLayout.S_VAL&&a<SettingsLayout.S_GRAPH)floatEditSig=ch[a-SettingsLayout.S_VAL];
@@ -324,7 +325,9 @@ public final class VehicleDash extends View implements Runnable {
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
         else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
             int k=t==SettingsLayout.F_EDIT?Math.min(floatSel,FloatPanel.count-1):t-SettingsLayout.F_CELL;if(k>=FloatPanel.count)return;
-            floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&Tiles.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];return;}
+            floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&Tiles.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
+            int[] gs=FloatPanel.groups(prof);int want=Tiles.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
+            return;}
         else{int g=t/10*10,i=t-g;
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
             else if(g==SettingsLayout.F_COUNT){FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
@@ -432,7 +435,7 @@ public final class VehicleDash extends View implements Runnable {
         }
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);
         renderer.setModeOptions(modeColor,modeScreen);
-        if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);}
+        if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);}
         renderer.setLap(lap);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();

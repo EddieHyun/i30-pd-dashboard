@@ -593,6 +593,7 @@ public final class UiText {
         EN.put("작게","Small");
         EN.put("작동","Active");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌","Small text is the reading now · readings this car lacks are left out");
+        EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌 · ▲ 최고값은 부스트·RPM·온도 등에만","Small text is the reading now · readings this car lacks are left out · ▲ peak on boost, rpm, temperatures and the like");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");

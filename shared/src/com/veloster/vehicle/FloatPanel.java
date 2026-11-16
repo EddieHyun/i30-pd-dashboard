@@ -48,8 +48,24 @@ public final class FloatPanel {
     static final int HIST=60;static final long HIST_MS=500;
     private static final float[][] hist=new float[4][HIST];private static final int[] histHead=new int[4],histN=new int[4],histSig={-1,-1,-1,-1};
     private static final long[] histAt=new long[4];
-    /** Adds the cell's value to its line graph once every HIST_MS (called on every draw). */
+    /** The highest reading per cell (최고값), for the readings where a peak means something (boost, rpm, speed, pedal,
+     *  temperatures, G); G and yaw keep the largest size either way. It starts over when the cell's reading changes, or
+     *  when the reading has been missing for PEAK_IDLE_MS (the car was off). */
+    static final long PEAK_IDLE_MS=600000;
+    private static final float[] peak={Float.NaN,Float.NaN,Float.NaN,Float.NaN};private static final int[] peakSig={-1,-1,-1,-1};private static final long[] peakAt=new long[4];
+    public static boolean peaks(int s){
+        switch(s){case 0:case 1:case 2:case 7:case 9:case 10:case 11:case 12:case Telemetry.BOOST:case Telemetry.INTAKE:case Telemetry.ENGINE_LOAD:
+            case Telemetry.THROTTLE_POS:case Telemetry.FUEL_RATE:case Telemetry.YAW:case Telemetry.STEERING_SPEED:case Telemetry.CLUTCH_ODD:case Telemetry.CLUTCH_EVEN:
+            case Telemetry.CAT_TEMP:case Telemetry.DPF_TEMP:case Telemetry.EGT_CAT:case Telemetry.TIRE_TEMP_FL:case Telemetry.TIRE_TEMP_FR:case Telemetry.TIRE_TEMP_RL:case Telemetry.TIRE_TEMP_RR:return true;}
+        return false;
+    }
+    private static boolean both(int s){return s==11||s==12||s==Telemetry.YAW;}
+    /** Cell k's highest reading so far, or NaN. */
+    static float peak(int k,int sig){return k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
+    /** Adds the cell's value to its line graph once every HIST_MS, and to its peak every time (called on every draw). */
     static void record(int k,int sig,float v,long now){
+        if(peakSig[k]!=sig||now<peakAt[k]||now-peakAt[k]>PEAK_IDLE_MS){peakSig[k]=sig;peak[k]=Float.NaN;peakAt[k]=now;}
+        if(!Float.isNaN(v)&&peaks(sig)){float a=both(sig)?Math.abs(v):v;if(Float.isNaN(peak[k])||a>peak[k])peak[k]=a;peakAt[k]=now;}
         if(histSig[k]!=sig||now<histAt[k]){histSig[k]=sig;histN[k]=0;histHead[k]=0;histAt[k]=0;}   // a new signal, or the clock went back: start over
         if(histN[k]>0&&now-histAt[k]<HIST_MS)return;
         histAt[k]=now;hist[k][histHead[k]]=v;histHead[k]=(histHead[k]+1)%HIST;if(histN[k]<HIST)histN[k]++;
@@ -63,7 +79,8 @@ public final class FloatPanel {
         for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
             h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
-            if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];}
+            if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
+            float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+Tiles.text(sig,pk).hashCode();}
         boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
@@ -86,12 +103,9 @@ public final class FloatPanel {
     public static int signal(int k,VehicleProfile p){return resolve(cells[k],k,p);}
     public static int resolve(int c,int k,VehicleProfile p){boolean diesel=p!=null&&p.fuel==VehicleProfile.Fuel.DIESEL;
         return c>=0&&(p==null||Tiles.available(c,p))?c:(diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
-    /** What a cell can show on this car: -1 (자동) first, then CHOICES without the ones it lacks. */
-    public static int[] choices(VehicleProfile p){
-        int[] t=new int[CHOICES.length+1];int n=0;t[n++]=-1;
-        for(int s:CHOICES)if(p==null||Tiles.available(s,p))t[n++]=s;
-        return java.util.Arrays.copyOf(t,n);
-    }
+    /** The reading groups a cell can choose from on this car (Tiles.GROUPS indices, single readings only). */
+    public static int[] groups(VehicleProfile p){return Tiles.groups(p,false);}
+    public static int[] group(int g,VehicleProfile p){return Tiles.group(g,p,false);}
     /** The next choice for a cell: automatic, then CHOICES in order, then automatic again. */
     public static int next(int current){if(current<0)return CHOICES[0];for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==current)return i+1<CHOICES.length?CHOICES[i+1]:-1;return -1;}
     public static String name(int sig){for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
@@ -139,7 +153,7 @@ public final class FloatPanel {
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
         if(shape==ROUND){   // no window body: each reading is its own disc
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
-                gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v);}
+                gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig));}
             return;}
         outline(c,w,h,k,BG,EDGE);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);
@@ -149,6 +163,9 @@ public final class FloatPanel {
             int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
             text(c,name(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
             String unit=Telemetry.UNITS[sig],val=Tiles.text(sig,v);float f=Tiles.fraction(sig,v);
+            float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
+            if(!Float.isNaN(pk)&&g!=LINE){String ps="▲ "+Tiles.text(sig,pk);   // the peak, small, top right (left out when the name leaves no room)
+                if(width(name(sig),12*k,Typeface.DEFAULT_BOLD)+width(ps,10*k,Typeface.DEFAULT)+20*k<=cw)text(c,ps,x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);}
             if(Float.isNaN(f)||g==NUM||g==LINE&&!drawn(i,sig)){   // nothing to graph (no value yet, or the line has no history): the value alone, large, in the middle
                 float vw=width(val,30*k,Typeface.DEFAULT_BOLD),uw=width(unit,12*k,Typeface.DEFAULT),x0=x+(cw-(vw+3*k+uw))/2;
                 text(c,val,x0,y+ch-13*k,30*k,Float.isNaN(v)?MUT:col,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);text(c,unit,x0+vw+3*k,y+ch-13*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT);continue;}
@@ -157,25 +174,30 @@ public final class FloatPanel {
                 boolean fits=nw+vw+uw+26*k<=cw;float right=x+cw-8*k;
                 if(fits){text(c,unit,right,y+20*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);right-=uw+3*k;}
                 text(c,val,right,y+21*k,21*k,col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
-                line(c,i,sig,x+8*k,y+29*k,x+cw-8*k,y+ch-7*k,k,lv);continue;}
+                line(c,i,sig,x+8*k,y+29*k,x+cw-8*k,y+ch-7*k,k,lv);
+                if(!Float.isNaN(pf)){float t2=y+29*k,b2=y+ch-7*k,py=b2-Math.max(0,Math.min(1,pf))*(b2-t2);p.setColor(0x99ffffff);   // the peak as a dotted line across the graph
+                    for(float xx=x+8*k;xx<x+cw-8*k;xx+=5*k)c.drawRect(xx,py-.5f,Math.min(xx+2.5f*k,x+cw-8*k),py+.5f,p);}
+                continue;}
             float uw=width(unit,11*k,Typeface.DEFAULT);
             text(c,unit,x+cw-10*k,y+ch-15*k,11*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);
             text(c,val,x+cw-10*k-uw-3*k,y+ch-15*k,26*k,col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
             float bl=x+8*k,br=x+cw-8*k;
             if(g==LED){   // lit segments, the top fifth amber
                 int segs=Math.max(8,Math.round((br-bl)/(8*k)));float sw=(br-bl)/segs,bt=y+ch-11*k,bb=bt+6*k;int lit=Float.isNaN(f)?0:Math.round(Math.max(0,Math.min(1,f))*segs);
-                for(int s2=0;s2<segs;s2++){p.setColor(s2<lit?(s2>=segs*.8f?WARM:lv==2?HOT:ACC):TRACK);c.drawRect(bl+s2*sw+k,bt,bl+(s2+1)*sw-k,bb,p);}
+                int pseg=Float.isNaN(pf)?-1:Math.min(segs-1,Math.max(0,Math.round(Math.max(0,Math.min(1,pf))*segs)-1));
+                for(int s2=0;s2<segs;s2++){p.setColor(s2<lit?(s2>=segs*.8f?WARM:lv==2?HOT:ACC):s2==pseg?0x88ffffff:TRACK);c.drawRect(bl+s2*sw+k,bt,bl+(s2+1)*sw-k,bb,p);}
                 continue;}
             float bt=y+ch-9*k,bb=bt+4*k;p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);
             f=Math.max(0,Math.min(1,f));
             float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0,a=bl+(br-bl)*Math.min(zero,f),b=bl+(br-bl)*Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);r.set(a,bt,Math.max(b,a+2),bb);c.drawRoundRect(r,2*k,2*k,p);
             if(zero>0){p.setColor(0x99ffffff);float z=bl+(br-bl)*zero;c.drawRect(z-.5f,bt-2*k,z+.5f,bb+2*k,p);}
+            if(!Float.isNaN(pf)){p.setColor(0xffffffff);float z=bl+(br-bl)*Math.max(0,Math.min(1,pf));c.drawRect(z-k,bt-2*k,z+k,bb+2*k,p);}   // the peak, a white tick
         }
     }
     /** A round gauge in the d x d square at x,y: a dark disc, a 270 degree ring open at the bottom (filled from zero, so
      *  boost below zero fills the other way), the value in the middle, its unit under it and its name in the gap. */
-    private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v){
+    private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v,float pk){
         float cx=x+d/2,cy=y+d/2,rad=d/2-2*k,sw=7*k,ar=rad-sw/2-4*k;
         int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT;float f=Tiles.fraction(sig,v);
         p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);
@@ -184,6 +206,11 @@ public final class FloatPanel {
         if(!Float.isNaN(f)){f=Math.max(0,Math.min(1,f));float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0,a=Math.min(zero,f),b=Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawArc(r,135+270*a,Math.max(1,270*(b-a)),false,p);}
         p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
+        float pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
+        if(!Float.isNaN(pf)){double a=Math.toRadians(135+270*Math.max(0,Math.min(1,pf)));float o=ar+sw/2+1*k,in=ar-sw/2-1*k;   // the peak: a white tick across the ring
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2*k);p.setColor(0xffffffff);
+            c.drawLine(cx+(float)Math.cos(a)*in,cy+(float)Math.sin(a)*in,cx+(float)Math.cos(a)*o,cy+(float)Math.sin(a)*o,p);p.setStyle(Paint.Style.FILL);
+            text(c,"▲ "+Tiles.text(sig,pk),cx,cy-ar*.42f,9*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);}
         String val=Tiles.text(sig,v),unit=Telemetry.UNITS[sig];float size=24*k,room=ar*1.5f;
         p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);float vw=p.measureText(val);if(vw>room)size*=room/vw;
         text(c,val,cx,cy+size*.36f,size,Float.isNaN(v)?MUT:col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
