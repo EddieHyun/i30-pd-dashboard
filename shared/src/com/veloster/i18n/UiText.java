@@ -184,6 +184,7 @@ public final class UiText {
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
+        EN.put("기본","Default");
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본 파랑","N blue");
@@ -223,6 +224,7 @@ public final class UiText {
         EN.put("냉각수 온도","Coolant temperature");
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
+        EN.put("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로","Applies at once · cells, size and opacity stay");
         EN.put("누르면 배기구 보기","Tap: tailpipe view");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("누르면 페트병 보기","Tap: bottle view");
@@ -427,6 +429,9 @@ public final class UiText {
         EN.put("스로틀","Throttle");
         EN.put("스로틀 %","Throttle %");
         EN.put("스로틀 개도","Throttle position");
+        EN.put("스킨","Skin");
+        EN.put("스킨 고르기","Choose a skin");
+        EN.put("스킨마다 정해진 막대를 씁니다 (그래프 고르기 없음)","Each skin has its own bar (no graph choice)");
         EN.put("스타게이징 블루","Stargazing Blue");
         EN.put("스포츠 머플러","Sport muffler");
         EN.put("시간  ","Time  ");
@@ -725,6 +730,7 @@ public final class UiText {
         EN.put("측정 중 · 버튼","Timing");
         EN.put("카드","Card");
         EN.put("카세트","Cassette");
+        EN.put("카세트 VU","Cassette VU");
         EN.put("카세트 데크","Cassette deck");
         EN.put("카세트 찰칵 소리","Cassette click sound");
         EN.put("카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개","Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound");
@@ -869,5 +875,7 @@ public final class UiText {
         String value=("ko".equals(language)?KO:EN).get(key);
         return value==null?key:value;
     }
+    /** The English text whatever the language (layouts that label in English, like the floating window's skins). */
+    public static String en(String key){if(key==null)return "";String value=EN.get(key);return value==null?key:value;}
     public static String[] list(String[] keys){String[] result=new String[keys.length];for(int i=0;i<keys.length;i++)result[i]=t(keys[i]);return result;}
 }

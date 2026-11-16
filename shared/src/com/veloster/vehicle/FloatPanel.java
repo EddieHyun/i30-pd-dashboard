@@ -47,6 +47,10 @@ public final class FloatPanel {
     public static final String[] ALPHA_NAMES={"진하게","보통","연하게"};
     static final int[] ALPHAS={0xf4,0xd8,0x80};
     public static volatile int alpha=1;
+    /** 스킨: the cells drawn like a dashboard layout (FloatSkin.NAMES); 0 = the plain window with its corners and colours. */
+    public static final String[] SKIN_NAMES=FloatSkin.NAMES;
+    public static volatile int skin=0;
+    public static int skinCount(){return FloatSkin.NAMES.length;}
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
@@ -84,7 +88,7 @@ public final class FloatPanel {
     /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
      *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
     public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
-        int h=17;h=h*31+alpha;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
+        int h=17;h=h*31+skin;h=h*31+alpha;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
         for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
             h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
@@ -165,6 +169,16 @@ public final class FloatPanel {
         if(shape==ROUND){   // no window body: each reading is its own disc
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
                 gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig));}
+            return;}
+        int sk=Math.max(0,Math.min(FloatSkin.NAMES.length-1,skin));
+        if(sk!=FloatSkin.PLAIN){   // a skin: its own body and cells
+            FloatSkin.body(c,sk,w,h,k,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8);
+            for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
+                FloatSkin.Cell d=FloatSkin.CELL;float pk=peak(i,sig);d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);
+                d.val=Tiles.text(sig,v);String u=Telemetry.UNITS[sig];d.unit=u==null?"":u;d.f=Tiles.fraction(sig,v);d.lv=Tiles.level(sig,v);
+                d.zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0;d.pk=Float.isNaN(pk)?null:Tiles.text(sig,pk);d.pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
+                d.first=j==0&&n>1;d.bar=gs[j]!=NUM;
+                FloatSkin.cell(c,sk,(j%cols)*cw,(j/cols)*ch,cw,ch,k);}
             return;}
         outline(c,w,h,k,BG,EDGE);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);

@@ -120,7 +120,9 @@ public final class SettingsLayout {
     public static final float[] F_ROW_Y={262,306,350,394};
     public static final String[] F_ROW_LABELS={"모양","칸 수","모서리","색"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
-    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70;
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,SKIN_SHEET=100;
+    /** 스킨 at the end of the shape row: opens the skin sheet (VehicleDash.floatEdit = SKIN_SHEET). */
+    public static final float[] F_SKIN_BOX={674,262,788,298};
     public static final String[] F_SHAPES={"카드","아래 띠","옆 세로","원형 게이지"},F_COUNTS={"1","2","4"},
         F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마 따라","각진","라운드","다이아 커팅"},F_COLORS={"테마 따라","기본 파랑","흰색"},F_ALPHAS={"진하게","보통","연하게"};
     private static final float[] W_SHAPE={92,92,92,118},W_COUNT={52,52,52},W_SIZE={62,62,62,88},W_CORNER={100,74,82,112},W_COLOR={100,100,74},W_ALPHA={58,58,58};
@@ -130,7 +132,7 @@ public final class SettingsLayout {
     public static final float F_SIZE_X=F_ROW_X+3*52+2*F_GAP+60;
     /** The button for target t ({l, t, r, b}), or null (preview cells are placed by floatPreview*). */
     public static float[] floatBox(int t){
-        if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
+        if(t==F_SKIN)return F_SKIN_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
         int g=t/10*10,i=t-g;float[] w;float x,y;
         switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_ROW_X;y=F_ROW_Y[1];break;
             case F_SIZE:w=W_SIZE;x=F_SIZE_X;y=F_ROW_Y[1];break;case F_CORNER:w=W_CORNER;x=F_ROW_X;y=F_ROW_Y[2];break;
@@ -140,7 +142,7 @@ public final class SettingsLayout {
         return new float[]{x,y,x+w[i],y+F_ROW_H};
     }
     /** Every button target in drawing order. */
-    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SHAPE,F_SHAPE+1,F_SHAPE+2,F_SHAPE+3,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_SIZE+1,F_SIZE+2,F_SIZE+3,
+    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_SHAPE,F_SHAPE+1,F_SHAPE+2,F_SHAPE+3,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_SIZE+1,F_SIZE+2,F_SIZE+3,
         F_CORNER,F_CORNER+1,F_CORNER+2,F_CORNER+3,F_COLOR,F_COLOR+1,F_COLOR+2,F_ALPHA,F_ALPHA+1,F_ALPHA+2};
     /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
     public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}
@@ -170,6 +172,15 @@ public final class SettingsLayout {
     private static boolean in(float[] b,float x,float y){return x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3];}
     /** What the sheet has under x,y with tabs tabs, n readings and graphs graph buttons: S_TAB + i, S_VAL + i,
      *  S_GRAPH + g, S_CANCEL, S_DONE, S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
+    /** The skin sheet: 3 x 3 tiles on the sheet, each the skin's name over a live cell. */
+    public static final float K_X=112,K_Y=72,K_GAP=10,K_W=(SH_R-SH_L-32-2*K_GAP)/3,K_H=(SH_B-K_Y-14-2*K_GAP)/3;
+    public static float[] skinTile(int i){float x=K_X+(i%3)*(K_W+K_GAP),y=K_Y+(i/3)*(K_H+K_GAP);return new float[]{x,y,x+K_W,y+K_H};}
+    /** A skin tile, -1 elsewhere on the sheet, -2 outside it (closes). */
+    public static int skinHit(float x,float y,int n){
+        if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -2;
+        for(int i=0;i<n;i++)if(in(skinTile(i),x,y))return i;
+        return -1;
+    }
     public static int sheetHit(float x,float y,int tabs,int n,int graphs){
         if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -1;
         for(int i=0;i<tabs;i++)if(in(sheetTab(i),x,y))return S_TAB+i;

@@ -49,7 +49,7 @@ public final class FloatService extends Service implements Runnable {
     public void onCreate(){
         super.onCreate();
         windows=(WindowManager)getSystemService(Context.WINDOW_SERVICE);
-        com.veloster.i18n.LanguageSettings.init(this);wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
+        com.veloster.i18n.LanguageSettings.init(this);VehicleDash.fonts(this);wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
         handler.post(this);
     }
     public int onStartCommand(Intent intent,int flags,int startId){

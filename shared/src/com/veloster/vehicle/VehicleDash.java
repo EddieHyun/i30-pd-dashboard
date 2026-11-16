@@ -168,7 +168,7 @@ public final class VehicleDash extends View implements Runnable {
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
-        if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}
+        fonts(a);
         if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}ShiftBeep.loadCassette(a);
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);LambdaCluster.downAlways=p.getBoolean("lambda_down_always",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
             EcoCluster.grade=p.getInt("eco_grade",0)==1?1:0;
@@ -307,10 +307,13 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
+        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.skinHit(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.skinHit(downX,downY,FloatPanel.skinCount()))return;
+            if(i==-1)return;if(i>=0)FloatPanel.skin=i;floatEdit=-1;   // a tile picks it, outside the sheet closes it
+            SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;
             int a=SettingsLayout.sheetHit(x,y,gs.length+1,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,gs.length+1,ch.length,g))return;
             if(a>=SettingsLayout.S_TAB){if(a==SettingsLayout.S_TAB)floatEditSig=-1;else floatEditTab=a-SettingsLayout.S_TAB-1;return;}   // 자동, or open a group
-            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND)a=SettingsLayout.S_IN;   // no graph on a round gauge
+            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&((FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND||FloatPanel.skin!=0))a=SettingsLayout.S_IN;   // no graph on a round gauge
             if(a>=SettingsLayout.S_GRAPH)floatEditGraph=a<SettingsLayout.S_CANCEL?a-SettingsLayout.S_GRAPH:floatEditGraph;
             if(a>=SettingsLayout.S_VAL&&a<SettingsLayout.S_GRAPH)floatEditSig=ch[a-SettingsLayout.S_VAL];
             if(a==SettingsLayout.S_CANCEL)floatEdit=-1;
@@ -323,6 +326,7 @@ public final class VehicleDash extends View implements Runnable {
         if(t<0||t!=SettingsLayout.floatHit(downX,downY,cols,rows,cw,chh))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
+        else if(t==SettingsLayout.F_SKIN){if(shape!=FloatPanel.ROUND)floatEdit=SettingsLayout.SKIN_SHEET;return;}
         else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
             int k=t==SettingsLayout.F_EDIT?Math.min(floatSel,FloatPanel.count-1):t-SettingsLayout.F_CELL;if(k>=FloatPanel.count)return;
             floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&Tiles.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
@@ -332,8 +336,8 @@ public final class VehicleDash extends View implements Runnable {
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
             else if(g==SettingsLayout.F_COUNT){FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
             else if(g==SettingsLayout.F_SIZE)FloatPanel.size=i;
-            else if(g==SettingsLayout.F_CORNER)FloatPanel.corner=i;
-            else if(g==SettingsLayout.F_COLOR)FloatPanel.color=i;
+            else if(g==SettingsLayout.F_CORNER){if(FloatPanel.skin==0)FloatPanel.corner=i;}
+            else if(g==SettingsLayout.F_COLOR){if(FloatPanel.skin==0)FloatPanel.color=i;}
             else if(g==SettingsLayout.F_ALPHA)FloatPanel.alpha=i;}
         SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();
     }
@@ -343,7 +347,7 @@ public final class VehicleDash extends View implements Runnable {
             FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.ROUND,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.ROUND?last:FloatPanel.CARD;
-            int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1);FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
+            int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",0);FloatPanel.skin=skn>=0&&skn<FloatPanel.skinCount()?skn:0;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
             FloatPanel.corner=cn>=0&&cn<FloatPanel.CORNER_NAMES.length?cn:0;FloatPanel.color=co>=0&&co<FloatPanel.COLOR_NAMES.length?co:0;
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too
             for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
@@ -351,7 +355,7 @@ public final class VehicleDash extends View implements Runnable {
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
         e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).remove("float_style")
-         .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha);
+         .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin);
         for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
     public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}
@@ -373,6 +377,8 @@ public final class VehicleDash extends View implements Runnable {
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
     public static float now(int i){Telemetry.Sample x=DATA.sample(i,SystemClock.elapsedRealtime());return x.valid?x.value:Float.NaN;}
     /** A TTF from res/raw (API 17 has no font resources): copied once into the cache, then Typeface.createFromFile; null on any failure. */
+    /** The Chakra Petch faces (LambdaCluster, the floating window's skins), loaded once: by the dashboard, or by FloatService at boot. */
+    public static void fonts(android.content.Context a){if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}}
     private static android.graphics.Typeface rawFont(android.content.Context c,String name){
         try{int id=c.getResources().getIdentifier(name,"raw",c.getPackageName());if(id==0)return null;
             java.io.File f=new java.io.File(c.getCacheDir(),name+".ttf");

@@ -145,6 +145,18 @@ public final class TabsPreview {
                 for(int sx=0;sx<260;sx+=20){g2.setColor(new java.awt.Color(sx/20%2==0?0x6fa86a:0xd8d2b8));g2.fillRect(sx,0,20,140);}g2.translate(6,6);
                 FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_alpha_"+al+".png"));}
             FloatPanel.alpha=1;
+            // 스킨: every skin as a 4-cell card over a map-like ground (1 and 2 cells, strip, side, big size for two of them)
+            for(int sk=0;sk<FloatPanel.skinCount();sk++){FloatPanel.skin=sk;
+                for(int[] v:new int[][]{{FloatPanel.CARD,4,1},{FloatPanel.STRIP,4,1},{FloatPanel.SIDE,2,0},{FloatPanel.CARD,1,3}}){int sh=v[0],n=v[1],sz=v[2];
+                    int w=FloatPanel.width(sh,n,sz),hh=FloatPanel.height(sh,n,sz);
+                    BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
+                    g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.setColor(new java.awt.Color(0xffffff));for(int sx=-hh;sx<w+24;sx+=46)g2.fillPolygon(new int[]{sx,sx+8,sx+8+hh+24,sx+hh+24},new int[]{0,0,hh+24,hh+24},4);
+                    g2.setColor(new java.awt.Color(0x2f7df0));g2.fillRect(0,(hh+24)/2,w+24,7);g2.translate(12,12);
+                    FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
+                    ImageIO.write(img,"png",new File(out,"x_float_skin_"+sk+"_"+sh+n+sz+".png"));}}
+            FloatPanel.skin=1;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);
+            rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);
+            rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.skin=0;
             // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all
             for(int gg:FloatPanel.groups(VehicleProfile.PETROL_DCT)){int[] vs=FloatPanel.group(gg,VehicleProfile.PETROL_DCT);
                 if(vs.length>SettingsLayout.S_MAX_VALUES)throw new AssertionError("float chooser: group "+gg+" has more readings than the sheet shows");

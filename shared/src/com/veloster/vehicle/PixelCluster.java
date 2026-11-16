@@ -622,7 +622,7 @@ final class PixelCluster extends ClusterKit {
     private static final String FONT_CHARS=" !%+-./0123456789:?ABCDEFGHIJKLMNOPQRSTUVWXYZsvx";
     /** 7 rows per glyph, 5 bits each (bit 4 = left column), as hex pairs in FONT_CHARS order. */
     private static final String FONT_ROWS="0000000000000004040404040004181902040813030004041F0404000000001F00000000000000000C0C000102040810000E11131519110E040C040404040E0E11010204081F1F02040201110E02060A121F02021F101E0101110E0608101E11110E1F0102040808080E11110E11110E0E11110F01020C000C0C000C0C000E1101020400040E1111111F11111E11111E11111E0E11101010110E1C12111111121C1F10101E10101F1F10101E1010100E11101711110F1111111F1111110E04040404040E0702020202120C111214181412111010101010101F111B1515111111111119151311110E11111111110E1E11111E1010100E11111115120D1E11111E1412110F10100E01011E1F0404040404041111111111110E11111111110A041111111515150A11110A040A11111111110A0404041F01020408101F00000E100E011E00001F1F0E04000000110A040A11";
-    private static final int[] FONT_BITS=new int[FONT_ROWS.length()/2];
+    static final int[] FONT_BITS=new int[FONT_ROWS.length()/2];
     static{for(int i=0;i<FONT_BITS.length;i++)FONT_BITS[i]=Integer.parseInt(FONT_ROWS.substring(i*2,i*2+2),16);}
     /** Strings drawn lately, text and its one-pixel shadow baked at font scale: one blit each. Values change (speed, time),
      * so it is a small LRU; ponytail: 64 entries is about 20 frames of the busiest HUD, raise it if the frame log shows misses. */
@@ -641,7 +641,7 @@ final class PixelCluster extends ClusterKit {
     private static int fontPx(float size){return size>=26?4:2;}
     private static float fontWidth(String s,float size){int k=fontPx(size);return s.length()*6*k-k;}
     /** Glyph of a character: lower case shown as capitals except s, v (the ▼ prompt) and x; anything else as '-'. */
-    private static int glyph(char ch){int g=FONT_CHARS.indexOf(ch);if(g<0)g=FONT_CHARS.indexOf(Character.toUpperCase(ch));return g<0?FONT_CHARS.indexOf('-'):g;}
+    static int glyph(char ch){int g=FONT_CHARS.indexOf(ch);if(g<0)g=FONT_CHARS.indexOf(Character.toUpperCase(ch));return g<0?FONT_CHARS.indexOf('-'):g;}
     private void sh(Canvas c,String s,float x,float y,float size,int color){sh(c,s,x,y,size,color,Paint.Align.LEFT);}
     /** Pixel text with a one-pixel black drop shadow, baseline y: one blit of the baked string. */
     private void sh(Canvas c,String s,float x,float y,float size,int color,Paint.Align a){
