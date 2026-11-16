@@ -235,6 +235,7 @@ public final class UiText {
         EN.put("누르면 바로 바뀝니다 · 칸 값·스킨은 그대로","Applies at once · cells and skin stay");
         EN.put("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로","Applies at once · cells, size and opacity stay");
         EN.put("누르면 바로 적용","Applies at once");
+        EN.put("누르면 바로 적용 · 칸 수는 모양에 맞춰집니다","A tap applies it · the cell count follows the shape");
         EN.put("누르면 배기구 보기","Tap: tailpipe view");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("누르면 페트병 보기","Tap: bottle view");
@@ -416,6 +417,8 @@ public final class UiText {
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
         EN.put("색","Colour");
+        EN.put("색감","Look");
+        EN.put("색감 고르기","Choose a look");
         EN.put("서울","Seoul");
         EN.put("서킷","Circuit");
         EN.put("서킷 선택","Choose circuit");
@@ -578,6 +581,7 @@ public final class UiText {
         EN.put("원형 RPM·다운시프트","Round rpm · downshift");
         EN.put("원형 게이지","Round gauges");
         EN.put("원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)","A round gauge fills its ring with the reading (no graph to choose)");
+        EN.put("원형 게이지는 테마 색","Round gauges use the theme colours");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유리 톡","Glass tap");
         EN.put("유리 톡톡","Glass tap");
@@ -700,6 +704,7 @@ public final class UiText {
         EN.put("지각 (추정)","Retard (est.)");
         EN.put("지각 추정","Est. retard");
         EN.put("지금","Now");
+        EN.put("지금 모양에 입힌 모습 · 누르면 바로 적용","Shown on the current shape · a tap applies it");
         EN.put("지금 연비 ","Now ");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난 랩","Last");

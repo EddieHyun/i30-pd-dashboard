@@ -17,6 +17,8 @@ final class FloatLayouts extends ClusterKit {
 
     /** Cells shown: the pill has room for two. */
     static int used(int shape,int n){return shape==PILL?Math.min(n,2):n;}
+    /** The cell counts a layout fills without a hole (the settings offer these only). */
+    static int[] counts(int shape){return shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:new int[]{2,4};}
     private static int rows(int n){return Math.min(3,n-1);}
     static float w(int shape,int n){
         switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;default:return 248;}
@@ -31,7 +33,7 @@ final class FloatLayouts extends ClusterKit {
             case PILL:return new float[]{38+i*81,0,38+(i+1)*81,H};
             case HERO:return i==0?new float[]{0,0,140,H}:new float[]{140,6+(i-1)*32,W,6+i*32};
             case DIAL:return i==0?new float[]{0,0,132,H}:new float[]{132,8+(i-1)*30,W,8+i*30};
-            case GEAR:return new float[]{i%2==0?0:154,i<2?0:56,i%2==0?94:248,i<2?56:112};
+            case GEAR:return n<=2?new float[]{i%2==0?0:154,28,i%2==0?94:248,84}:new float[]{i%2==0?0:154,i<2?0:56,i%2==0?94:248,i<2?56:112};
             case DIAG:return new float[]{i%2==0?0:128,(i/2)*72,i%2==0?128:248,(i/2+1)*72};
             default:return new float[]{i*70,0,(i+1)*70,H};
         }
@@ -103,7 +105,7 @@ final class FloatLayouts extends ClusterKit {
     /** Draws layout shape at 0,0 with cells d[0..], the rpm fraction and the gear's text. */
     static void draw(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear){K.drawImpl(c,shape,n,k,skin,af,d,rpm,gear);}
     private void drawImpl(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear){
-        palette(skin==FloatSkin.ROUND_GAUGE?FloatSkin.PLAIN:skin,af);
+        palette(skin,af);
         float W=w(shape,n)*k,H=h(shape,n)*k;int u=used(shape,n);boolean rOk=!Float.isNaN(rpm);float rf=rOk?Math.max(0,Math.min(1,rpm)):0;
         switch(shape){
         case PILL:{   // a short pill: gear in a ring that fills with rpm, then up to two values
@@ -137,7 +139,7 @@ final class FloatLayouts extends ClusterKit {
         case GEAR:{   // the race screen's gear box in the middle, an rpm line over it, a reading in each corner
             body(c,W,H,k,-1);fill(c,94*k,18*k,154*k,96*k,box);fit(c,gear,124*k,78*k,58*k,54*k,boxInk,Paint.Align.CENTER,bold);
             fill(c,94*k,10*k,154*k,13*k,track);if(rOk)fill(c,94*k,10*k,94*k+60*k*rf,13*k,rf>.85f?0xffff4b3c:acc);
-            for(int i=0;i<Math.min(4,n);i++){boolean left=i%2==0;float x=(left?10:238)*k,y=(i<2?10:62)*k;Paint.Align al=left?Paint.Align.LEFT:Paint.Align.RIGHT;
+            for(int i=0;i<Math.min(4,n);i++){boolean left=i%2==0;float x=(left?10:238)*k,y=(n<=2?36:i<2?10:62)*k;Paint.Align al=left?Paint.Align.LEFT:Paint.Align.RIGHT;
                 fit(c,nm(d[i]),x,y+11*k,8*k,76*k,mut,al,Typeface.DEFAULT);vu(c,d[i],x,y+34*k,20*k,78*k,k,al);}
             break;}
         case DIAG:{   // the N logo's slant splits each band: a big reading left, the next one right

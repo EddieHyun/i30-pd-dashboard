@@ -307,12 +307,12 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
-        if(floatEdit==SettingsLayout.FORM_SHEET){int n=FloatPanel.FORMS.length,i=SettingsLayout.formHit(x,y,n);if(i!=SettingsLayout.formHit(downX,downY,n))return;
-            if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;
+        if(floatEdit==SettingsLayout.FORM_SHEET){int n=FloatPanel.FORMS.length,i=SettingsLayout.hit4(x,y,n);if(i!=SettingsLayout.hit4(downX,downY,n))return;
+            if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;FloatPanel.count=FloatPanel.fitCount(f,FloatPanel.count);   // never a count the shape leaves a hole in
                 floatSel=Math.min(floatSel,FloatPanel.used(f,FloatPanel.count)-1);}floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
-        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.skinHit(x,y,FloatPanel.skinCount()+1);if(i!=SettingsLayout.skinHit(downX,downY,FloatPanel.skinCount()+1))return;
-            if(i==-1)return;if(i>=0)FloatPanel.skin=i-1;floatEdit=-1;   // a tile picks it (tile 0: 계기판 따라), outside the sheet closes it
+        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.hit3(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.hit3(downX,downY,FloatPanel.skinCount()))return;
+            if(i==-1)return;if(i>=0)FloatPanel.skin=i;floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;
             int a=SettingsLayout.sheetHit(x,y,gs.length+1,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,gs.length+1,ch.length,g))return;
@@ -330,7 +330,8 @@ public final class VehicleDash extends View implements Runnable {
         if(t<0||t!=SettingsLayout.floatHit(downX,downY,fw,fh,cr))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
-        else if(t==SettingsLayout.F_SKIN){floatEdit=SettingsLayout.SKIN_SHEET;return;}
+        else if(t==SettingsLayout.F_SKIN){if(FloatPanel.skin>=0&&!FloatPanel.round(shape))floatEdit=SettingsLayout.SKIN_SHEET;return;}   // dim while 계기판 따라 is on, and for round gauges
+        else if(t==SettingsLayout.F_AUTO){if(FloatPanel.round(shape))return;FloatPanel.skin=FloatPanel.skin<0?FloatPanel.skinNow():FloatPanel.AUTO;}   // off keeps the look it was following
         else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
         else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
             int u=FloatPanel.used(shape,FloatPanel.count),k=t==SettingsLayout.F_EDIT?Math.min(floatSel,u-1):t-SettingsLayout.F_CELL;if(k>=u)return;
@@ -339,7 +340,7 @@ public final class VehicleDash extends View implements Runnable {
             return;}
         else{int g=t/10*10,i=t-g;
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
-            else if(g==SettingsLayout.F_COUNT){FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
+            else if(g==SettingsLayout.F_COUNT){if(!FloatPanel.fits(shape,FloatPanel.COUNTS[i]))return;FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
             else if(g==SettingsLayout.F_SIZE)FloatPanel.size=i;
             else if(g==SettingsLayout.F_CORNER){if(FloatPanel.skinNow()==0)FloatPanel.corner=i;}
             else if(g==SettingsLayout.F_COLOR){if(FloatPanel.skinNow()==0||FloatPanel.round())FloatPanel.color=i;}
@@ -349,11 +350,14 @@ public final class VehicleDash extends View implements Runnable {
     public static void loadFloat(android.content.SharedPreferences p){
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
-            boolean wasRound=shape==FloatPanel.ROUND||p.getInt("float_last_shape",0)==FloatPanel.ROUND;if(shape==FloatPanel.ROUND)shape=FloatPanel.CARD;   // the old 원형 게이지 shape: a card with the round gauge skin
             FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.SHIFT?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
-            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SHIFT&&last!=FloatPanel.ROUND?last:FloatPanel.CARD;
-            int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",wasRound?FloatPanel.ROUND_SKIN:FloatPanel.AUTO);FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
+            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SHIFT?last:FloatPanel.CARD;
+            int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);
+            if(skn==9){skn=0;   // the round gauge was a skin for a while: on a grid shape it is the 원형 게이지 shape now
+                if(FloatPanel.shape>=FloatPanel.CARD&&FloatPanel.shape<=FloatPanel.SIDE)FloatPanel.shape=FloatPanel.ROUND;if(FloatPanel.lastShape<=FloatPanel.SIDE)FloatPanel.lastShape=FloatPanel.ROUND;}
+            FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
+            FloatPanel.count=FloatPanel.fitCount(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,FloatPanel.count);
             int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
             FloatPanel.corner=FloatPanel.CORNER_THEME;FloatPanel.color=FloatPanel.COLOR_THEME;   // the 모서리 / 색 rows are gone: the theme's (an earlier pick is ignored)
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too

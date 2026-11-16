@@ -127,12 +127,12 @@ public final class TabsPreview {
             rec.setSettings(SettingsLayout.FLOAT,"auto",-1,targets);rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_on",rec,model,now,false,false);
             rec.setFloatEdit(1,1,2,FloatPanel.LINE,1);save(out,"9_settings_float_sheet",rec,model,now,false,false);rec.setFloatEdit(1,1,7,FloatPanel.BAR,4);save(out,"9_settings_float_sheet_drive",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
             FloatPanel.shape=FloatPanel.STRIP;save(out,"9_settings_float_strip",rec,model,now,false,false);FloatPanel.shape=FloatPanel.CARD;
-            FloatPanel.skin=FloatPanel.ROUND_SKIN;save(out,"9_settings_float_round",rec,model,now,false,false);
+            FloatPanel.skin=0;FloatPanel.shape=FloatPanel.ROUND;save(out,"9_settings_float_round",rec,model,now,false,false);
             rec.setFloatEdit(0,0,-1,0,2);save(out,"9_settings_float_round_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
             for(int[] cb:new int[][]{{4,1},{2,2},{1,3}}){int n=cb[0],sz=cb[1];   // round gauges over the 개요 page
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
-                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(FloatPanel.CARD,n,sz),FloatPanel.defaultY(FloatPanel.CARD,n,sz));
-                FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_round"+n+"_"+sz+".png"));}
+                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(FloatPanel.ROUND,n,sz),FloatPanel.defaultY(FloatPanel.ROUND,n,sz));
+                FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.ROUND,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_round"+n+"_"+sz+".png"));}
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.skin=0;
             // corners x themes on the window itself
             String keepTheme=Theme.current().id;int keepCorner=FloatPanel.corner;
@@ -156,7 +156,7 @@ public final class TabsPreview {
                     ImageIO.write(img,"png",new File(out,"x_float_skin_"+sk+"_"+sh+n+sz+".png"));}}
             // the layouts: each with 4 (and the pill and the dial with 2 / 1) in the plain look and three skins
             for(int f:new int[]{FloatPanel.PILL,FloatPanel.HERO,FloatPanel.GEARBOX,FloatPanel.DIAG,FloatPanel.DIAL,FloatPanel.SHIFT})for(int sk:new int[]{0,1,4,8,6})for(int n:new int[]{4,2,1}){
-                if(n!=4&&sk!=0)continue;FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);
+                if(n!=4&&sk!=0||!FloatPanel.fits(f,n))continue;FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);
                 BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                 g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.setColor(new java.awt.Color(0xffffff));for(int sx=-hh;sx<w+24;sx+=46)g2.fillPolygon(new int[]{sx,sx+8,sx+8+hh+24,sx+hh+24},new int[]{0,0,hh+24,hh+24},4);
                 g2.setColor(new java.awt.Color(0x2f7df0));g2.fillRect(0,(hh+24)/2,w+24,7);g2.translate(12,12);
@@ -165,7 +165,7 @@ public final class TabsPreview {
             FloatPanel.count=4;FloatPanel.skin=0;
             {   // 타이어 4개: pressure and temperature cells in the plain card, three skins, the round gauge and two layouts
                 int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.cells[1]=FloatPanel.QUAD_T;
-                for(int[] v:new int[][]{{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,6},{FloatPanel.CARD,4},{FloatPanel.CARD,9},{FloatPanel.HERO,0},{FloatPanel.GEARBOX,1}}){
+                for(int[] v:new int[][]{{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,6},{FloatPanel.CARD,4},{FloatPanel.ROUND,0},{FloatPanel.HERO,0},{FloatPanel.GEARBOX,1}}){
                     int f=v[0];FloatPanel.skin=v[1];int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
                     BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                     g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
@@ -173,9 +173,11 @@ public final class TabsPreview {
                     ImageIO.write(img,"png",new File(out,"x_float_quad_"+f+"_"+v[1]+".png"));}
                 System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.skin=0;}
             FloatPanel.shape=FloatPanel.HERO;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_form",rec,model,now,false,false);
-            rec.setFloatEdit(SettingsLayout.FORM_SHEET,0,-1,0,0);save(out,"9_settings_float_form_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.shape=FloatPanel.CARD;
+            rec.setFloatEdit(SettingsLayout.FORM_SHEET,0,-1,0,0);save(out,"9_settings_float_form_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
+            FloatPanel.shape=FloatPanel.GEARBOX;FloatPanel.count=2;FloatPanel.skin=1;save(out,"9_settings_float_gear2",rec,model,now,false,false);   // 단수 중심: 2 or 4, the 1 dim
+            rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_look_gear2",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.count=4;FloatPanel.shape=FloatPanel.CARD;
             FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);   // 계기판 따라 on the 레이스 screen
-            rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);
+            FloatPanel.skin=1;rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);FloatPanel.skin=FloatPanel.AUTO;
             rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.skin=0;FloatPanel.screen=0;
             FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;int fs5=FloatPanel.skinNow();FloatPanel.screen=0;int fs0=FloatPanel.skinNow();FloatPanel.skin=0;if(fs5!=1||fs0!=0)throw new AssertionError("계기판 따라: 레이스 → 레이스 스킨, 전체 조망 → 기본");
             // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all

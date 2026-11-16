@@ -118,33 +118,35 @@ public final class SettingsLayout {
     /** Button rows under the preview: label at PANE_L+6, buttons from F_ROW_X; ROW_H tall, F_GAP apart. */
     public static final float F_ROW_X=PANE_L+70,F_ROW_H=36,F_GAP=8;
     public static final float[] F_ROW_Y={262,306,350,394};
-    public static final String[] F_ROW_LABELS={"디자인","칸 수","투명도"};
+    public static final String[] F_ROW_LABELS={"모양","색감","크기","투명도"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
-    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,SKIN_SHEET=100,F_FORM=5,FORM_SHEET=101;
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,SKIN_SHEET=100,F_FORM=5,FORM_SHEET=101,F_AUTO=6;
     /** 모양 at the start of the first row: opens the shape sheet (FloatPanel.FORMS). */
-    public static final float[] F_FORM_BOX={248,262,514,298};
-    /** 스킨 at the end of the shape row: opens the skin sheet (VehicleDash.floatEdit = SKIN_SHEET). */
-    public static final float[] F_SKIN_BOX={522,262,788,298};
+    public static final float[] F_FORM_BOX={248,262,470,298};
+    /** The 색감 row: the 계기판 따라 switch, then the chip that opens the look sheet (VehicleDash.floatEdit = SKIN_SHEET). */
+    public static final float[] F_AUTO_BOX={248,306,418,342},F_SKIN_BOX={426,306,788,342};
+    /** 칸 수 sits on the 모양 row, right of the shape chip: the shape decides which counts there are. */
+    public static final float F_COUNT_X=540;
     public static final String[] F_SHAPES={"카드","가로 띠","세로 띠"},F_COUNTS={"1","2","4"},
         F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마","직각","둥글게","사선 컷"},F_COLORS={"테마","파랑","흰색"},F_ALPHAS={"진하게","보통","연하게"};
     private static final float[] W_SHAPE={92,92,92},W_COUNT={52,52,52},W_SIZE={62,62,62,88},W_CORNER={100,74,82,112},W_COLOR={100,100,74},W_ALPHA={92,92,92};
     /** 투명도 sits on the colour row, right of the colours (like 크기 beside 칸 수). */
     public static final float F_ALPHA_X=F_ROW_X;
     /** Where the 크기 buttons start on the 칸 수 row (after the count buttons and the 크기 label). */
-    public static final float F_SIZE_X=F_ROW_X+3*52+2*F_GAP+60;
+    public static final float F_SIZE_X=F_ROW_X;
     /** The button for target t ({l, t, r, b}), or null (preview cells are placed by floatPreview*). */
     public static float[] floatBox(int t){
-        if(t==F_FORM)return F_FORM_BOX;if(t==F_SKIN)return F_SKIN_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
+        if(t==F_FORM)return F_FORM_BOX;if(t==F_SKIN)return F_SKIN_BOX;if(t==F_AUTO)return F_AUTO_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
         int g=t/10*10,i=t-g;float[] w;float x,y;
-        switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_ROW_X;y=F_ROW_Y[1];break;
-            case F_SIZE:w=W_SIZE;x=F_SIZE_X;y=F_ROW_Y[1];break;case F_CORNER:w=W_CORNER;x=F_ROW_X;y=F_ROW_Y[2];break;
-            case F_COLOR:w=W_COLOR;x=F_ROW_X;y=F_ROW_Y[3];break;case F_ALPHA:w=W_ALPHA;x=F_ALPHA_X;y=F_ROW_Y[2];break;default:return null;}
+        switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_COUNT_X;y=F_ROW_Y[0];break;
+            case F_SIZE:w=W_SIZE;x=F_SIZE_X;y=F_ROW_Y[2];break;case F_CORNER:w=W_CORNER;x=F_ROW_X;y=F_ROW_Y[2];break;
+            case F_COLOR:w=W_COLOR;x=F_ROW_X;y=F_ROW_Y[3];break;case F_ALPHA:w=W_ALPHA;x=F_ALPHA_X;y=F_ROW_Y[3];break;default:return null;}
         if(i<0||i>=w.length)return null;
         for(int k=0;k<i;k++)x+=w[k]+F_GAP;
         return new float[]{x,y,x+w[i],y+F_ROW_H};
     }
     /** Every button target in drawing order. */
-    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_SIZE+1,F_SIZE+2,F_SIZE+3,
+    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_SIZE+1,F_SIZE+2,F_SIZE+3,
         F_ALPHA,F_ALPHA+1,F_ALPHA+2};
     /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
     public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}
@@ -179,21 +181,21 @@ public final class SettingsLayout {
     private static boolean in(float[] b,float x,float y){return x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3];}
     /** What the sheet has under x,y with tabs tabs, n readings and graphs graph buttons: S_TAB + i, S_VAL + i,
      *  S_GRAPH + g, S_CANCEL, S_DONE, S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
-    /** The skin sheet: 4 x 3 tiles on the sheet (계기판 따라, then each skin), each a name over a live cell. */
+    /** The 모양 sheet: 4 x 3 tiles (FloatPanel.FORMS), each a shape drawn small. */
     public static final float K_X=112,K_Y=72,K_GAP=10,K_W=(SH_R-SH_L-32-3*K_GAP)/4,K_H=(SH_B-K_Y-14-2*K_GAP)/3;
-    public static float[] skinTile(int i){float x=K_X+(i%4)*(K_W+K_GAP),y=K_Y+(i/4)*(K_H+K_GAP);return new float[]{x,y,x+K_W,y+K_H};}
+    public static float[] tile4(int i){float x=K_X+(i%4)*(K_W+K_GAP),y=K_Y+(i/4)*(K_H+K_GAP);return new float[]{x,y,x+K_W,y+K_H};}
     /** A skin tile, -1 elsewhere on the sheet, -2 outside it (closes). */
-    /** The shape sheet: 3 x 3 tiles, each a shape drawn small. */
+    /** The 색감 sheet: 3 x 3 tiles, each look on the shape chosen now. */
     public static final float M_W=(SH_R-SH_L-32-2*K_GAP)/3;
-    public static float[] formTile(int i){float x=K_X+(i%3)*(M_W+K_GAP),y=K_Y+(i/3)*(K_H+K_GAP);return new float[]{x,y,x+M_W,y+K_H};}
-    public static int formHit(float x,float y,int n){
+    public static float[] tile3(int i){float x=K_X+(i%3)*(M_W+K_GAP),y=K_Y+(i/3)*(K_H+K_GAP);return new float[]{x,y,x+M_W,y+K_H};}
+    public static int hit3(float x,float y,int n){
         if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -2;
-        for(int i=0;i<n;i++)if(in(formTile(i),x,y))return i;
+        for(int i=0;i<n;i++)if(in(tile3(i),x,y))return i;
         return -1;
     }
-    public static int skinHit(float x,float y,int n){
+    public static int hit4(float x,float y,int n){
         if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -2;
-        for(int i=0;i<n;i++)if(in(skinTile(i),x,y))return i;
+        for(int i=0;i<n;i++)if(in(tile4(i),x,y))return i;
         return -1;
     }
     public static int sheetHit(float x,float y,int tabs,int n,int graphs){

@@ -13,16 +13,21 @@ import android.graphics.Typeface;
  * choices. Host-testable.
  */
 public final class FloatPanel {
-    /** ROUND: the old 원형 게이지 shape, now the ROUND_SKIN skin; only read from saved settings (loadFloat turns it into CARD + that skin). */
+    /** ROUND: 원형 게이지, a disc per reading laid out like the card, in the theme's colours (no 색감). */
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
     /** The rectangular layouts with their own inside (FloatLayouts). */
     public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","카드","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등"};
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등"};
     /** The 모양 sheet's order. */
-    public static final int[] FORMS={CARD,STRIP,SIDE,PILL,HERO,GEARBOX,DIAG,DIAL,SHIFT};
+    public static final int[] FORMS={CARD,STRIP,SIDE,ROUND,PILL,HERO,DIAL,DIAG,GEARBOX,SHIFT};
     public static boolean layout(int s){return s>=PILL&&s<=SHIFT;}
     /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
-    public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s);}
+    public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND;}
+    /** The cell counts shape s fills without a hole; the settings offer these only. */
+    public static int[] counts(int s){return layout(s)?FloatLayouts.counts(s):COUNTS;}
+    public static boolean fits(int s,int n){for(int v:counts(s))if(v==n)return true;return false;}
+    /** n, or the next count up that shape s takes (its largest when there is none). */
+    public static int fitCount(int s,int n){int[] cs=counts(s);for(int v:cs)if(v>=n)return v;return cs[cs.length-1];}
     /** Cells the shape shows of n (the short pill has room for two). */
     public static int used(int s,int n){return layout(s)?FloatLayouts.used(s,n):n;}
     public static final int[] COUNTS={1,2,4};
@@ -66,11 +71,9 @@ public final class FloatPanel {
     public static final String[] SKIN_NAMES=FloatSkin.NAMES;
     public static volatile int skin=AUTO;
     public static int skinCount(){return FloatSkin.NAMES.length;}
-    public static final int ROUND_SKIN=FloatSkin.ROUND_GAUGE;
-    /** The round gauge skin is drawn now: square cells, a disc each, no window body. */
+    /** The round gauge shape is on: square cells, a disc each, no window body. */
     public static boolean round(){return round(shape==OFF?lastShape:shape);}
-    /** The round gauge skin on a grid shape (a layout draws itself plain instead). */
-    public static boolean round(int s){return skinNow()==FloatSkin.ROUND_GAUGE&&!layout(s);}
+    public static boolean round(int s){return s==ROUND;}
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
