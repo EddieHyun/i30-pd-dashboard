@@ -153,6 +153,8 @@ public final class UiText {
         EN.put("경북","Gyeongbuk");
         EN.put("경유","Diesel");
         EN.put("계기판","Dashboard");
+        EN.put("계기판 따라","Follow the screen");
+        EN.put("계기판 따라 = 지금 계기판 화면의 스킨 (스킨이 없는 화면은 기본)","Follow the screen = the skin of the dashboard screen (Default where it has none)");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");

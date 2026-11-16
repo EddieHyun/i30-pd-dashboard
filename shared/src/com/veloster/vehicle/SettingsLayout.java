@@ -172,9 +172,9 @@ public final class SettingsLayout {
     private static boolean in(float[] b,float x,float y){return x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3];}
     /** What the sheet has under x,y with tabs tabs, n readings and graphs graph buttons: S_TAB + i, S_VAL + i,
      *  S_GRAPH + g, S_CANCEL, S_DONE, S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
-    /** The skin sheet: 3 x 3 tiles on the sheet, each the skin's name over a live cell. */
-    public static final float K_X=112,K_Y=72,K_GAP=10,K_W=(SH_R-SH_L-32-2*K_GAP)/3,K_H=(SH_B-K_Y-14-2*K_GAP)/3;
-    public static float[] skinTile(int i){float x=K_X+(i%3)*(K_W+K_GAP),y=K_Y+(i/3)*(K_H+K_GAP);return new float[]{x,y,x+K_W,y+K_H};}
+    /** The skin sheet: 4 x 3 tiles on the sheet (계기판 따라, then each skin), each a name over a live cell. */
+    public static final float K_X=112,K_Y=72,K_GAP=10,K_W=(SH_R-SH_L-32-3*K_GAP)/4,K_H=(SH_B-K_Y-14-2*K_GAP)/3;
+    public static float[] skinTile(int i){float x=K_X+(i%4)*(K_W+K_GAP),y=K_Y+(i/4)*(K_H+K_GAP);return new float[]{x,y,x+K_W,y+K_H};}
     /** A skin tile, -1 elsewhere on the sheet, -2 outside it (closes). */
     public static int skinHit(float x,float y,int n){
         if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -2;

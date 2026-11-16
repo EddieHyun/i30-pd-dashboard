@@ -68,9 +68,9 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.sheetHit(30,30,10,15,4)==-1&&SettingsLayout.sheetHit(300,440,10,15,4)==SettingsLayout.S_IN,"outside / empty sheet");
         check(SettingsLayout.sheetHit(300,124,10,2,4)==SettingsLayout.S_VAL&&SettingsLayout.sheetHit(300,170,10,2,4)==SettingsLayout.S_IN,"only the readings there are hit (2 readings: row 2 is empty)");
         // the skin sheet: 9 tiles on the sheet, each big enough and hit by its middle; outside the sheet closes
-        for(int i=0;i<9;i++){float[] b=SettingsLayout.skinTile(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=150&&b[3]-b[1]>=90,"skin tile "+i+" big and on the sheet");
-            check(SettingsLayout.skinHit((b[0]+b[2])/2,(b[1]+b[3])/2,9)==i,"skin tile "+i+" hits");}
-        check(SettingsLayout.skinHit(30,30,9)==-2&&SettingsLayout.skinHit(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,9)==-1,"outside closes, the sheet's edge does nothing");
+        for(int i=0;i<10;i++){float[] b=SettingsLayout.skinTile(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=130&&b[3]-b[1]>=90,"skin tile "+i+" big and on the sheet");
+            check(SettingsLayout.skinHit((b[0]+b[2])/2,(b[1]+b[3])/2,10)==i,"skin tile "+i+" hits");}
+        check(SettingsLayout.skinHit(30,30,10)==-2&&SettingsLayout.skinHit(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,10)==-1,"outside closes, the sheet's edge does nothing");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

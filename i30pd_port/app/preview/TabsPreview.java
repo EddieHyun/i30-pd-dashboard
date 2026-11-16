@@ -154,9 +154,10 @@ public final class TabsPreview {
                     g2.setColor(new java.awt.Color(0x2f7df0));g2.fillRect(0,(hh+24)/2,w+24,7);g2.translate(12,12);
                     FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                     ImageIO.write(img,"png",new File(out,"x_float_skin_"+sk+"_"+sh+n+sz+".png"));}}
-            FloatPanel.skin=1;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);
+            FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);   // 계기판 따라 on the 레이스 screen
             rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);
-            rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.skin=0;
+            rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.skin=0;FloatPanel.screen=0;
+            FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;int fs5=FloatPanel.skinNow();FloatPanel.screen=0;int fs0=FloatPanel.skinNow();FloatPanel.skin=0;if(fs5!=1||fs0!=0)throw new AssertionError("계기판 따라: 레이스 → 레이스 스킨, 전체 조망 → 기본");
             // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all
             for(int gg:FloatPanel.groups(VehicleProfile.PETROL_DCT)){int[] vs=FloatPanel.group(gg,VehicleProfile.PETROL_DCT);
                 if(vs.length>SettingsLayout.S_MAX_VALUES)throw new AssertionError("float chooser: group "+gg+" has more readings than the sheet shows");

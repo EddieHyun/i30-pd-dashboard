@@ -14,6 +14,11 @@ final class FloatSkin extends ClusterKit {
     static final int PLAIN=0,RACE=1,F1=2,RETRO=3,VFD=4,HUD=5,PIXEL=6,VU=7,NIGHT=8;
     static final String[] NAMES={"기본","레이스","F1","레트로","80년대","HUD","8비트","카세트 VU","야간"};
     private static final FloatSkin K=new FloatSkin();
+    /** The skin that goes with a dashboard screen (ClusterPicker index), PLAIN for screens without one of their own. */
+    static int forScreen(int s){
+        switch(s){case ClusterPicker.F1:return F1;case 5:return RACE;case 9:return RETRO;case 12:return VFD;case 13:return HUD;
+            case 14:case 15:return PIXEL;case 17:return NIGHT;case 20:return VU;default:return PLAIN;}
+    }
     protected void draw(Canvas c){}
 
     /** One cell's content, filled by FloatPanel before each cell (main thread only). */

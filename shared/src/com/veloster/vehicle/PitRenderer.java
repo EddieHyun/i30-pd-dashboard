@@ -397,11 +397,11 @@ public final class PitRenderer {
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
                 case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;
-                case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i&&shape!=FloatPanel.ROUND&&FloatPanel.skin==0;break;
-                case SettingsLayout.F_COLOR:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i&&FloatPanel.skin==0;break;
+                case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i&&shape!=FloatPanel.ROUND&&FloatPanel.skinNow()==0;break;
+                case SettingsLayout.F_COLOR:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i&&FloatPanel.skinNow()==0;break;
                 default:label=SettingsLayout.F_ALPHAS[i];on=FloatPanel.alpha==i;}
-            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,g==SettingsLayout.F_CORNER&&shape==FloatPanel.ROUND||(g==SettingsLayout.F_CORNER||g==SettingsLayout.F_COLOR)&&FloatPanel.skin!=0);}   // a round gauge has no corners; a skin has its own corners and colours
-        chip(c,SettingsLayout.F_SKIN_BOX,UiText.t("스킨")+" · "+UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skin])+"  ›",null,FloatPanel.skin!=0&&shape!=FloatPanel.ROUND,shape==FloatPanel.ROUND);
+            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,g==SettingsLayout.F_CORNER&&shape==FloatPanel.ROUND||(g==SettingsLayout.F_CORNER||g==SettingsLayout.F_COLOR)&&FloatPanel.skinNow()!=0);}   // a round gauge has no corners; a skin has its own corners and colours
+        chip(c,SettingsLayout.F_SKIN_BOX,UiText.t("스킨")+" · "+(FloatPanel.skin<0?UiText.t("계기판 따라"):UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNow()]))+"  ›",null,FloatPanel.skinNow()!=0&&shape!=FloatPanel.ROUND,shape==FloatPanel.ROUND);
         text(c,UiText.t("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
         if(floatEdit==SettingsLayout.SKIN_SHEET)drawSkinSheet(c);else if(floatEdit>=0)drawFloatSheet(c);
     }
@@ -410,13 +410,13 @@ public final class PitRenderer {
         box(c,0,0,800,480,0xc0000000);
         panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
         text(c,UiText.t("스킨 고르기"),SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
-        text(c,UiText.t("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로"),SettingsLayout.K_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
+        text(c,UiText.t("계기판 따라 = 지금 계기판 화면의 스킨 (스킨이 없는 화면은 기본)"),SettingsLayout.K_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
         int keep=FloatPanel.skin,sel=Math.min(floatSel,FloatPanel.count-1),sig=FloatPanel.signal(sel,profile);
-        for(int i=0;i<FloatPanel.skinCount();i++){float[] b=SettingsLayout.skinTile(i);boolean on=i==keep;
+        for(int i=0;i<=FloatPanel.skinCount();i++){float[] b=SettingsLayout.skinTile(i);int ch=i-1;boolean on=ch==keep;   // tile 0: 계기판 따라
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
-            text(c,UiText.t(FloatPanel.SKIN_NAMES[i]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
+            text(c,ch<0?UiText.t("계기판 따라")+" · "+UiText.t(FloatPanel.SKIN_NAMES[FloatSkin.forScreen(FloatPanel.screen)]):UiText.t(FloatPanel.SKIN_NAMES[ch]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){float s=Math.min((b[2]-b[0]-20)/124f,(b[3]-b[1]-32)/64f);c.save();c.translate((b[0]+b[2])/2-62*s,b[1]+26);c.scale(s,s);
-                FloatPanel.skin=i;FloatPanel.drawCell(c,FloatPanel.CARD,1,samples,sig,FloatPanel.graphs[sel],sel,frameTime);c.restore();}}
+                FloatPanel.skin=ch;FloatPanel.drawCell(c,FloatPanel.CARD,1,samples,sig,FloatPanel.graphs[sel],sel,frameTime);c.restore();}}
         FloatPanel.skin=keep;
     }
     /** The chooser for one cell: this car's values with their live readings, the graph buttons, 취소 / 완료. */
@@ -436,7 +436,7 @@ public final class PitRenderer {
             fitted(c,UiText.t(Tiles.GROUPS[gs[t]])+(mine?" ●":""),b[0]+10,b[1]+20,13,b[2]-b[0]-14,open?WHITE:MUTED);}
         int[] vs=gs.length==0?new int[0]:FloatPanel.group(gs[tab],profile);
         for(int i=0;i<Math.min(vs.length,SettingsLayout.S_MAX_VALUES);i++)chip(c,SettingsLayout.sheetValue(i),UiText.t(FloatPanel.name(vs[i])),floatValue(vs[i])+(FloatPanel.peaks(vs[i])?"  ▲":""),vs[i]==floatEditSig,false);
-        if(!round&&FloatPanel.skin!=0){text(c,UiText.t("스킨마다 정해진 막대를 씁니다 (그래프 고르기 없음)"),SettingsLayout.S_GRAPH_X,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,13,MUTED,false);}
+        if(!round&&FloatPanel.skinNow()!=0){text(c,UiText.t("스킨마다 정해진 막대를 씁니다 (그래프 고르기 없음)"),SettingsLayout.S_GRAPH_X,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,13,MUTED,false);}
         else if(round){text(c,UiText.t("원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)"),SettingsLayout.S_GRAPH_X,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,13,MUTED,false);}
         else for(int g=0;g<FloatPanel.GRAPH_NAMES.length;g++){float[] b=SettingsLayout.sheetGraph(g);boolean on=g==floatEditGraph;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff233b46:0xff111415,on?BLUE:LINE);

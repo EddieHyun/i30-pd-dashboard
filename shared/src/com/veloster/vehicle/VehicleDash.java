@@ -138,7 +138,7 @@ public final class VehicleDash extends View implements Runnable {
         symmetric=screen>ClusterPicker.F1;page=symmetric?ClusterPicker.page(screen):0;
     }
     private void showCluster(){
-        applyScreen();
+        applyScreen();FloatPanel.screen=screen;
         activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).putString("cluster_order",orderCsv(order)).apply();
     }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
@@ -307,13 +307,13 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
-        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.skinHit(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.skinHit(downX,downY,FloatPanel.skinCount()))return;
-            if(i==-1)return;if(i>=0)FloatPanel.skin=i;floatEdit=-1;   // a tile picks it, outside the sheet closes it
+        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.skinHit(x,y,FloatPanel.skinCount()+1);if(i!=SettingsLayout.skinHit(downX,downY,FloatPanel.skinCount()+1))return;
+            if(i==-1)return;if(i>=0)FloatPanel.skin=i-1;floatEdit=-1;   // a tile picks it (tile 0: 계기판 따라), outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;
             int a=SettingsLayout.sheetHit(x,y,gs.length+1,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,gs.length+1,ch.length,g))return;
             if(a>=SettingsLayout.S_TAB){if(a==SettingsLayout.S_TAB)floatEditSig=-1;else floatEditTab=a-SettingsLayout.S_TAB-1;return;}   // 자동, or open a group
-            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&((FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND||FloatPanel.skin!=0))a=SettingsLayout.S_IN;   // no graph on a round gauge
+            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&((FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND||FloatPanel.skinNow()!=0))a=SettingsLayout.S_IN;   // no graph on a round gauge
             if(a>=SettingsLayout.S_GRAPH)floatEditGraph=a<SettingsLayout.S_CANCEL?a-SettingsLayout.S_GRAPH:floatEditGraph;
             if(a>=SettingsLayout.S_VAL&&a<SettingsLayout.S_GRAPH)floatEditSig=ch[a-SettingsLayout.S_VAL];
             if(a==SettingsLayout.S_CANCEL)floatEdit=-1;
@@ -336,8 +336,8 @@ public final class VehicleDash extends View implements Runnable {
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
             else if(g==SettingsLayout.F_COUNT){FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
             else if(g==SettingsLayout.F_SIZE)FloatPanel.size=i;
-            else if(g==SettingsLayout.F_CORNER){if(FloatPanel.skin==0)FloatPanel.corner=i;}
-            else if(g==SettingsLayout.F_COLOR){if(FloatPanel.skin==0)FloatPanel.color=i;}
+            else if(g==SettingsLayout.F_CORNER){if(FloatPanel.skinNow()==0)FloatPanel.corner=i;}
+            else if(g==SettingsLayout.F_COLOR){if(FloatPanel.skinNow()==0)FloatPanel.color=i;}
             else if(g==SettingsLayout.F_ALPHA)FloatPanel.alpha=i;}
         SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();
     }
@@ -347,7 +347,8 @@ public final class VehicleDash extends View implements Runnable {
             FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.ROUND,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.ROUND?last:FloatPanel.CARD;
-            int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",0);FloatPanel.skin=skn>=0&&skn<FloatPanel.skinCount()?skn:0;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
+            int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
+            int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
             FloatPanel.corner=cn>=0&&cn<FloatPanel.CORNER_NAMES.length?cn:0;FloatPanel.color=co>=0&&co<FloatPanel.COLOR_NAMES.length?co:0;
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too
             for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
