@@ -112,6 +112,15 @@ public final class Tiles {
         if(s<TIRES){String w=Telemetry.label(s,v);if(w!=null)return w;}
         return Telemetry.format(fmt(s),v);
     }
+    private static final float[] POW10={1,10,100,1000};
+    /** A number that changes exactly when text(s, v) would (the digits shown), without building the string: the floating window's
+     *  change test runs 20 times a second, and String.format on Dalvik allocates and is slow. */
+    public static long textKey(int s,float v){
+        if(Float.isNaN(v))return Long.MIN_VALUE;
+        if(s<TIRES){String w=Telemetry.label(s,v);if(w!=null)return w.hashCode();}   // a word (gear, ON / OFF): constants, hash cached
+        String f=fmt(s);int d=Math.max(0,Math.min(3,f.charAt(f.length()-2)-'0'));
+        return Math.round((double)v*POW10[d]);   // in double, as Formatter rounds the float's exact value (101.405f is 101.40499..): -0.004 and 0.004 both read "0" (Telemetry.format drops the minus) and both round to 0 here
+    }
     private static String fmt(int s){
         if(s==Telemetry.BOOST||s==11||s==12||s==CORNER_MAX_LAT)return "%+.2f";
         if(s==Telemetry.STEERING||s==Telemetry.STEER_TORQUE||s==Telemetry.YAW)return "%+.1f";

@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.IBinder;
+import android.view.Choreographer;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,6 +28,19 @@ import com.veloster.vehicle.VehicleDash;
 public final class FloatService extends Service implements Runnable {
     static final String HUB="com.veloster.carplayhub",HIDE_ACTION="com.veloster.carplayhub.QUICK_ENTRY_HIDE";
     private static final long FRAME_MS=50,HIDE_REPEAT_MS=30000;   // 20 frames a second, like the race screen: the car sends every 40-80 ms
+    /** A tick runs on the first vsync at least this long after the last one: every third frame at 60 Hz (50 ms), in step with the display
+     *  instead of a 50 ms timer that drifts by the work it does. */
+    private static final long TICK_MS=FRAME_MS-8;
+    /** GPU drawing for the window, on by default since 2026-11-17 (our car: draw 5-10 ms -> 2.5-4 ms, worst 51 -> 12 ms, the same picture).
+     *  Off while /sdcard/i30pd_float_sw exists (adb shell touch / rm), looked at every 2 s, so the two can still be compared without a new build. */
+    private static final String SW_FLAG="i30pd_float_sw";
+    private boolean hw=true,alive;private long hwCheckedAt;
+    // ---- frame-rate measurement: one "FLOAT ..." line a second (tag VehicleDash), see i30pd_port FLOAT_FPS.md -------------------
+    private int mTicks,mInval,mDraws;private long mDrawNs,mDrawMax,mTickNs,mTickMax,mGapMax,mLastTick,mLogAt;private boolean mHwCanvas;
+    private final Choreographer.FrameCallback frame=new Choreographer.FrameCallback(){public void doFrame(long ns){
+        if(!alive)return;
+        if(android.os.SystemClock.elapsedRealtime()-mLastTick>=TICK_MS)run();
+        Choreographer.getInstance().postFrameCallback(this);}};
     private final Handler handler=new Handler();
     private VehicleDataClient client;
     private WindowManager windows;
@@ -50,7 +64,7 @@ public final class FloatService extends Service implements Runnable {
         super.onCreate();
         windows=(WindowManager)getSystemService(Context.WINDOW_SERVICE);
         com.veloster.i18n.LanguageSettings.init(this);VehicleDash.fonts(this);wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
-        handler.post(this);
+        alive=true;Choreographer.getInstance().postFrameCallback(frame);
     }
     public int onStartCommand(Intent intent,int flags,int startId){
         VehicleDash.loadFloat(prefs());
@@ -60,24 +74,35 @@ public final class FloatService extends Service implements Runnable {
     private SharedPreferences prefs(){return getSharedPreferences("pit_vehicle_ui",0);}
 
     public void run(){
+        long t0=System.nanoTime(),now0=android.os.SystemClock.elapsedRealtime();
+        if(mLastTick>0)mGapMax=Math.max(mGapMax,now0-mLastTick);mLastTick=now0;
+        if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;boolean want=!new java.io.File(android.os.Environment.getExternalStorageDirectory(),SW_FLAG).exists();if(want!=hw){hw=want;remove();}}   // a new window with the other renderer
         int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0);   // the round gauge has square cells: its own window
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
         VehicleDash.chimeTick();
-        if(panel!=null){if(changed)panel.invalidate();   // drawn only when it would look different: nothing to composite over the navi at a steady reading
+        if(panel!=null){if(changed){panel.invalidate();mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}
             else if(!FloatPanel.hideButton&&hideSent)hide(false);}
-        handler.postDelayed(this,FRAME_MS);
+        long dt=System.nanoTime()-t0;mTickNs+=dt;mTickMax=Math.max(mTickMax,dt);mTicks++;
+        if(now0-mLogAt>=1000){
+            if(mLogAt>0&&panel!=null)android.util.Log.i("VehicleDash",String.format(java.util.Locale.US,
+                "FLOAT fps=%d ticks=%d redraw=%d%% draw_ms=%.1f/%.1f tick_ms=%.1f/%.1f gap_ms=%d hw=%d/%d shape=%d n=%d size=%d",
+                mDraws,mTicks,mTicks==0?0:mInval*100/mTicks,mDraws==0?0f:mDrawNs/1e6f/mDraws,mDrawMax/1e6f,mTicks==0?0f:mTickNs/1e6f/mTicks,mTickMax/1e6f,mGapMax,
+                hw?1:0,mHwCanvas?1:0,FloatPanel.shape,FloatPanel.count,FloatPanel.size));
+            mLogAt=now0;mTicks=0;mInval=0;mDraws=0;mDrawNs=0;mDrawMax=0;mTickNs=0;mTickMax=0;mGapMax=0;}
     }
     private void add(final int shape,final int n,final int size){
         final int w=FloatPanel.width(shape,n,size),h=FloatPanel.height(shape,n,size);final boolean rnd=FloatPanel.round();final String at=shape+"_"+n+"_"+size+(rnd?"_r":"");
         layout=new WindowManager.LayoutParams(w,h,WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
+            |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|(hw?WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED:0),PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
         layout.gravity=Gravity.TOP|Gravity.LEFT;
         layout.x=prefs().getInt("float_x_"+at,FloatPanel.defaultX(shape,n,size));layout.y=prefs().getInt("float_y_"+at,FloatPanel.defaultY(shape,n,size));
-        final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.floatSamples(n),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());}};
+        final View v=new View(this){protected void onDraw(Canvas c){long t=System.nanoTime();
+            FloatPanel.draw(c,shape,n,size,VehicleDash.floatSamples(n),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
+            long d=System.nanoTime()-t;mDraws++;mDrawNs+=d;mDrawMax=Math.max(mDrawMax,d);mHwCanvas=c.isHardwareAccelerated();}};
         v.setOnTouchListener(new View.OnTouchListener(){
             float downX,downY;int startX,startY;boolean moved,held;
             final Runnable longPress=new Runnable(){public void run(){if(panel!=v)return;held=true;open(HUB,"com.veloster.carplayhub.HubActivity");}};
@@ -116,7 +141,7 @@ public final class FloatService extends Service implements Runnable {
         try{sendBroadcast(new Intent(HIDE_ACTION).setPackage(HUB).putExtra("hide",on));}catch(RuntimeException ignored){/* 내 앱 not installed */}
     }
     public void onDestroy(){
-        handler.removeCallbacks(this);remove();
+        alive=false;Choreographer.getInstance().removeFrameCallback(frame);handler.removeCallbacks(this);remove();
         wanted=false;if(client!=null){if(!DashboardActivity.resumed)client.stop();client=null;}
         super.onDestroy();
     }

@@ -113,17 +113,19 @@ public final class FloatPanel {
     private static int lastLook;
     /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
      *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
+    /** The shown text of a value as an int for the change hash (Tiles.textKey), no string built. */
+    private static int key(int sig,float v){long k=Tiles.textKey(fmt(sig),v);return (int)(k^(k>>>32));}
     public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         int h=17;h=h*31+skinNow();h=h*31+alpha;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
         for(int i=0;i<n;i++){int sig=signal(i,prof);float v=value(q,sig),f=Tiles.fraction(fmt(sig),v);record(i,sig,v,now);
-            h=h*31+sig;h=h*31+Tiles.text(fmt(sig),v).hashCode();h=h*31+Tiles.level(fmt(sig),v);h=h*31+graphs[i];
+            h=h*31+sig;h=h*31+key(sig,v);h=h*31+Tiles.level(fmt(sig),v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
-            float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+Tiles.text(fmt(sig),pk).hashCode();
+            float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+key(sig,pk);
             if(quad(sig)){quadTexts(q,sig);for(int w=0;w<4;w++)h=h*31+QV[w].hashCode()+QL[w];}}
         int s=shape==OFF?lastShape:shape;
         if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
-            h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?Tiles.text(8,gm.value).hashCode():0);}
+            h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 

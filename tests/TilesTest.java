@@ -6,6 +6,13 @@ public final class TilesTest {
     private static int checks;
     private static void check(boolean ok,String what){checks++;if(!ok)throw new AssertionError(what);}
     public static void main(String[] args){
+        // textKey changes exactly when the shown text does (the floating window's change test builds no strings)
+        {java.util.Random rnd=new java.util.Random(7);int[] sigs={0,2,7,8,9,10,11,13,14,17,18,26,30,34,35,43,Telemetry.TIRE_TEMP_FL,Telemetry.CLUTCH_ODD,Tiles.CORNER_MAX_LAT};
+         for(int s:sigs)for(int i=0;i<400;i++){float a=(rnd.nextFloat()-0.5f)*(i%3==0?4:i%3==1?40:400),b=i%5==0?a:a+(rnd.nextFloat()-0.5f)*(i%2==0?0.02f:2);
+            if(i%7==0){a=Math.round(a);b=a;}
+            boolean sameText=Tiles.text(s,a).equals(Tiles.text(s,b)),sameKey=Tiles.textKey(s,a)==Tiles.textKey(s,b);
+            check(sameText==sameKey,"textKey("+s+") "+a+" / "+b+": text "+Tiles.text(s,a)+" / "+Tiles.text(s,b));}
+         check(Tiles.textKey(0,Float.NaN)!=Tiles.textKey(0,0),"NaN has its own key");}
         VehicleProfile[] cars={VehicleProfile.PETROL_DCT,VehicleProfile.PETROL_MT,VehicleProfile.DIESEL_DCT};
         // every Telemetry signal sits in exactly one group, and so does every several-value entry
         for(int s=0;s<Telemetry.LABELS.length;s++)check(Tiles.groupOf(s)>=0,"signal "+s+" ("+Telemetry.LABELS[s]+") is in a group");
