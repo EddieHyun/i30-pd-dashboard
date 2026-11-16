@@ -17,7 +17,7 @@ public final class FloatPanel {
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
     /** The rectangular layouts with their own inside (FloatLayouts). */
     public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT,TICK=FloatLayouts.TICK,FILLS=FloatLayouts.FILLS,BARS=FloatLayouts.BARS,TWIN=FloatLayouts.TWIN,WEDGE=FloatLayouts.WEDGE,TOWER=FloatLayouts.TOWER;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등","한 줄","채움 목록","세로 막대","쌍 계기","RPM 계단","세로 단수"};
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수"};
     /** The 모양 sheet's order. */
     public static final int[] FORMS={CARD,STRIP,SIDE,TICK, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL, GEARBOX,TOWER,SHIFT,WEDGE};   // rows: grids, gauges, lists, rpm and gear
     public static final int LAST_SHAPE=FloatLayouts.LAST;

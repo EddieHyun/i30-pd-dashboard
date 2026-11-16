@@ -97,7 +97,7 @@ public final class UiText {
         EN.put("R · 부스트","R · boost");
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
         EN.put("RPM","RPM");
-        EN.put("RPM 계단","RPM steps");
+        EN.put("RPM 막대","RPM bar");
         EN.put("SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값","SHIFT warnings · red zones · tap the name for the default");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
@@ -125,6 +125,7 @@ public final class UiText {
         EN.put("☆ 버튼: ","☆ button: ");
         EN.put("☆ 버튼을 원래 기능으로 되돌렸습니다.","☆ button is back to its previous function.");
         EN.put("가로 띠","Bar");
+        EN.put("가로 막대","Row bars");
         EN.put("가속","Accel");
         EN.put("가속 · 스로틀","Pedal/Thr");
         EN.put("가속 페달","Accelerator");
@@ -156,6 +157,7 @@ public final class UiText {
         EN.put("경남","Gyeongnam");
         EN.put("경북","Gyeongbuk");
         EN.put("경유","Diesel");
+        EN.put("계기 묶음","Dials");
         EN.put("계기판","Dashboard");
         EN.put("계기판 따라","Follow the screen");
         EN.put("계기판 따라 = 지금 계기판 화면의 스킨 (스킨이 없는 화면은 기본)","Follow the screen = the skin of the dashboard screen (Default where it has none)");
@@ -437,7 +439,7 @@ public final class UiText {
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
         EN.put("세로 단수","Gear column");
         EN.put("세로 띠","Column");
-        EN.put("세로 막대","Bars");
+        EN.put("세로 막대","Column bars");
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");
         EN.put("소리 반응 속도","Sound response");
@@ -484,7 +486,6 @@ public final class UiText {
         EN.put("실행 실패: ","Launch failed: ");
         EN.put("심야 %s시 최대 %d%%","Night %s h up to %d%%");
         EN.put("심야 할증 ","Night surcharge ");
-        EN.put("쌍 계기","Dials");
         EN.put("아래 띠","Bottom strip");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
@@ -512,6 +513,7 @@ public final class UiText {
         EN.put("앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.","Could not open My Apps. Try the notification.");
         EN.put("야간","Night");
         EN.put("야간 미니멀","Night minimal");
+        EN.put("얇은 띠","Thin strip");
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
         EN.put("없음","none");
@@ -730,7 +732,6 @@ public final class UiText {
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
         EN.put("차임 소리","Chime sound");
         EN.put("창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'","While the window is up, My Apps' edge button hides · long-press the window for My Apps");
-        EN.put("채움 목록","Filled rows");
         EN.put("처리 실패: ","Operation failed: ");
         EN.put("처리 중입니다. 완료될 때까지 기다려 주세요.","Working. Please wait until this finishes.");
         EN.put("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다.","After first installation, set up Quick entry. The factory home screen does not add this app automatically.");
@@ -860,7 +861,6 @@ public final class UiText {
         EN.put("하강 2음","Falling 2 tones");
         EN.put("하강 3음","Falling 3 tones");
         EN.put("한 번 더 누르면 초기화","Tap again to reset");
-        EN.put("한 줄","One line");
         EN.put("한국어","Korean");
         EN.put("할증","Night");
         EN.put("할증 (심야·시계외)","Surcharge (night, area)");

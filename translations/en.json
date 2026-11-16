@@ -873,10 +873,10 @@
   "지금 모양에 입힌 모습 · 누르면 바로 적용": "Shown on the current shape · a tap applies it",
   "누르면 바로 적용 · 칸 수는 모양에 맞춰집니다": "A tap applies it · the cell count follows the shape",
   "원형 게이지는 테마 색": "Round gauges use the theme colours",
-  "한 줄": "One line",
-  "채움 목록": "Filled rows",
-  "세로 막대": "Bars",
-  "쌍 계기": "Dials",
-  "RPM 계단": "RPM steps",
+  "얇은 띠": "Thin strip",
+  "가로 막대": "Row bars",
+  "세로 막대": "Column bars",
+  "계기 묶음": "Dials",
+  "RPM 막대": "RPM bar",
   "세로 단수": "Gear column"
 }
