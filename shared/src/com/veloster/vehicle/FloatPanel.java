@@ -96,6 +96,29 @@ public final class FloatPanel {
     static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
     private static boolean still;
+    // ---- glide: bars, arcs and the rpm bar move from the last reading to the new one over GLIDE_MS (ease-out), the numbers jump as
+    // before. The car sends every 40-80 ms, so a bar stepped about 12 times a second; gliding fills the frames in between. -----------
+    public static final long GLIDE_MS=80;
+    /** Off: every bar jumps (FloatService turns it off while /sdcard/i30pd_float_noglide exists, for a side-by-side look). */
+    public static boolean glideOn=true;
+    private static final int GLIDES=9;   // cells 0..7 and the rpm bar
+    private static final float[] gFrom=new float[GLIDES],gTo=new float[GLIDES];private static final long[] gAt=new long[GLIDES];private static long drawNow;
+    static{java.util.Arrays.fill(gTo,Float.NaN);}
+    /** The bar position (0..1) to draw for slot i now: the target itself in a still picture, when off, at the first reading or with
+     *  no reading; otherwise on its way from where it was shown when the target moved. */
+    static float glide(int i,float f){
+        if(still||!glideOn||i<0||i>=GLIDES){return f;}
+        if(Float.isNaN(f)){gTo[i]=Float.NaN;return f;}
+        if(Float.isNaN(gTo[i])){gTo[i]=f;gFrom[i]=f;gAt[i]=0;return f;}
+        if(Math.abs(f-gTo[i])>1e-4f){gFrom[i]=glided(i,drawNow);gTo[i]=f;gAt[i]=drawNow;}
+        return glided(i,drawNow);
+    }
+    private static float glided(int i,long now){
+        if(gAt[i]==0)return gTo[i];float t=Math.max(0,Math.min(1,(now-gAt[i])/(float)GLIDE_MS));t=1-(1-t)*(1-t);
+        return gFrom[i]+(gTo[i]-gFrom[i])*t;}
+    /** A bar is still on its way: the window keeps drawing every frame until it lands. */
+    public static boolean gliding(long now){
+        if(!glideOn)return false;for(int i=0;i<GLIDES;i++)if(gAt[i]!=0&&!Float.isNaN(gTo[i])&&now-gAt[i]<GLIDE_MS)return true;return false;}
     /** Adds the cell's value to its line graph once every HIST_MS, and to its peak every time (called on every draw). */
     static void record(int k,int sig,float v,long now){
         if(peakSig[k]!=sig||now<peakAt[k]||now-peakAt[k]>PEAK_IDLE_MS){peakSig[k]=sig;peak[k]=Float.NaN;peakAt[k]=now;}
@@ -220,7 +243,7 @@ public final class FloatPanel {
     /** A cell's texts and scale positions for a skin or a layout. */
     private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
         d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);
-        d.val=Tiles.text(fmt(sig),v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=Tiles.fraction(fmt(sig),v);d.lv=Tiles.level(fmt(sig),v);
+        d.val=Tiles.text(fmt(sig),v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=glide(i,Tiles.fraction(fmt(sig),v));d.lv=Tiles.level(fmt(sig),v);
         d.zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(fmt(sig),0))):0;d.pk=Float.isNaN(pk)?null:Tiles.text(fmt(sig),pk);d.pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(fmt(sig),pk);
         d.first=first;d.bar=g!=NUM;d.quad=null;
         if(quad(sig)){quadTexts(LAST_Q,sig);System.arraycopy(QV,0,d.q4,0,4);System.arraycopy(QL,0,d.l4,0,4);d.quad=d.q4;d.val=QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];d.f=Float.NaN;d.lv=0;}}
@@ -253,17 +276,17 @@ public final class FloatPanel {
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
     private static Telemetry.Sample[] LAST_Q;
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
-        colours();LAST_Q=q;
+        colours();LAST_Q=q;drawNow=now;
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
         if(round(shape)){   // no window body: each reading is its own disc
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);
-                gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig));}
+                gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig),i);}
             return;}
         int sk=skinNow();
         if(layout(shape)){   // a layout: its own inside, the skin's colours
             int u=FloatLayouts.used(shape,n);
             for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
-            Telemetry.Sample rm=q[0],gm=q[8];float rpm=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
+            Telemetry.Sample rm=q[0],gm=q[8];float rpm=glide(GLIDES-1,rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN);String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
             FloatLayouts.draw(c,shape,n,k,sk,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8,LCELLS,rpm,gear);
             return;}
         if(sk!=FloatSkin.PLAIN){   // a skin: its own body and cells
@@ -279,7 +302,7 @@ public final class FloatPanel {
         for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float x=(j%cols)*cw,y=(j/cols)*ch;float v=value(q,sig);
             int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
             text(c,label(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-            String unit=Telemetry.UNITS[fmt(sig)],val=Tiles.text(fmt(sig),v);float f=Tiles.fraction(fmt(sig),v);
+            String unit=Telemetry.UNITS[fmt(sig)],val=Tiles.text(fmt(sig),v);float f=g==LINE||g==NUM?Tiles.fraction(fmt(sig),v):glide(i,Tiles.fraction(fmt(sig),v));
             float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(fmt(sig),pk);
             if(quad(sig)){quadTexts(q,sig);text(c,unit0(sig),x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);quad(c,x,y,cw,ch,k,TXT,DIV,Typeface.DEFAULT_BOLD);continue;}   // the unit where the peak would be
             if(!Float.isNaN(pk)&&g!=LINE){String ps="▲ "+Tiles.text(fmt(sig),pk);   // the peak, small, top right (left out when the name leaves no room)
@@ -315,13 +338,13 @@ public final class FloatPanel {
     }
     /** A round gauge in the d x d square at x,y: a dark disc, a 270 degree ring open at the bottom (filled from zero, so
      *  boost below zero fills the other way), the value in the middle, its unit under it and its name in the gap. */
-    private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v,float pk){
+    private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v,float pk,int slot){
         float cx=x+d/2,cy=y+d/2,rad=d/2-2*k,sw=7*k,ar=rad-sw/2-4*k;
         if(quad(sig)){p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);p.setStyle(Paint.Style.FILL);
             quadTexts(LAST_Q,sig);float s2=Math.min(15*k,d*.14f);
             for(int w=0;w<4;w++)text(c,QV[w],cx+(w%2==0?-1:1)*d*.2f,cy+(w<2?-d*.06f:d*.16f),s2,QL[w]==2?HOT:QL[w]==1?WARM:TXT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
             p.setColor(DIV);c.drawRect(cx-.5f,cy-d*.2f,cx+.5f,cy+d*.2f,p);text(c,label(sig),cx,cy+ar*.84f,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);return;}
-        int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT;float f=Tiles.fraction(fmt(sig),v);
+        int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT;float f=glide(slot,Tiles.fraction(fmt(sig),v));
         p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);
         r.set(cx-ar,cy-ar,cx+ar,cy+ar);p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);c.drawArc(r,135,270,false,p);

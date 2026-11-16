@@ -31,6 +31,9 @@ public final class FloatService extends Service implements Runnable {
     /** A tick runs on the first vsync at least this long after the last one: every third frame at 60 Hz (50 ms), in step with the display
      *  instead of a 50 ms timer that drifts by the work it does. */
     private static final long TICK_MS=FRAME_MS-8;
+    /** While a bar glides, a frame at most this often (every second vsync, ~30 a second): every vsync took ~50 draws a second, 4-6 ms each
+     *  on the UI thread the navi shares the CPU with, and stretched the tick gaps to 130 ms. */
+    private static final long GLIDE_FRAME_MS=30;private long mGlideAt;
     /** GPU drawing for the window, on by default since 2026-11-17 (our car: draw 5-10 ms -> 2.5-4 ms, worst 51 -> 12 ms, the same picture).
      *  Off while /sdcard/i30pd_float_sw exists (adb shell touch / rm), looked at every 2 s, so the two can still be compared without a new build. */
     private static final String SW_FLAG="i30pd_float_sw";
@@ -39,7 +42,9 @@ public final class FloatService extends Service implements Runnable {
     private int mTicks,mInval,mDraws;private long mDrawNs,mDrawMax,mTickNs,mTickMax,mGapMax,mLastTick,mLogAt;private boolean mHwCanvas;
     private final Choreographer.FrameCallback frame=new Choreographer.FrameCallback(){public void doFrame(long ns){
         if(!alive)return;
-        if(android.os.SystemClock.elapsedRealtime()-mLastTick>=TICK_MS)run();
+        long now=android.os.SystemClock.elapsedRealtime();
+        if(now-mLastTick>=TICK_MS)run();
+        else if(panel!=null&&now-mGlideAt>=GLIDE_FRAME_MS&&FloatPanel.gliding(now)){mGlideAt=now;panel.invalidate();}   // a bar on its way: about 30 frames a second until it lands
         Choreographer.getInstance().postFrameCallback(this);}};
     private final Handler handler=new Handler();
     private VehicleDataClient client;
@@ -76,12 +81,13 @@ public final class FloatService extends Service implements Runnable {
     public void run(){
         long t0=System.nanoTime(),now0=android.os.SystemClock.elapsedRealtime();
         if(mLastTick>0)mGapMax=Math.max(mGapMax,now0-mLastTick);mLastTick=now0;
-        if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;boolean want=!new java.io.File(android.os.Environment.getExternalStorageDirectory(),SW_FLAG).exists();if(want!=hw){hw=want;remove();}}   // a new window with the other renderer
+        if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;java.io.File sd=android.os.Environment.getExternalStorageDirectory();boolean want=!new java.io.File(sd,SW_FLAG).exists();if(want!=hw){hw=want;remove();}
+            FloatPanel.glideOn=!new java.io.File(sd,"i30pd_float_noglide").exists();}   // a new window with the other renderer
         int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0);   // the round gauge has square cells: its own window
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
         VehicleDash.chimeTick();
-        if(panel!=null){if(changed){panel.invalidate();mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
+        if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}
             else if(!FloatPanel.hideButton&&hideSent)hide(false);}
