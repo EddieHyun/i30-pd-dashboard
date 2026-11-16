@@ -41,6 +41,28 @@ public final class SettingsLayoutTest {
         }
         check(SettingsLayout.item(SettingsLayout.THEME,SettingsLayout.CAT_L+10,SettingsLayout.TOP+10)==-1,"the category column is not a choice");
         check(SettingsLayout.downScreen(0,ClusterPicker.MANUAL)&&SettingsLayout.downScreen(0,ClusterPicker.TACHO)&&!SettingsLayout.downScreen(0,ClusterPicker.F1)&&SettingsLayout.downScreen(1,ClusterPicker.F1+2)&&!SettingsLayout.downScreen(1,ClusterPicker.CLASSIC)&&SettingsLayout.downScreen(2,ClusterPicker.CLASSIC),"downshift-sound screens: 람다 and RPM, then +F1/퍼포먼스/레이스, then all");
+        // 플로팅 pane: every button is big enough to hit in a car, inside the pane, clear of the others and of the preview
+        int[] ft=SettingsLayout.F_TARGETS;
+        for(int a=0;a<ft.length;a++){float[] b=SettingsLayout.floatBox(ft[a]);
+            check(b[3]-b[1]>=36&&b[2]-b[0]>=52,"float button "+ft[a]+" at least 52 x 36");
+            check(b[0]>=SettingsLayout.PANE_L&&b[2]<=SettingsLayout.PANE_R&&b[1]>=SettingsLayout.TOP&&b[3]<=SettingsLayout.BOTTOM-14,"float button "+ft[a]+" inside the pane, above the hint");
+            check(b[0]>=SettingsLayout.FW_R||b[3]<=SettingsLayout.FW_B||b[1]>=SettingsLayout.FW_B,"float button "+ft[a]+" clear of the preview");
+            for(int c=a+1;c<ft.length;c++){float[] o=SettingsLayout.floatBox(ft[c]);
+                if(ft[a]==SettingsLayout.F_EDIT&&ft[c]>SettingsLayout.F_EDIT||ft[c]==SettingsLayout.F_EDIT)continue;
+                check(b[2]<=o[0]||o[2]<=b[0]||b[3]<=o[1]||o[3]<=b[1],"float buttons "+ft[a]+" and "+ft[c]+" do not overlap");}
+            float cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2;
+            check(SettingsLayout.floatHit(cx,cy,2,2,124,64)==ft[a],"a tap in the middle of "+ft[a]+" hits it");}
+        {float w=2*124,h=2*64,k=SettingsLayout.floatPreviewScale(w,h),x=SettingsLayout.floatPreviewX(w,h),y=SettingsLayout.floatPreviewY(w,h);
+            check(k==1,"a 2 x 2 card at 보통 fits the preview at full size");
+            check(SettingsLayout.floatHit(x+124+30,y+64+30,2,2,124,64)==SettingsLayout.F_CELL+3,"the bottom right preview cell is cell 4");
+            float ws=4*124*1.5f,ks=SettingsLayout.floatPreviewScale(ws,64*1.5f);check(ks<1&&SettingsLayout.floatPreviewX(ws,96)>=SettingsLayout.FW_L,"a wide strip is scaled down to fit");}
+        // the chooser sheet: values and graph buttons apart, graph buttons tall, 취소 / 완료 reachable
+        for(int i=0;i<16;i++){float[] b=SettingsLayout.sheetValue(i);check(b[3]<SettingsLayout.S_GRAPH_Y-10,"value "+i+" above the graph buttons");
+            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,16,4)==SettingsLayout.S_VAL+i,"value "+i+" hits");}
+        for(int g=0;g<4;g++){float[] b=SettingsLayout.sheetGraph(g);check(b[3]-b[1]>=50&&b[2]-b[0]>=100&&b[2]<=SettingsLayout.SH_R-10,"graph button "+g+" big and on the sheet");
+            check(SettingsLayout.sheetHit((b[0]+b[2])/2,(b[1]+b[3])/2,16,4)==SettingsLayout.S_GRAPH+g,"graph button "+g+" hits");}
+        check(SettingsLayout.sheetHit(500,430,16,4)==SettingsLayout.S_CANCEL&&SettingsLayout.sheetHit(620,430,16,4)==SettingsLayout.S_DONE,"취소 and 완료");
+        check(SettingsLayout.sheetHit(30,30,16,4)==-1&&SettingsLayout.sheetHit(110,400,16,4)==SettingsLayout.S_IN,"outside / empty sheet");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

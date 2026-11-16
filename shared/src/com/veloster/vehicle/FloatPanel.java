@@ -27,11 +27,20 @@ public final class FloatPanel {
     /** -1 = automatic: boost, coolant, intake, battery; a diesel shows its DPF soot in the third. */
     public static final int[] AUTO_PETROL={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE},AUTO_DIESEL={Telemetry.BOOST,2,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE};
     public static volatile int shape=OFF,count=4,size=1;
+    /** The shape the 켬 switch brings back (the window was switched off from it). */
+    public static volatile int lastShape=CARD;
     public static volatile boolean hideButton=true;
     public static final int[] cells={-1,-1,-1,-1};
-    /** Each cell's graph: a bar under the value, the last 30 s as a line, or a row of lit segments (LED). */
-    public static final int BAR=0,LINE=1,LED=2;
-    public static final String[] GRAPH_NAMES={"막대","선 그래프","칸 막대"};
+    /** Each cell's graph: a bar under the value, the last 30 s as a line, a row of lit segments (LED), or the number alone. */
+    public static final int BAR=0,LINE=1,LED=2,NUM=3;
+    public static final String[] GRAPH_NAMES={"막대","선 그래프","칸 막대","숫자만"};
+    /** The window's corners: the theme's (N: two cut corners, hex themes: four, BMW / Rose: round), or a fixed one. */
+    public static final int CORNER_THEME=0,CORNER_SQUARE=1,CORNER_ROUND=2,CORNER_CUT=3;
+    public static final String[] CORNER_NAMES={"테마 따라","각진","라운드","다이아 커팅"};
+    /** Colours: the theme's (accent, text, lines), the N blue whatever the theme, or white. Warnings stay amber / red. */
+    public static final int COLOR_THEME=0,COLOR_BLUE=1,COLOR_WHITE=2;
+    public static final String[] COLOR_NAMES={"테마 따라","기본 파랑","흰색"};
+    public static volatile int corner=CORNER_THEME,color=COLOR_THEME;
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500;
@@ -47,9 +56,9 @@ public final class FloatPanel {
     private static int lastLook;
     /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
      *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
-    public static boolean tick(int n,int size,Telemetry.Sample[] q,boolean diesel,long now){
-        int h=17;
-        for(int i=0;i<n;i++){int sig=signal(i,diesel);Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
+    public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
+        int h=17;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
+        for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
             h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];}
@@ -70,26 +79,71 @@ public final class FloatPanel {
     public static int defaultY(int shape,int n,int size){return shape==STRIP?480-height(shape,n,size)-10:62;}
     /** The next cell count after the current one (1, 2, 4, 1 ...). */
     public static int nextCount(int n){return n>=4?1:n>=2?4:2;}
-    /** The signal cell k shows (the automatic choice resolved for the car). */
-    public static int signal(int k,boolean diesel){int c=cells[k];return c>=0?c:(diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
+    /** The signal cell k shows: its choice, or the automatic one when it has none or this car lacks it (a DPF value on a
+     *  petrol, the DCT clutches on a 6MT). */
+    public static int signal(int k,VehicleProfile p){return resolve(cells[k],k,p);}
+    public static int resolve(int c,int k,VehicleProfile p){boolean diesel=p!=null&&p.fuel==VehicleProfile.Fuel.DIESEL;
+        return c>=0&&(p==null||Tiles.available(c,p))?c:(diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
+    /** What a cell can show on this car: -1 (자동) first, then CHOICES without the ones it lacks. */
+    public static int[] choices(VehicleProfile p){
+        int[] t=new int[CHOICES.length+1];int n=0;t[n++]=-1;
+        for(int s:CHOICES)if(p==null||Tiles.available(s,p))t[n++]=s;
+        return java.util.Arrays.copyOf(t,n);
+    }
     /** The next choice for a cell: automatic, then CHOICES in order, then automatic again. */
     public static int next(int current){if(current<0)return CHOICES[0];for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==current)return i+1<CHOICES.length?CHOICES[i+1]:-1;return -1;}
     public static String name(int sig){for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
 
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
-    private static final int BG=0xd8080c10,EDGE=0x33ffffff,DIV=0x22ffffff,TXT=0xfff0f4f7,MUT=0xff96a0aa,TRACK=0x28ffffff,ACC=0xff5ac8fa,WARM=0xffffaa3c,HOT=0xffff4b3c;
+    private static final int WARM=0xffffaa3c,HOT=0xffff4b3c;
+    /** This frame's colours: N palette values, which Theme.map turns into the theme's. */
+    private static int BG,EDGE,DIV,TXT,MUT,TRACK,ACC;
+    private static void colours(){
+        Theme th=color==COLOR_THEME?Theme.current():null;
+        BG=m(th,0xd805070a);EDGE=m(th,0xff3a4650);DIV=m(th,0x993a4650);TXT=m(th,0xfff2f6f8);MUT=m(th,0xff8fa0a8);TRACK=m(th,0xff2a343b);
+        ACC=color==COLOR_WHITE?0xffe8eef2:m(th,0xff5bc8f5);
+    }
+    private static int m(Theme th,int c){return th==null?c:th.map(c);}
+    /** The corner drawn: 0 square, 1 round, 2 four cut corners, 3 the N cut (top right and bottom left). */
+    public static int cornerShape(){
+        if(corner==CORNER_SQUARE)return 0;if(corner==CORNER_ROUND)return 1;if(corner==CORNER_CUT)return 2;
+        int s=Theme.current().shape;return s==Theme.SHAPE_ROUND?1:s==Theme.SHAPE_HEX?2:3;
+    }
+    private static final android.graphics.Path edge=new android.graphics.Path();
+    /** The window's body and its 1 px edge in the chosen corner shape. */
+    private static void outline(Canvas c,float w,float h,float k,int fill,int line){
+        int cs=cornerShape();float a=cs==1?10*k:cs==0?2*k:11*k;
+        p.setStyle(Paint.Style.FILL);p.setColor(fill);
+        if(cs<=1){r.set(0,0,w,h);c.drawRoundRect(r,a,a,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(line);r.set(.5f,.5f,w-.5f,h-.5f);c.drawRoundRect(r,a,a,p);}
+        else for(int pass=0;pass<2;pass++){float o=pass==0?0:.5f,l=o,t=o,rr=w-o,b=h-o;edge.reset();
+            if(cs==2){edge.moveTo(l+a,t);edge.lineTo(rr-a,t);edge.lineTo(rr,t+a);edge.lineTo(rr,b-a);edge.lineTo(rr-a,b);edge.lineTo(l+a,b);edge.lineTo(l,b-a);edge.lineTo(l,t+a);}
+            else{edge.moveTo(l,t);edge.lineTo(rr-a,t);edge.lineTo(rr,t+a);edge.lineTo(rr,b);edge.lineTo(l+a,b);edge.lineTo(l,b-a);}
+            edge.close();if(pass==1){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(line);}c.drawPath(edge,p);}
+        p.setStyle(Paint.Style.FILL);
+    }
+    private static final int[] SIG=new int[4],G=new int[4];
     /** Draws the window (shape, n cells, size) at 0,0 from the samples (index = signal). */
-    public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,boolean diesel,long now){
+    public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
+        for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
+        draw(c,shape,n,size,q,SIG,G,0,true,now);
+    }
+    /** One cell showing sig with graph g at 0,0 (the settings' value chooser); its line graph is cell k's memory. */
+    public static void drawCell(Canvas c,int size,Telemetry.Sample[] q,int sig,int g,int k,long now){
+        draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);
+    }
+    /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
+    private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
+        colours();
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(size),ch=cellH(size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
-        p.setStyle(Paint.Style.FILL);p.setColor(BG);r.set(0,0,w,h);c.drawRoundRect(r,10*k,10*k,p);
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);r.set(.5f,.5f,w-.5f,h-.5f);c.drawRoundRect(r,10*k,10*k,p);
+        outline(c,w,h,k,BG,EDGE);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);
         p.setColor(DIV);for(int i=1;i<cols;i++)c.drawLine(i*cw,8*k,i*cw,h-8*k,p);for(int i=1;i<rows;i++)c.drawLine(8*k,i*ch,w-8*k,i*ch,p);
         p.setStyle(Paint.Style.FILL);
-        for(int i=0;i<n;i++){int sig=signal(i,diesel);float x=(i%cols)*cw,y=(i/cols)*ch;Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN;
-            int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT,g=graphs[i];record(i,sig,v,now);
+        for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float x=(j%cols)*cw,y=(j/cols)*ch;Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;
+            int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
             text(c,name(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
             String unit=Telemetry.UNITS[sig],val=Tiles.text(sig,v);float f=Tiles.fraction(sig,v);
-            if(Float.isNaN(f)||g==LINE&&!drawn(i,sig)){   // nothing to graph (no value yet, or the line has no history): the value alone, large, in the middle
+            if(Float.isNaN(f)||g==NUM||g==LINE&&!drawn(i,sig)){   // nothing to graph (no value yet, or the line has no history): the value alone, large, in the middle
                 float vw=width(val,30*k,Typeface.DEFAULT_BOLD),uw=width(unit,12*k,Typeface.DEFAULT),x0=x+(cw-(vw+3*k+uw))/2;
                 text(c,val,x0,y+ch-13*k,30*k,Float.isNaN(v)?MUT:col,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);text(c,unit,x0+vw+3*k,y+ch-13*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT);continue;}
             if(g==LINE){   // the value on the name's line (the unit gives way to a long name), the last 30 s below it

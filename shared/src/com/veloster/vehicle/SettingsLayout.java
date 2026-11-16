@@ -6,9 +6,9 @@ package com.veloster.vehicle;
  */
 public final class SettingsLayout {
     public static final int SCREENS=0,THEME=1,PAINT=2,MODE=3,RPM=4,SOUND=5,LANG=6,DIAG=7,FLOAT=8,DONE=9;
-    /** 플로팅 pane rows: the window's shape (FloatPanel.SHAPE_NAMES, cycles; 끔 first), how many cells (1, 2, 4), its size
-     *  (FloatPanel.SIZE_NAMES), whether it hides 내 앱's floating button, then what each cell shows (cycles 자동 and
-     *  FloatPanel.CHOICES). */
+    /** 플로팅 pane (its own layout, see the float* methods below): a preview of the window top left (a tap on a cell
+     *  opens that cell's chooser), the on switch, 내 앱 button hiding and the chosen cell top right, then one row of
+     *  buttons each for the shape, cell count and size, corners and colours. Every button sets its value directly. */
     public static final int FLOAT_STYLE=0,FLOAT_COUNT=1,FLOAT_SIZE=2,FLOAT_HIDE=3,FLOAT_CELL=4;
     /** Not a category: the screen chooser a mode row opens (every screen, then 원래 화면), under a title line. */
     public static final int PICK=10;
@@ -108,6 +108,70 @@ public final class SettingsLayout {
         if(x>=downBtnL()&&x<downBtnL()+SBTN_W)return 2;
         return 0;
     }
+    // --- 플로팅 pane ---
+    /** The preview well (the window drawn at its real size, or smaller when it does not fit), its caption below it. */
+    public static final float FW_L=PANE_L,FW_T=TOP+2,FW_R=566,FW_B=252,FW_CAPTION=16;
+    /** The right column: the on switch, the button-hiding switch, and the chosen cell's box with its change button. */
+    public static final float FC_L=576,FC_R=PANE_R;
+    public static final float[] F_ON_BOX={FC_L,FW_T,FC_R,FW_T+40},F_HIDE_BOX={FC_L,FW_T+46,FC_R,FW_T+86},F_CELL_BOX={FC_L,FW_T+94,FC_R,FW_B},
+        F_EDIT_BOX={FC_L+12,FW_B-44,FC_R-12,FW_B-8};
+    /** Button rows under the preview: label at PANE_L+6, buttons from F_ROW_X; ROW_H tall, F_GAP apart. */
+    public static final float F_ROW_X=PANE_L+70,F_ROW_H=36,F_GAP=8;
+    public static final float[] F_ROW_Y={262,306,350,394};
+    public static final String[] F_ROW_LABELS={"모양","칸 수","모서리","색"};
+    /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60;
+    public static final String[] F_SHAPES={"카드","아래 띠","옆 세로"},F_COUNTS={"1","2","4"},
+        F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마 따라","각진","라운드","다이아 커팅"},F_COLORS={"테마 따라","기본 파랑","흰색"};
+    private static final float[] W_SHAPE={96,96,96},W_COUNT={52,52,52},W_SIZE={62,62,62,88},W_CORNER={100,74,82,112},W_COLOR={100,100,74};
+    /** Where the 크기 buttons start on the 칸 수 row (after the count buttons and the 크기 label). */
+    public static final float F_SIZE_X=F_ROW_X+3*52+2*F_GAP+60;
+    /** The button for target t ({l, t, r, b}), or null (preview cells are placed by floatPreview*). */
+    public static float[] floatBox(int t){
+        if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
+        int g=t/10*10,i=t-g;float[] w;float x,y;
+        switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_ROW_X;y=F_ROW_Y[1];break;
+            case F_SIZE:w=W_SIZE;x=F_SIZE_X;y=F_ROW_Y[1];break;case F_CORNER:w=W_CORNER;x=F_ROW_X;y=F_ROW_Y[2];break;
+            case F_COLOR:w=W_COLOR;x=F_ROW_X;y=F_ROW_Y[3];break;default:return null;}
+        if(i<0||i>=w.length)return null;
+        for(int k=0;k<i;k++)x+=w[k]+F_GAP;
+        return new float[]{x,y,x+w[i],y+F_ROW_H};
+    }
+    /** Every button target in drawing order. */
+    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SHAPE,F_SHAPE+1,F_SHAPE+2,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_SIZE+1,F_SIZE+2,F_SIZE+3,
+        F_CORNER,F_CORNER+1,F_CORNER+2,F_CORNER+3,F_COLOR,F_COLOR+1,F_COLOR+2};
+    /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
+    public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}
+    public static float floatPreviewX(float w,float h){return (FW_L+FW_R)/2-w*floatPreviewScale(w,h)/2;}
+    public static float floatPreviewY(float w,float h){return (FW_T+FW_B-FW_CAPTION)/2-h*floatPreviewScale(w,h)/2;}
+    /** The target under x,y on the 플로팅 pane, or -1. The preview has cols x rows cells of cw x ch at size 1. */
+    public static int floatHit(float x,float y,int cols,int rows,float cw,float ch){
+        for(int t:F_TARGETS){float[] b=floatBox(t);if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return t;}
+        float w=cols*cw,h=rows*ch,k=floatPreviewScale(w,h),px=floatPreviewX(w,h),py=floatPreviewY(w,h);
+        if(x>=px&&x<px+w*k&&y>=py&&y<py+h*k){int c=(int)((x-px)/(cw*k)),r=(int)((y-py)/(ch*k));return F_CELL+r*cols+c;}
+        return -1;
+    }
+
+    /** The cell chooser sheet over the whole screen: the values in a grid (S_COLS across), the graph buttons, 취소 / 완료. */
+    public static final float SH_L=96,SH_T=24,SH_R=704,SH_B=466,S_GX=116,S_GY=100,S_GW=568,S_ROW_H=40,S_VGAP=5,S_HGAP=6;
+    public static final int S_COLS=4,S_VAL=100,S_GRAPH=200,S_CANCEL=300,S_DONE=301,S_IN=0;
+    public static final float S_GRAPH_Y=310,S_GRAPH_H=56,S_GRAPH_X=180,S_GRAPH_W=117,S_GRAPH_GAP=12;
+    public static final float[] S_CANCEL_BOX={440,410,560,452},S_DONE_BOX={568,410,688,452};
+    /** The cell preview at the sheet's top right (one cell at size 1). */
+    public static final float S_CELL_X=560,S_CELL_Y=32;
+    public static float[] sheetValue(int i){float cw=(S_GW-(S_COLS-1)*S_HGAP)/S_COLS,x=S_GX+(i%S_COLS)*(cw+S_HGAP),y=S_GY+(i/S_COLS)*(S_ROW_H+S_VGAP);return new float[]{x,y,x+cw,y+S_ROW_H};}
+    public static float[] sheetGraph(int g){float x=S_GRAPH_X+g*(S_GRAPH_W+S_GRAPH_GAP);return new float[]{x,S_GRAPH_Y,x+S_GRAPH_W,S_GRAPH_Y+S_GRAPH_H};}
+    /** What the sheet has under x,y with n values and graphs graph buttons: S_VAL + i, S_GRAPH + g, S_CANCEL, S_DONE,
+     *  S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
+    public static int sheetHit(float x,float y,int n,int graphs){
+        if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -1;
+        for(int i=0;i<n;i++){float[] b=sheetValue(i);if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return S_VAL+i;}
+        for(int g=0;g<graphs;g++){float[] b=sheetGraph(g);if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return S_GRAPH+g;}
+        if(x>=S_CANCEL_BOX[0]&&x<=S_CANCEL_BOX[2]&&y>=S_CANCEL_BOX[1]&&y<=S_CANCEL_BOX[3])return S_CANCEL;
+        if(x>=S_DONE_BOX[0]&&x<=S_DONE_BOX[2]&&y>=S_DONE_BOX[1]&&y<=S_DONE_BOX[3])return S_DONE;
+        return S_IN;
+    }
+
     /** Choice under the point in cat's pane, or -1. */
     public static int item(int cat,float x,float y){return item(cat,x,y,0);}
     /** Choice under the point given the pane's scroll, or -1 (nothing outside the TOP..BOTTOM viewport). */

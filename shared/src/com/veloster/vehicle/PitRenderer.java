@@ -270,6 +270,7 @@ public final class PitRenderer {
         }
         box(c,SettingsLayout.PANE_L-8,SettingsLayout.TOP,SettingsLayout.PANE_L-7,SettingsLayout.BOTTOM,LINE);
         if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){drawScreenList(c);return;}
+        if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){drawFloatPane(c);return;}
         int cat=pickSlot>=0?SettingsLayout.PICK:settingsCat;float w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
         if(pickSlot>=0)text(c,ClusterPicker.MODE_NAMES[pickSlot]+" "+UiText.t("모드 화면"),SettingsLayout.PANE_L,SettingsLayout.TOP+20,16,BLUE,true);
         boolean paneScroll=cat==SettingsLayout.SOUND;float paneSc=paneScroll?settingsScroll:0;   // the 사운드 pane scrolls: its rows overflow the pane
@@ -277,7 +278,7 @@ public final class PitRenderer {
         for(int i=0;i<SettingsLayout.count(cat);i++){
             float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i)-paneSc;
             if(paneScroll&&(t+h<SettingsLayout.TOP||t>SettingsLayout.BOTTOM))continue;   // scrolled out of view
-            String name,sub=null,value=null,floatVal=null,floatGraph=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
+            String name,sub=null,value=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
             switch(cat){
                 case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
@@ -301,14 +302,6 @@ public final class PitRenderer {
                         dim=d<0;value=d<0?"끔":SettingsLayout.BEEP_SOUNDS[d];break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
-                case SettingsLayout.FLOAT:{boolean off=FloatPanel.shape==FloatPanel.OFF;
-                    if(i==SettingsLayout.FLOAT_STYLE){sel=!off;name="플로팅 창";sub="계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판";value=FloatPanel.SHAPE_NAMES[FloatPanel.shape];}
-                    else if(i==SettingsLayout.FLOAT_COUNT){dim=off;name="칸 수";value=FloatPanel.count+UiText.t("칸");}
-                    else if(i==SettingsLayout.FLOAT_SIZE){dim=off;name="크기";value=FloatPanel.SIZE_NAMES[FloatPanel.size];}
-                    else if(i==SettingsLayout.FLOAT_HIDE){sel=FloatPanel.hideButton&&!off;dim=off;name="플로팅 버튼 숨기기";sub="창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'";value=FloatPanel.hideButton?"켬":"끔";}
-                    else{int k=i-SettingsLayout.FLOAT_CELL,cv=FloatPanel.cells[k];dim=off||k>=FloatPanel.count;name=(k+1)+UiText.t("번 칸");sub="왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양";
-                        floatVal=cv<0?UiText.t("자동")+" ("+UiText.t(FloatPanel.name(FloatPanel.signal(k,profile!=null&&profile.fuel==VehicleProfile.Fuel.DIESEL)))+")":UiText.t(FloatPanel.name(cv));floatGraph=UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[k]]);}
-                    break;}
                 case SettingsLayout.SOUND:
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
                     else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";value=soundOn?"켬":"끔";}
@@ -350,14 +343,88 @@ public final class PitRenderer {
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
             }
-            if(floatGraph!=null){float bw=SettingsLayout.downBtnL()+SettingsLayout.SBTN_W-SettingsLayout.upBtnL(),by=t+(h-SettingsLayout.SBTN_W)/2;   // the cell's value, then its graph as a button
-                paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,floatVal,SettingsLayout.upBtnL()-14-paint.measureText(floatVal),t+h/2+7,18,dim?MUTED:BLUE,true);
-                button(c,floatGraph,SettingsLayout.upBtnL(),by,bw,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);}
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
         }
         if(paneScroll){c.restore();float max=SettingsLayout.maxPaneScroll(cat);
             if(max>0){float top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM,hh=bot-top,vis=Math.max(24,hh*hh/(max+hh)),y=top+(hh-vis)*(settingsScroll/max);
                 box(c,798,top,800,bot,0xff0c1012);box(c,798,y,800,y+vis,0xff2a3b44);}}
+    }
+    // --- 플로팅 pane: preview, switches, button rows, and the cell chooser sheet ---
+    private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph;
+    /** edit: the cell whose chooser is open (-1 none); sel: the cell shown in the right box; sig / graph: the chooser's pick. */
+    public void setFloatEdit(int edit,int sel,int sig,int graph){floatEdit=edit;floatSel=sel;floatEditSig=sig;floatEditGraph=graph;}
+    /** A button with its label centred (and a small second line); on = the chosen one. */
+    private void chip(Canvas c,float[] b,String label,String sub,boolean on,boolean dim){
+        panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff233b46:0xff111415,on?BLUE:LINE);
+        if(on){box(c,b[0]+9,b[3]-3,b[2]-9,b[3]-1,BLUE);}
+        float cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2;int ink=dim?MUTED:on?WHITE:0xffc8d3d8;
+        if(sub==null)centered(c,label,cx,cy+5,14,ink,true);
+        else{centered(c,label,cx,cy-1,14,ink,true);centered(c,sub,cx,cy+14,11,on?BLUE:MUTED,false);}
+    }
+    private String floatValue(int sig){
+        if(samples==null||sig<0||sig>=samples.length||samples[sig]==null||!samples[sig].valid)return "—";
+        String u=Telemetry.UNITS[sig];return Tiles.text(sig,samples[sig].value)+(u==null||u.isEmpty()?"":" "+u);
+    }
+    private void drawFloatPane(Canvas c){
+        boolean off=FloatPanel.shape==FloatPanel.OFF;int shape=off?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count,size=FloatPanel.size;
+        int cols=FloatPanel.cols(shape,n),rows=FloatPanel.rows(shape,n);float cw=FloatPanel.cellW(size),ch=FloatPanel.cellH(size),w=cols*cw,h=rows*ch;
+        box(c,SettingsLayout.PANE_L-6,SettingsLayout.TOP,800,480,0xff040506);   // opaque: the dashboard behind must not show between the buttons
+        // the preview well: the window as it will look (real size when it fits), the chosen cell outlined
+        box(c,SettingsLayout.FW_L,SettingsLayout.FW_T,SettingsLayout.FW_R,SettingsLayout.FW_B,0xff0b0f12);
+        stroke(c,SettingsLayout.FW_L,SettingsLayout.FW_T,SettingsLayout.FW_R,SettingsLayout.FW_T,LINE,1);stroke(c,SettingsLayout.FW_L,SettingsLayout.FW_B,SettingsLayout.FW_R,SettingsLayout.FW_B,LINE,1);
+        stroke(c,SettingsLayout.FW_L,SettingsLayout.FW_T,SettingsLayout.FW_L,SettingsLayout.FW_B,LINE,1);stroke(c,SettingsLayout.FW_R,SettingsLayout.FW_T,SettingsLayout.FW_R,SettingsLayout.FW_B,LINE,1);
+        float k=SettingsLayout.floatPreviewScale(w,h),px=SettingsLayout.floatPreviewX(w,h),py=SettingsLayout.floatPreviewY(w,h);
+        if(samples!=null){c.save();c.translate(px,py);c.scale(k,k);FloatPanel.draw(c,shape,n,size,samples,profile,frameTime);c.restore();}
+        int sel=Math.min(floatSel,n-1);float sx=px+(sel%cols)*cw*k,sy=py+(sel/cols)*ch*k;
+        if(off){box(c,px,py,px+w*k,py+h*k,0xb0040506);centered(c,UiText.t("꺼져 있음"),px+w*k/2,py+h*k/2+6,16,MUTED,true);}
+        else{paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawRect(sx+2,sy+2,sx+cw*k-2,sy+ch*k-2,paint);paint.setStyle(Paint.Style.FILL);}
+        text(c,UiText.t("미리보기 · 칸을 누르면 값 고르기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
+        // right column
+        chip(c,SettingsLayout.F_ON_BOX,UiText.t("플로팅 창")+"  "+UiText.t(off?"끔":"켬"),null,!off,false);
+        chip(c,SettingsLayout.F_HIDE_BOX,UiText.t("내 앱 버튼 숨기기")+"  "+UiText.t(FloatPanel.hideButton?"켬":"끔"),null,FloatPanel.hideButton&&!off,off);
+        float[] cb=SettingsLayout.F_CELL_BOX;panel(c,cb[0],cb[1],cb[2]-cb[0],cb[3]-cb[1],0xff101315,LINE);
+        int sig=FloatPanel.signal(sel,profile);
+        text(c,String.format(Locale.US,UiText.t("선택한 칸 · %d번"),sel+1),cb[0]+12,cb[1]+18,11,MUTED,false);
+        fitted(c,UiText.t(FloatPanel.name(sig))+" · "+UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[sel]]),cb[0]+12,cb[1]+42,16,cb[2]-cb[0]-24,WHITE);
+        chip(c,SettingsLayout.F_EDIT_BOX,UiText.t("값·그래프 바꾸기")+"  ›",null,false,false);
+        // button rows
+        for(int r=0;r<SettingsLayout.F_ROW_LABELS.length;r++)text(c,UiText.t(SettingsLayout.F_ROW_LABELS[r]),SettingsLayout.PANE_L+6,SettingsLayout.F_ROW_Y[r]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
+        text(c,UiText.t("크기"),SettingsLayout.F_SIZE_X-50,SettingsLayout.F_ROW_Y[1]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
+        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE)continue;int g=t/10*10,i=t-g;String label;boolean on;
+            switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
+                case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
+                case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;
+                case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i;break;
+                default:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i;}
+            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,false);}
+        text(c,UiText.t("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
+        if(floatEdit>=0)drawFloatSheet(c);
+    }
+    /** The chooser for one cell: this car's values with their live readings, the graph buttons, 취소 / 완료. */
+    private void drawFloatSheet(Canvas c){
+        box(c,0,0,800,480,0xc0000000);
+        panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
+        text(c,String.format(Locale.US,UiText.t("%d번 칸에 띄울 값"),floatEdit+1),SettingsLayout.S_GX,SettingsLayout.SH_T+32,18,WHITE,true);
+        text(c,UiText.t("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌"),SettingsLayout.S_GX,SettingsLayout.SH_T+52,11,MUTED,false);
+        if(samples!=null){c.save();c.translate(SettingsLayout.S_CELL_X,SettingsLayout.S_CELL_Y);
+            FloatPanel.drawCell(c,1,samples,FloatPanel.resolve(floatEditSig,floatEdit,profile),floatEditGraph,floatEdit,frameTime);c.restore();}
+        int[] ch=FloatPanel.choices(profile);
+        for(int i=0;i<ch.length;i++){int sg=ch[i];
+            String name=sg<0?UiText.t("자동"):UiText.t(FloatPanel.name(sg)),sub=sg<0?UiText.t(FloatPanel.name(FloatPanel.resolve(-1,floatEdit,profile))):floatValue(sg);
+            chip(c,SettingsLayout.sheetValue(i),name,sub,sg==floatEditSig,false);}
+        text(c,UiText.t("그래프"),SettingsLayout.S_GX,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,14,MUTED,true);
+        for(int g=0;g<FloatPanel.GRAPH_NAMES.length;g++){float[] b=SettingsLayout.sheetGraph(g);boolean on=g==floatEditGraph;
+            panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff233b46:0xff111415,on?BLUE:LINE);
+            if(on)box(c,b[0]+9,b[3]-3,b[2]-9,b[3]-1,BLUE);
+            float il=b[0]+12,ir=b[0]+44,cy=(b[1]+b[3])/2;String nm=UiText.t(FloatPanel.GRAPH_NAMES[g]);int ink=on?WHITE:0xffc8d3d8;
+            if(g==FloatPanel.BAR){box(c,il,cy-3,ir,cy+3,0xff2a343b);box(c,il,cy-3,il+(ir-il)*.6f,cy+3,BLUE);}
+            else if(g==FloatPanel.LINE){shape.reset();float[] ys={.7f,.5f,.6f,.3f,.45f,.2f,.35f};
+                for(int j=0;j<ys.length;j++){float xx=il+j*(ir-il)/(ys.length-1),yy=cy-10+ys[j]*20;if(j==0)shape.moveTo(xx,yy);else shape.lineTo(xx,yy);}
+                paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawPath(shape,paint);paint.setStyle(Paint.Style.FILL);}
+            else if(g==FloatPanel.LED){float sw=(ir-il)/8;for(int j=0;j<8;j++)box(c,il+j*sw+1,cy-4,il+(j+1)*sw-1,cy+4,j<5?BLUE:0xff2a343b);}
+            if(g==FloatPanel.NUM)centered(c,nm,(b[0]+b[2])/2,cy+5,14,ink,true);else fitted(c,nm,ir+8,cy+5,14,b[2]-ir-14,ink);}
+        chip(c,SettingsLayout.S_CANCEL_BOX,UiText.t("취소"),null,false,false);
+        chip(c,SettingsLayout.S_DONE_BOX,UiText.t("완료"),null,true,false);
     }
     /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */
     private void drawScreenList(Canvas c){

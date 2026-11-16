@@ -27,6 +27,7 @@ public final class UiText {
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
         EN.put("%,d원","%,d won");
+        EN.put("%d번 칸에 띄울 값","Cell %d shows");
         EN.put("%s · 서울 요금","%s · Seoul fare");
         EN.put("%s 요금","%s fare");
         EN.put("'내 앱' 열기","Open 'My Apps'");
@@ -127,6 +128,8 @@ public final class UiText {
         EN.put("가장자리 버튼 + 알림","Floating + notification");
         EN.put("가장자리 버튼 + 알림 / Floating + notification","Floating + notification");
         EN.put("가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.","The floating button could not be shown. The notification remains. Check permission to display over other apps.");
+        EN.put("각진","Square");
+        EN.put("값·그래프 바꾸기","Change reading and graph");
         EN.put("강원","Gangwon");
         EN.put("강제 재시작","Restart head unit");
         EN.put("개"," full");
@@ -183,6 +186,7 @@ public final class UiText {
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
+        EN.put("기본 파랑","N blue");
         EN.put("기본값으로 되돌리기","Back to the default");
         EN.put("기본앱","Built-in apps");
         EN.put("기본요금 %.1f km","Base %.1f km");
@@ -197,6 +201,7 @@ public final class UiText {
         EN.put("기존 핫스팟 설정을 읽지 못했습니다. 백업 불가로 변경하지 않았습니다.","Could not read the existing hotspot configuration. No backup or changes were made.");
         EN.put("기존 핫스팟이 이미 켜져 있습니다. 설정을 변경하지 않았습니다.","The existing hotspot is already on. No settings were changed.");
         EN.put("긴 비프","Long beep");
+        EN.put("꺼져 있음","Off");
         EN.put("꺼짐","Off");
         EN.put("끄기","Disable");
         EN.put("끔","Off");
@@ -205,6 +210,7 @@ public final class UiText {
         EN.put("낮은 톤","Low tone");
         EN.put("내 앱","My Apps");
         EN.put("내 앱 / My Apps","My Apps");
+        EN.put("내 앱 버튼 숨기기","Hide the My Apps button");
         EN.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","Open My Apps; drag to move");
         EN.put("내 앱에 표시할 앱","Apps to show in My Apps");
         EN.put("내비 효과음 · 차에서 무음","Navi effects · silent in car");
@@ -233,6 +239,7 @@ public final class UiText {
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
+        EN.put("다이아 커팅","Diamond cut");
         EN.put("단","gear");
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("닫기","Close");
@@ -259,6 +266,7 @@ public final class UiText {
         EN.put("디지털 3틱","Digital 3 ticks");
         EN.put("딩","Ding");
         EN.put("라바 오렌지","Lava Orange");
+        EN.put("라운드","Round");
         EN.put("람다","Lambda");
         EN.put("람다 · RPM","Lambda · RPM");
         EN.put("람다 · RPM · 레이스 · F1 · 퍼포먼스","Lambda · RPM · Race · F1 · Performance");
@@ -289,6 +297,8 @@ public final class UiText {
         EN.put("모든 값 한눈에","Every value at a glance");
         EN.put("모든 게이지의 항목과 모양을 초기화합니다.","Reset all gauge signals and styles to their defaults.");
         EN.put("모든 화면","Every screen");
+        EN.put("모서리","Corners");
+        EN.put("모양","Shape");
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
@@ -296,6 +306,7 @@ public final class UiText {
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
+        EN.put("미리보기 · 칸을 누르면 값 고르기","Preview · tap a cell to choose its reading");
         EN.put("미사용","Off");
         EN.put("바디 (BCM)","Body (BCM)");
         EN.put("바로가기 끄기","Turn shortcut off");
@@ -314,6 +325,7 @@ public final class UiText {
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
         EN.put("버튼 + 알림","Button + notification");
         EN.put("버튼 위치를 갱신하지 못해 알림만 유지합니다.","Could not update the button position. Only the notification remains.");
+        EN.put("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로","A button changes when you lift your finger · drag away to cancel");
         EN.put("번 · "," - ");
         EN.put("번 칸"," cell");
         EN.put("범위","Range");
@@ -379,11 +391,13 @@ public final class UiText {
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
+        EN.put("색","Colour");
         EN.put("서울","Seoul");
         EN.put("서킷","Circuit");
         EN.put("서킷 선택","Choose circuit");
         EN.put("서킷까지 %s","%s to the circuit");
         EN.put("선 그래프","Line");
+        EN.put("선택한 칸 · %d번","Chosen cell · %d");
         EN.put("설명 / Help","Help");
         EN.put("설정","Settings");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
@@ -409,6 +423,7 @@ public final class UiText {
         EN.put("순간 연비","Instant economy");
         EN.put("순정","Stock");
         EN.put("숫자","Number");
+        EN.put("숫자만","Number only");
         EN.put("스로틀","Throttle");
         EN.put("스로틀 %","Throttle %");
         EN.put("스로틀 개도","Throttle position");
@@ -575,6 +590,7 @@ public final class UiText {
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("작게","Small");
         EN.put("작동","Active");
+        EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌","Small text is the reading now · readings this car lacks are left out");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");
@@ -687,6 +703,7 @@ public final class UiText {
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
+        EN.put("축소","scaled down");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
         EN.put("출발선 위치는 추정","Start / finish line estimated");
@@ -743,6 +760,7 @@ public final class UiText {
         EN.put("터보 휘슬","Turbo whistle");
         EN.put("터보·연료","Turbo · fuel");
         EN.put("테마","Theme");
+        EN.put("테마 따라","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
         EN.put("통과 속도","Trap speed");
         EN.put("트랙·서킷 전용 · 속도 곡선 0~12초","Track use only · speed 0-12 s");
@@ -815,6 +833,7 @@ public final class UiText {
         EN.put("흡기 온도","Intake temperature");
         EN.put("흡기온","Intake");
         EN.put("흰 네모 숫자","White boxed numbers");
+        EN.put("흰색","White");
         KO.put("가장자리 버튼 + 알림 / Floating + notification","가장자리 버튼 + 알림");
         KO.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경");
         KO.put("내 앱 / My Apps","내 앱");

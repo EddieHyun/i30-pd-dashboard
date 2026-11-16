@@ -93,32 +93,49 @@ public final class TabsPreview {
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
                 new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
-                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),false,now);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
+                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
             {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
                 Telemetry hm=new Telemetry();long t0=now-30000;int from=Math.max(0,last-(int)(31000/step));
-                for(int q2=0;q2<=last;q2++){long tq=1_000_000+q2*step;feed(hm,raw.get(q2),tq);if(q2>=from&&(q2-from)%Math.max(1,(int)(500/step))==0)FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(400,300,BufferedImage.TYPE_INT_ARGB).createGraphics()),FloatPanel.CARD,4,2,hm.snapshot(tq),false,tq);}
+                for(int q2=0;q2<=last;q2++){long tq=1_000_000+q2*step;feed(hm,raw.get(q2),tq);if(q2>=from&&(q2-from)%Math.max(1,(int)(500/step))==0)FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(400,300,BufferedImage.TYPE_INT_ARGB).createGraphics()),FloatPanel.CARD,4,2,hm.snapshot(tq),VehicleProfile.PETROL_DCT,tq);}
                 FloatPanel.graphs[0]=FloatPanel.LINE;FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.LED;FloatPanel.graphs[3]=FloatPanel.LINE;FloatPanel.cells[3]=0;
                 for(int[] cb:new int[][]{{1,4,2},{2,4,1}}){BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
                     new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                     java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(cb[0],cb[1],cb[2]),FloatPanel.defaultY(cb[0],cb[1],cb[2]));
-                    FloatPanel.draw(new android.graphics.Canvas(g2),cb[0],cb[1],cb[2],hm.snapshot(1_000_000+last*step),false,1_000_000+last*step);ImageIO.write(img,"png",new File(out,"x_float_graphs_"+(cb[0]==1?"card":"strip")+".png"));}
+                    FloatPanel.draw(new android.graphics.Canvas(g2),cb[0],cb[1],cb[2],hm.snapshot(1_000_000+last*step),VehicleProfile.PETROL_DCT,1_000_000+last*step);ImageIO.write(img,"png",new File(out,"x_float_graphs_"+(cb[0]==1?"card":"strip")+".png"));}
                 {   // no values yet (the car just woke): every cell the value alone, large and centred
                     BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                     java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(1,4,2),FloatPanel.defaultY(1,4,2));
-                    FloatPanel.draw(new android.graphics.Canvas(g2),1,4,2,new Telemetry().snapshot(now),false,now+1);ImageIO.write(img,"png",new File(out,"x_float_graphs_empty.png"));}
+                    FloatPanel.draw(new android.graphics.Canvas(g2),1,4,2,new Telemetry().snapshot(now),VehicleProfile.PETROL_DCT,now+1);ImageIO.write(img,"png",new File(out,"x_float_graphs_empty.png"));}
                 FloatPanel.cells[3]=-1;
                 {   // FloatPanel.tick: a redraw only when the window would look different
                     Telemetry.Sample[] e=new Telemetry().snapshot(now);int[] keep=FloatPanel.graphs.clone();java.util.Arrays.fill(FloatPanel.graphs,FloatPanel.BAR);long ft0=now+100000;
-                    FloatPanel.tick(4,1,e,false,ft0);
-                    if(FloatPanel.tick(4,1,e,false,ft0+50)||FloatPanel.tick(4,1,e,false,ft0+2000))throw new AssertionError("float tick: nothing changed, no draw");
+                    FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0);
+                    if(FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+50)||FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+2000))throw new AssertionError("float tick: nothing changed, no draw");
                     FloatPanel.graphs[0]=FloatPanel.LINE;
-                    if(!FloatPanel.tick(4,1,e,false,ft0+2050))throw new AssertionError("float tick: a graph changed, draw");
-                    if(FloatPanel.tick(4,1,e,false,ft0+2100))throw new AssertionError("float tick: same line sample, no draw");
-                    if(!FloatPanel.tick(4,1,e,false,ft0+2700))throw new AssertionError("float tick: a new line sample, draw");
-                    if(!FloatPanel.tick(4,1,model.snapshot(now),false,ft0+2750))throw new AssertionError("float tick: values changed, draw");
+                    if(!FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+2050))throw new AssertionError("float tick: a graph changed, draw");
+                    if(FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+2100))throw new AssertionError("float tick: same line sample, no draw");
+                    if(!FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+2700))throw new AssertionError("float tick: a new line sample, draw");
+                    if(!FloatPanel.tick(4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,ft0+2750))throw new AssertionError("float tick: values changed, draw");
                     System.arraycopy(keep,0,FloatPanel.graphs,0,4);}
             }
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=2;   // the settings shot below shows the window on, two cells
+        }
+        {   // the 플로팅 pane: on with four cells, then a cell's chooser open (cell 2, the line graph picked)
+            FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=4;FloatPanel.graphs[1]=FloatPanel.LINE;FloatPanel.graphs[2]=FloatPanel.LED;
+            rec.setSettings(SettingsLayout.FLOAT,"auto",-1,targets);rec.setFloatEdit(-1,0,-1,0);save(out,"9_settings_float_on",rec,model,now,false,false);
+            rec.setFloatEdit(1,1,2,FloatPanel.LINE);save(out,"9_settings_float_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0);
+            FloatPanel.shape=FloatPanel.STRIP;save(out,"9_settings_float_strip",rec,model,now,false,false);FloatPanel.shape=FloatPanel.CARD;
+            // corners x themes on the window itself
+            String keepTheme=Theme.current().id;int keepCorner=FloatPanel.corner;
+            for(String th:new String[]{"n","purple","amber","bmw"})for(int cn=0;cn<FloatPanel.CORNER_NAMES.length;cn++){Theme.select(th);FloatPanel.corner=cn;
+                BufferedImage img=new BufferedImage(260,140,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x1a2226));g2.fillRect(0,0,260,140);g2.translate(6,6);
+                FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_corner_"+th+"_"+cn+".png"));}
+            Theme.select(keepTheme);FloatPanel.corner=keepCorner;
+            // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all
+            if(FloatPanel.choices(VehicleProfile.PETROL_DCT).length!=FloatPanel.CHOICES.length-1)throw new AssertionError("float choices: petrol DCT drops the 2 DPF values");
+            for(int sg:FloatPanel.choices(VehicleProfile.PETROL_DCT))if(sg==Telemetry.DPF_SOOT||sg==Telemetry.DPF_TEMP)throw new AssertionError("float choices: no DPF on a petrol");
+            FloatPanel.cells[0]=Telemetry.DPF_SOOT;if(FloatPanel.signal(0,VehicleProfile.PETROL_DCT)!=Telemetry.BOOST)throw new AssertionError("float: a saved DPF cell falls back to 자동 on a petrol");FloatPanel.cells[0]=-1;
+            FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.BAR;FloatPanel.count=2;
         }
         rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
