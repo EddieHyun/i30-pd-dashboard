@@ -89,7 +89,9 @@ public final class FloatPanel {
     }
     private static boolean both(int s){return s==11||s==12||s==Telemetry.YAW;}
     /** Cell k's highest reading so far, or NaN. */
-    static float peak(int k,int sig){return k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
+    static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
+    /** Drawing the settings' example window: no peaks (they belong to the real readings). */
+    private static boolean still;
     /** Adds the cell's value to its line graph once every HIST_MS, and to its peak every time (called on every draw). */
     static void record(int k,int sig,float v,long now){
         if(peakSig[k]!=sig||now<peakAt[k]||now-peakAt[k]>PEAK_IDLE_MS){peakSig[k]=sig;peak[k]=Float.NaN;peakAt[k]=now;}
@@ -196,9 +198,26 @@ public final class FloatPanel {
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
         draw(c,shape,n,size,q,SIG,G,0,true,now);
     }
+    /** The window as draw does, but without recording (the settings' preview and sheets: example values must not reach
+     *  the peaks or the line graphs). */
+    public static void drawStill(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
+        for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
+        still=true;try{draw(c,shape,n,size,q,SIG,G,0,false,now);}finally{still=false;}
+    }
+    private static Telemetry.Sample[] demo;
+    /** Fixed example readings for the settings (a car at 3,500 rpm in 3rd, boost +0.42 bar, coolant 88 °C ...): a live
+     *  preview redrew nine windows every frame and lagged. Signals without one sit at the middle of their bar. */
+    public static Telemetry.Sample[] example(){
+        if(demo!=null)return demo;Telemetry.Sample[] d=new Telemetry.Sample[Telemetry.LABELS.length];
+        for(int i=0;i<d.length;i++){float f0=Tiles.fraction(i,0),f1=Tiles.fraction(i,1),v=Float.isNaN(f0)||Float.isNaN(f1)||f1==f0?0:(.55f-f0)/(f1-f0);
+            if(i==0)v=3500;else if(i==1||i==2)v=88;else if(i==7)v=87;else if(i==8)v=3;else if(i==9)v=35;else if(i==Telemetry.BOOST)v=.42f;
+            else if(i==Telemetry.INTAKE)v=34;else if(i==Telemetry.BAT_VOLTAGE)v=13.8f;else if(i==Telemetry.AMBIENT)v=14;
+            d[i]=new Telemetry.Sample(v,true,false,true,false,0);}
+        return demo=d;
+    }
     /** One cell showing sig with graph g at 0,0 (the settings' value chooser); its line graph is cell k's memory. */
     public static void drawCell(Canvas c,int shape,int size,Telemetry.Sample[] q,int sig,int g,int k,long now){
-        draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);
+        still=true;try{draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);}finally{still=false;}
     }
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){

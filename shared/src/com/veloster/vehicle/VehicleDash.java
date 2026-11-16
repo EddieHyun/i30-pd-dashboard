@@ -417,6 +417,7 @@ public final class VehicleDash extends View implements Runnable {
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
             if(header.flinging())delay=16;   // a flicked tab strip coasts
+            if(picker&&editing&&settingsCat==SettingsLayout.FLOAT)delay=1000;   // 플로팅 settings: example values, nothing moves (a tap redraws at once)
             float re=DATA.dpfRegenEnd();
             if(Float.compare(re,regenEnd)!=0){regenEnd=re;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("dpf_regen_end_odo",re).apply();}
             // every 5 s the short line; the per-signal dump (about 3 KB) once a minute: at 5 s it filled the head unit's small

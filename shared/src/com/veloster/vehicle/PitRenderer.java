@@ -375,7 +375,7 @@ public final class PitRenderer {
         stroke(c,SettingsLayout.FW_L,SettingsLayout.FW_T,SettingsLayout.FW_R,SettingsLayout.FW_T,LINE,1);stroke(c,SettingsLayout.FW_L,SettingsLayout.FW_B,SettingsLayout.FW_R,SettingsLayout.FW_B,LINE,1);
         stroke(c,SettingsLayout.FW_L,SettingsLayout.FW_T,SettingsLayout.FW_L,SettingsLayout.FW_B,LINE,1);stroke(c,SettingsLayout.FW_R,SettingsLayout.FW_T,SettingsLayout.FW_R,SettingsLayout.FW_B,LINE,1);
         float k=SettingsLayout.floatPreviewScale(w,h),px=SettingsLayout.floatPreviewX(w,h),py=SettingsLayout.floatPreviewY(w,h);
-        if(samples!=null){c.save();c.translate(px,py);c.scale(k,k);FloatPanel.draw(c,shape,n,size,samples,profile,frameTime);c.restore();}
+        if(samples!=null){c.save();c.translate(px,py);c.scale(k,k);FloatPanel.drawStill(c,shape,n,size,FloatPanel.example(),profile,frameTime);c.restore();}
         int sel=Math.min(floatSel,cells.length-1);float[] cr=cells[sel];float sx=px+cr[0]*k,sy=py+cr[1]*k,cw=cr[2]-cr[0],ch=cr[3]-cr[1];
         if(off){box(c,px,py,px+w*k,py+h*k,0xb0040506);centered(c,UiText.t("꺼져 있음"),px+w*k/2,py+h*k/2+6,16,MUTED,true);}
         else{paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));
@@ -417,7 +417,7 @@ public final class PitRenderer {
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,UiText.t(FloatPanel.SHAPE_NAMES[f]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){float fw=FloatPanel.width(f,n,1),fh=FloatPanel.height(f,n,1),s=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));
-                c.save();c.translate((b[0]+b[2])/2-fw*s/2,b[1]+28+(b[3]-b[1]-34-fh*s)/2);c.scale(s,s);FloatPanel.draw(c,f,n,1,samples,profile,frameTime);c.restore();}}
+                c.save();c.translate((b[0]+b[2])/2-fw*s/2,b[1]+28+(b[3]-b[1]-34-fh*s)/2);c.scale(s,s);FloatPanel.drawStill(c,f,n,1,FloatPanel.example(),profile,frameTime);c.restore();}}
     }
     /** 스킨 고르기: every skin as a tile with the chosen cell drawn in it; a tap picks it. */
     private void drawSkinSheet(Canvas c){
@@ -430,7 +430,7 @@ public final class PitRenderer {
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,ch<0?UiText.t("계기판 따라")+" · "+UiText.t(FloatPanel.SKIN_NAMES[FloatSkin.forScreen(FloatPanel.screen)]):UiText.t(FloatPanel.SKIN_NAMES[ch]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){FloatPanel.skin=ch;float cw=FloatPanel.cellW(FloatPanel.CARD,1),chh=FloatPanel.cellH(FloatPanel.CARD,1),s=Math.min((b[2]-b[0]-20)/cw,(b[3]-b[1]-32)/chh);
-                c.save();c.translate((b[0]+b[2])/2-cw*s/2,b[1]+26);c.scale(s,s);FloatPanel.drawCell(c,FloatPanel.CARD,1,samples,sig,FloatPanel.graphs[sel],sel,frameTime);c.restore();}}
+                c.save();c.translate((b[0]+b[2])/2-cw*s/2,b[1]+26);c.scale(s,s);FloatPanel.drawCell(c,FloatPanel.CARD,1,FloatPanel.example(),sig,FloatPanel.graphs[sel],sel,frameTime);c.restore();}}
         FloatPanel.skin=keep;
     }
     /** The chooser for one cell: this car's values with their live readings, the graph buttons, 취소 / 완료. */
@@ -441,7 +441,7 @@ public final class PitRenderer {
         text(c,UiText.t("작은 글씨: 지금 값 · ▲: 최고값 표시 · 이 차에 없는 값은 숨김"),SettingsLayout.S_TAB_X,SettingsLayout.SH_T+52,11,MUTED,false);
         boolean round=FloatPanel.round();
         if(samples!=null){c.save();c.translate(SettingsLayout.S_CELL_X+(round?62-34:0),SettingsLayout.S_CELL_Y-(round?6:0));if(round)c.scale(.63f,.63f);
-            FloatPanel.drawCell(c,FloatPanel.CARD,1,samples,FloatPanel.resolve(floatEditSig,floatEdit,profile),floatEditGraph,floatEdit,frameTime);c.restore();}
+            FloatPanel.drawCell(c,FloatPanel.CARD,1,FloatPanel.example(),FloatPanel.resolve(floatEditSig,floatEdit,profile),floatEditGraph,floatEdit,frameTime);c.restore();}
         int[] gs=FloatPanel.groups(profile);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));
         chip(c,SettingsLayout.sheetTab(0),UiText.t("자동"),UiText.t(FloatPanel.name(FloatPanel.resolve(-1,floatEdit,profile))),floatEditSig<0,false);
         for(int t=0;t<gs.length;t++){float[] b=SettingsLayout.sheetTab(t+1);boolean open=t==tab;   // a group tab: open = its readings are shown

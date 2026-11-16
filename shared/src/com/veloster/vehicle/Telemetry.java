@@ -148,7 +148,7 @@ public final class Telemetry {
         public final float value;
         public final long ageMs;
         public final boolean valid, changed, seen, stale;
-        Sample(float v, boolean ok, boolean diff, boolean received, boolean old,long age) {
+        public Sample(float v, boolean ok, boolean diff, boolean received, boolean old,long age) {
             ageMs=age;value=v; valid=ok; changed=diff; seen=received; stale=old;
         }
     }
