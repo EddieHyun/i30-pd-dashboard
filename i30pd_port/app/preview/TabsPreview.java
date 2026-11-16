@@ -154,6 +154,17 @@ public final class TabsPreview {
                     g2.setColor(new java.awt.Color(0x2f7df0));g2.fillRect(0,(hh+24)/2,w+24,7);g2.translate(12,12);
                     FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                     ImageIO.write(img,"png",new File(out,"x_float_skin_"+sk+"_"+sh+n+sz+".png"));}}
+            // the layouts: each with 4 (and the pill and the dial with 2 / 1) in the plain look and three skins
+            for(int f:new int[]{FloatPanel.PILL,FloatPanel.HERO,FloatPanel.GEARBOX,FloatPanel.DIAG,FloatPanel.DIAL,FloatPanel.SHIFT})for(int sk:new int[]{0,1,4,8,6})for(int n:new int[]{4,2,1}){
+                if(n!=4&&sk!=0)continue;FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);
+                BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
+                g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.setColor(new java.awt.Color(0xffffff));for(int sx=-hh;sx<w+24;sx+=46)g2.fillPolygon(new int[]{sx,sx+8,sx+8+hh+24,sx+hh+24},new int[]{0,0,hh+24,hh+24},4);
+                g2.setColor(new java.awt.Color(0x2f7df0));g2.fillRect(0,(hh+24)/2,w+24,7);g2.translate(12,12);
+                FloatPanel.draw(new android.graphics.Canvas(g2),f,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
+                ImageIO.write(img,"png",new File(out,"x_float_form_"+f+"_"+sk+"_"+n+".png"));}
+            FloatPanel.count=4;FloatPanel.skin=0;
+            FloatPanel.shape=FloatPanel.HERO;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_form",rec,model,now,false,false);
+            rec.setFloatEdit(SettingsLayout.FORM_SHEET,0,-1,0,0);save(out,"9_settings_float_form_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.shape=FloatPanel.CARD;
             FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);   // 계기판 따라 on the 레이스 screen
             rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);
             rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.skin=0;FloatPanel.screen=0;

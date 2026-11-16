@@ -226,6 +226,7 @@ public final class UiText {
         EN.put("냉각수 온도","Coolant temperature");
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
+        EN.put("누르면 바로 바뀝니다 · 칸 값·스킨은 그대로","Applies at once · cells and skin stay");
         EN.put("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로","Applies at once · cells, size and opacity stay");
         EN.put("누르면 배기구 보기","Tap: tailpipe view");
         EN.put("누르면 음악으로","Tap for music");
@@ -246,6 +247,7 @@ public final class UiText {
         EN.put("다이아 커팅","Diamond cut");
         EN.put("단","gear");
         EN.put("단 = 워프 단계","gear = warp stage");
+        EN.put("단수 중심","Gear centre");
         EN.put("닫기","Close");
         EN.put("대구","Daegu");
         EN.put("대시보드 열기","Open the dashboard");
@@ -303,6 +305,7 @@ public final class UiText {
         EN.put("모든 화면","Every screen");
         EN.put("모서리","Corners");
         EN.put("모양","Shape");
+        EN.put("모양 고르기","Choose a layout");
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
@@ -320,6 +323,7 @@ public final class UiText {
         EN.put("바로가기 시작 실패. 내 앱을 다시 열어 설정을 확인하세요.","Shortcut could not start. Reopen My Apps and check its settings.");
         EN.put("바로가기 시작 실패. 설정 상태와 시스템 권한을 확인하세요.","Shortcut could not start. Check its settings and system permissions.");
         EN.put("바로가기: ","Shortcut: ");
+        EN.put("반원 계기","Half dial");
         EN.put("반응 시간","Reaction");
         EN.put("배기","Exhaust");
         EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
@@ -342,6 +346,7 @@ public final class UiText {
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속·구동","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
+        EN.put("변속등 머리","Shift-light header");
         EN.put("보정 토크","Corrected torque");
         EN.put("보통","Normal");
         EN.put("복구","Restore");
@@ -383,6 +388,7 @@ public final class UiText {
         EN.put("삐빅 · 낮게","Double beep · low");
         EN.put("삐빅 · 높게","Double beep · high");
         EN.put("삑","Beep");
+        EN.put("사선 분할","Slant split");
         EN.put("사용","On");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
@@ -433,7 +439,7 @@ public final class UiText {
         EN.put("스로틀 개도","Throttle position");
         EN.put("스킨","Skin");
         EN.put("스킨 고르기","Choose a skin");
-        EN.put("스킨마다 정해진 막대를 씁니다 (그래프 고르기 없음)","Each skin has its own bar (no graph choice)");
+        EN.put("스킨·레이아웃마다 정해진 막대를 씁니다 (그래프 고르기 없음)","Skins and layouts have their own bars (no graph choice)");
         EN.put("스타게이징 블루","Stargazing Blue");
         EN.put("스포츠 머플러","Sport muffler");
         EN.put("시간  ","Time  ");
@@ -658,6 +664,7 @@ public final class UiText {
         EN.put("주변 기기 검색 중","Searching for nearby devices");
         EN.put("주변 기기 검색을 누르고 연결할 기기를 페어링 모드로 켜주세요.","Tap Find nearby devices and put the device into pairing mode.");
         EN.put("주변 기기를 검색합니다.","Searching for nearby devices.");
+        EN.put("주인공 + 목록","Hero + list");
         EN.put("주차","Park");
         EN.put("주차 브레이크","Parking brake");
         EN.put("주행","Hired");
@@ -688,6 +695,7 @@ public final class UiText {
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("진하게","Solid");
         EN.put("짝수단","Even");
+        EN.put("짧은 캡슐","Short pill");
         EN.put("짧은 펄스 · 낮게","Short pulse · low");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");

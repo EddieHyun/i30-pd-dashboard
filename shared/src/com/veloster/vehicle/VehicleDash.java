@@ -307,13 +307,17 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
+        if(floatEdit==SettingsLayout.FORM_SHEET){int n=FloatPanel.FORMS.length,i=SettingsLayout.formHit(x,y,n);if(i!=SettingsLayout.formHit(downX,downY,n))return;
+            if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;
+                floatSel=Math.min(floatSel,FloatPanel.used(f,FloatPanel.count)-1);}floatEdit=-1;   // a tile picks it, outside the sheet closes it
+            SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.skinHit(x,y,FloatPanel.skinCount()+1);if(i!=SettingsLayout.skinHit(downX,downY,FloatPanel.skinCount()+1))return;
             if(i==-1)return;if(i>=0)FloatPanel.skin=i-1;floatEdit=-1;   // a tile picks it (tile 0: 계기판 따라), outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;
             int a=SettingsLayout.sheetHit(x,y,gs.length+1,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,gs.length+1,ch.length,g))return;
             if(a>=SettingsLayout.S_TAB){if(a==SettingsLayout.S_TAB)floatEditSig=-1;else floatEditTab=a-SettingsLayout.S_TAB-1;return;}   // 자동, or open a group
-            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&((FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND||FloatPanel.skinNow()!=0))a=SettingsLayout.S_IN;   // no graph on a round gauge
+            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&((FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND||!FloatPanel.graphsUsed()))a=SettingsLayout.S_IN;   // no graph on a round gauge
             if(a>=SettingsLayout.S_GRAPH)floatEditGraph=a<SettingsLayout.S_CANCEL?a-SettingsLayout.S_GRAPH:floatEditGraph;
             if(a>=SettingsLayout.S_VAL&&a<SettingsLayout.S_GRAPH)floatEditSig=ch[a-SettingsLayout.S_VAL];
             if(a==SettingsLayout.S_CANCEL)floatEdit=-1;
@@ -321,14 +325,15 @@ public final class VehicleDash extends View implements Runnable {
                 SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();}
             return;}
         boolean off=FloatPanel.shape==FloatPanel.OFF;int shape=off?FloatPanel.lastShape:FloatPanel.shape;
-        int cols=FloatPanel.cols(shape,FloatPanel.count),rows=FloatPanel.rows(shape,FloatPanel.count);float cw=FloatPanel.cellW(shape,FloatPanel.size),chh=FloatPanel.cellH(shape,FloatPanel.size);
-        int t=SettingsLayout.floatHit(x,y,cols,rows,cw,chh);
-        if(t<0||t!=SettingsLayout.floatHit(downX,downY,cols,rows,cw,chh))return;
+        float fw=FloatPanel.width(shape,FloatPanel.count,FloatPanel.size),fh=FloatPanel.height(shape,FloatPanel.count,FloatPanel.size);float[][] cr=FloatPanel.cellRects(shape,FloatPanel.count,FloatPanel.size);
+        int t=SettingsLayout.floatHit(x,y,fw,fh,cr);
+        if(t<0||t!=SettingsLayout.floatHit(downX,downY,fw,fh,cr))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
         else if(t==SettingsLayout.F_SKIN){floatEdit=SettingsLayout.SKIN_SHEET;return;}
+        else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
         else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
-            int k=t==SettingsLayout.F_EDIT?Math.min(floatSel,FloatPanel.count-1):t-SettingsLayout.F_CELL;if(k>=FloatPanel.count)return;
+            int u=FloatPanel.used(shape,FloatPanel.count),k=t==SettingsLayout.F_EDIT?Math.min(floatSel,u-1):t-SettingsLayout.F_CELL;if(k>=u)return;
             floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&Tiles.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
             int[] gs=FloatPanel.groups(prof);int want=Tiles.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
             return;}
@@ -345,9 +350,9 @@ public final class VehicleDash extends View implements Runnable {
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
             boolean wasRound=shape==FloatPanel.ROUND||p.getInt("float_last_shape",0)==FloatPanel.ROUND;if(shape==FloatPanel.ROUND)shape=FloatPanel.CARD;   // the old 원형 게이지 shape: a card with the round gauge skin
-            FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.SIDE,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
+            FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.SHIFT?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
-            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SIDE?last:FloatPanel.CARD;
+            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SHIFT&&last!=FloatPanel.ROUND?last:FloatPanel.CARD;
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",wasRound?FloatPanel.ROUND_SKIN:FloatPanel.AUTO);FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
             int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
             FloatPanel.corner=cn>=0&&cn<FloatPanel.CORNER_NAMES.length?cn:0;FloatPanel.color=co>=0&&co<FloatPanel.COLOR_NAMES.length?co:0;
@@ -364,7 +369,8 @@ public final class VehicleDash extends View implements Runnable {
     private static final Telemetry.Sample[] FLOAT_Q=new Telemetry.Sample[Telemetry.LABELS.length];
     /** Only the signals the floating window's n cells show, in an array indexed by signal that is reused (main thread only). */
     public static Telemetry.Sample[] floatSamples(int n){long now=SystemClock.elapsedRealtime();VehicleProfile prof=DATA.profile();
-        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);FLOAT_Q[sig]=DATA.sample(sig,now);}return FLOAT_Q;}
+        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);FLOAT_Q[sig]=DATA.sample(sig,now);}
+        FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */
     public static void chimeTick(){

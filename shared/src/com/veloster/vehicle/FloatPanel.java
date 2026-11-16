@@ -15,7 +15,16 @@ import android.graphics.Typeface;
 public final class FloatPanel {
     /** ROUND: the old 원형 게이지 shape, now the ROUND_SKIN skin; only read from saved settings (loadFloat turns it into CARD + that skin). */
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
-    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로"};
+    /** The rectangular layouts with their own inside (FloatLayouts). */
+    public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT;
+    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로","카드","짧은 캡슐","주인공 + 목록","단수 중심","사선 분할","반원 계기","변속등 머리"};
+    /** The 모양 sheet's order. */
+    public static final int[] FORMS={CARD,STRIP,SIDE,PILL,HERO,GEARBOX,DIAG,DIAL,SHIFT};
+    public static boolean layout(int s){return s>=PILL&&s<=SHIFT;}
+    /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
+    public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s);}
+    /** Cells the shape shows of n (the short pill has room for two). */
+    public static int used(int s,int n){return layout(s)?FloatLayouts.used(s,n):n;}
     public static final int[] COUNTS={1,2,4};
     public static final String[] SIZE_NAMES={"작게","보통","크게","아주 크게"};
     public static final float[] SIZES={.85f,1,1.5f,2};
@@ -59,7 +68,9 @@ public final class FloatPanel {
     public static int skinCount(){return FloatSkin.NAMES.length;}
     public static final int ROUND_SKIN=FloatSkin.ROUND_GAUGE;
     /** The round gauge skin is drawn now: square cells, a disc each, no window body. */
-    public static boolean round(){return skinNow()==FloatSkin.ROUND_GAUGE;}
+    public static boolean round(){return round(shape==OFF?lastShape:shape);}
+    /** The round gauge skin on a grid shape (a layout draws itself plain instead). */
+    public static boolean round(int s){return skinNow()==FloatSkin.ROUND_GAUGE&&!layout(s);}
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
@@ -103,21 +114,30 @@ public final class FloatPanel {
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
             float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+Tiles.text(sig,pk).hashCode();}
-        boolean changed=h!=lastLook;lastLook=h;return changed;
+        int s=shape==OFF?lastShape:shape;
+        if(s==PILL||s==GEARBOX||s==SHIFT){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
+            h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?Tiles.text(8,gm.value).hashCode():0);}
+        h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
     private FloatPanel(){}
     /** Columns of a shape with n cells: a card is 2 wide from 2 cells, the strip one row, the side one column. */
     public static int cols(int shape,int n){return shape==STRIP?n:shape==SIDE?1:Math.min(2,n);}
     public static int rows(int shape,int n){return (n+cols(shape,n)-1)/cols(shape,n);}
-    public static int cellW(int shape,int size){return Math.round((round()?GAUGE:CELL_W)*SIZES[clampSize(size)]);}
-    public static int cellH(int shape,int size){return Math.round((round()?GAUGE:CELL_H)*SIZES[clampSize(size)]);}
-    public static int width(int shape,int n,int size){return shape<=OFF?0:cols(shape,n)*cellW(shape,size);}
-    public static int height(int shape,int n,int size){return shape<=OFF?0:rows(shape,n)*cellH(shape,size);}
+    public static int cellW(int shape,int size){return Math.round((round(shape)?GAUGE:CELL_W)*SIZES[clampSize(size)]);}
+    public static int cellH(int shape,int size){return Math.round((round(shape)?GAUGE:CELL_H)*SIZES[clampSize(size)]);}
+    public static int width(int shape,int n,int size){return shape<=OFF?0:layout(shape)?Math.round(FloatLayouts.w(shape,n)*SIZES[clampSize(size)]):cols(shape,n)*cellW(shape,size);}
+    public static int height(int shape,int n,int size){return shape<=OFF?0:layout(shape)?Math.round(FloatLayouts.h(shape,n)*SIZES[clampSize(size)]):rows(shape,n)*cellH(shape,size);}
+    /** Each shown cell's rectangle in the window (l, t, r, b at the size): taps and the settings' outline. */
+    public static float[][] cellRects(int shape,int n,int size){int u=used(shape,n);float[][] o=new float[u][];float k=SIZES[clampSize(size)];
+        for(int i=0;i<u;i++){if(layout(shape)){float[] b=FloatLayouts.rect(shape,n,i);o[i]=new float[]{b[0]*k,b[1]*k,b[2]*k,b[3]*k};}
+            else{int cols=cols(shape,n),cw=cellW(shape,size),ch=cellH(shape,size);o[i]=new float[]{(i%cols)*cw,(i/cols)*ch,(i%cols+1)*cw,(i/cols+1)*ch};}}
+        return o;}
     private static int clampSize(int s){return Math.max(0,Math.min(SIZES.length-1,s));}
     /** Where the window starts (screen 800 × 480, below the 52 px status bar): the card and the side column top right, the strip bottom middle. */
-    public static int defaultX(int shape,int n,int size){return shape==STRIP?(800-width(shape,n,size))/2:800-width(shape,n,size)-8;}
-    public static int defaultY(int shape,int n,int size){return shape==STRIP?480-height(shape,n,size)-10:62;}
+    private static boolean bottom(int s){return s==STRIP||s==PILL||s==SHIFT;}
+    public static int defaultX(int shape,int n,int size){return bottom(shape)?(800-width(shape,n,size))/2:800-width(shape,n,size)-8;}
+    public static int defaultY(int shape,int n,int size){return bottom(shape)?480-height(shape,n,size)-10:62;}
     /** The next cell count after the current one (1, 2, 4, 1 ...). */
     public static int nextCount(int n){return n>=4?1:n>=2?4:2;}
     /** The signal cell k shows: its choice, or the automatic one when it has none or this car lacks it (a DPF value on a
@@ -137,7 +157,9 @@ public final class FloatPanel {
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
     private static final int WARM=0xffffaa3c,HOT=0xffff4b3c;
     /** This frame's colours: N palette values, which Theme.map turns into the theme's. */
-    private static int BG,EDGE,DIV,TXT,MUT,TRACK,ACC;
+    static int BG,EDGE,DIV,TXT,MUT,TRACK,ACC;
+    /** A colour of the N palette in this frame's colour choice (the theme's, or as is). */
+    static int themed(int c){return color==COLOR_THEME?Theme.current().map(c):c;}
     private static void colours(){
         Theme th=color==COLOR_THEME?Theme.current():null;
         BG=m(th,0xd805070a)&0xffffff|ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]<<24;EDGE=m(th,0xff3a4650);DIV=m(th,0x993a4650);TXT=m(th,0xfff2f6f8);MUT=m(th,0xff8fa0a8);TRACK=m(th,0xff2a343b);
@@ -151,7 +173,7 @@ public final class FloatPanel {
     }
     private static final android.graphics.Path edge=new android.graphics.Path();
     /** The window's body and its 1 px edge in the chosen corner shape. */
-    private static void outline(Canvas c,float w,float h,float k,int fill,int line){
+    static void outline(Canvas c,float w,float h,float k,int fill,int line){
         int cs=cornerShape();float a=cs==1?10*k:cs==0?2*k:11*k;
         p.setStyle(Paint.Style.FILL);p.setColor(fill);
         if(cs<=1){r.set(0,0,w,h);c.drawRoundRect(r,a,a,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(line);r.set(.5f,.5f,w-.5f,h-.5f);c.drawRoundRect(r,a,a,p);}
@@ -162,6 +184,13 @@ public final class FloatPanel {
         p.setStyle(Paint.Style.FILL);
     }
     private static final int[] SIG=new int[4],G=new int[4];
+    private static final FloatSkin.Cell[] LCELLS={new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell()};
+    /** A cell's texts and scale positions for a skin or a layout. */
+    private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
+        d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);
+        d.val=Tiles.text(sig,v);String u=Telemetry.UNITS[sig];d.unit=u==null?"":u;d.f=Tiles.fraction(sig,v);d.lv=Tiles.level(sig,v);
+        d.zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0;d.pk=Float.isNaN(pk)?null:Tiles.text(sig,pk);d.pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
+        d.first=first;d.bar=g!=NUM;}
     /** Draws the window (shape, n cells, size) at 0,0 from the samples (index = signal). */
     public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
@@ -175,18 +204,21 @@ public final class FloatPanel {
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
         colours();
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
-        if(round()){   // no window body: each reading is its own disc
+        if(round(shape)){   // no window body: each reading is its own disc
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
                 gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig));}
             return;}
         int sk=skinNow();
+        if(layout(shape)){   // a layout: its own inside, the skin's colours
+            int u=FloatLayouts.used(shape,n);
+            for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
+            Telemetry.Sample rm=q[0],gm=q[8];float rpm=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
+            FloatLayouts.draw(c,shape,n,k,sk,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8,LCELLS,rpm,gear);
+            return;}
         if(sk!=FloatSkin.PLAIN){   // a skin: its own body and cells
             FloatSkin.body(c,sk,w,h,k,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8);
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
-                FloatSkin.Cell d=FloatSkin.CELL;float pk=peak(i,sig);d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);
-                d.val=Tiles.text(sig,v);String u=Telemetry.UNITS[sig];d.unit=u==null?"":u;d.f=Tiles.fraction(sig,v);d.lv=Tiles.level(sig,v);
-                d.zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0;d.pk=Float.isNaN(pk)?null:Tiles.text(sig,pk);d.pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
-                d.first=j==0&&n>1;d.bar=gs[j]!=NUM;
+                fillCell(FloatSkin.CELL,i,sig,v,gs[j],j==0&&n>1);
                 FloatSkin.cell(c,sk,(j%cols)*cw,(j/cols)*ch,cw,ch,k);}
             return;}
         outline(c,w,h,k,BG,EDGE);
