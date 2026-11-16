@@ -163,6 +163,15 @@ public final class TabsPreview {
                 FloatPanel.draw(new android.graphics.Canvas(g2),f,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                 ImageIO.write(img,"png",new File(out,"x_float_form_"+f+"_"+sk+"_"+n+".png"));}
             FloatPanel.count=4;FloatPanel.skin=0;
+            {   // 타이어 4개: pressure and temperature cells in the plain card, three skins, the round gauge and two layouts
+                int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.cells[1]=FloatPanel.QUAD_T;
+                for(int[] v:new int[][]{{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,6},{FloatPanel.CARD,4},{FloatPanel.CARD,9},{FloatPanel.HERO,0},{FloatPanel.GEARBOX,1}}){
+                    int f=v[0];FloatPanel.skin=v[1];int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
+                    BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
+                    g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
+                    FloatPanel.drawStill(new android.graphics.Canvas(g2),f,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
+                    ImageIO.write(img,"png",new File(out,"x_float_quad_"+f+"_"+v[1]+".png"));}
+                System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.skin=0;}
             FloatPanel.shape=FloatPanel.HERO;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_form",rec,model,now,false,false);
             rec.setFloatEdit(SettingsLayout.FORM_SHEET,0,-1,0,0);save(out,"9_settings_float_form_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.shape=FloatPanel.CARD;
             FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);   // 계기판 따라 on the 레이스 screen

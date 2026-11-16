@@ -334,8 +334,8 @@ public final class VehicleDash extends View implements Runnable {
         else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
         else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
             int u=FloatPanel.used(shape,FloatPanel.count),k=t==SettingsLayout.F_EDIT?Math.min(floatSel,u-1):t-SettingsLayout.F_CELL;if(k>=u)return;
-            floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&Tiles.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
-            int[] gs=FloatPanel.groups(prof);int want=Tiles.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
+            floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&FloatPanel.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
+            int[] gs=FloatPanel.groups(prof);int want=FloatPanel.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
             return;}
         else{int g=t/10*10,i=t-g;
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
@@ -355,9 +355,9 @@ public final class VehicleDash extends View implements Runnable {
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SHIFT&&last!=FloatPanel.ROUND?last:FloatPanel.CARD;
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",wasRound?FloatPanel.ROUND_SKIN:FloatPanel.AUTO);FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
             int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
-            FloatPanel.corner=cn>=0&&cn<FloatPanel.CORNER_NAMES.length?cn:0;FloatPanel.color=co>=0&&co<FloatPanel.COLOR_NAMES.length?co:0;
+            FloatPanel.corner=FloatPanel.CORNER_THEME;FloatPanel.color=FloatPanel.COLOR_THEME;   // the 모서리 / 색 rows are gone: the theme's (an earlier pick is ignored)
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too
-            for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
+            for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=FloatPanel.quad(v)||v>=0&&v<Telemetry.LABELS.length?v:-1;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
@@ -369,7 +369,7 @@ public final class VehicleDash extends View implements Runnable {
     private static final Telemetry.Sample[] FLOAT_Q=new Telemetry.Sample[Telemetry.LABELS.length];
     /** Only the signals the floating window's n cells show, in an array indexed by signal that is reused (main thread only). */
     public static Telemetry.Sample[] floatSamples(int n){long now=SystemClock.elapsedRealtime();VehicleProfile prof=DATA.profile();
-        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);FLOAT_Q[sig]=DATA.sample(sig,now);}
+        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);if(FloatPanel.quad(sig))for(int w=0;w<4;w++){int s=FloatPanel.quadSig(sig,w);FLOAT_Q[s]=DATA.sample(s,now);}else FLOAT_Q[sig]=DATA.sample(sig,now);}
         FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */

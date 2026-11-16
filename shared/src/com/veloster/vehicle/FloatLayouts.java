@@ -44,15 +44,15 @@ final class FloatLayouts extends ClusterKit {
     private void palette(int skin,float af){
         plain=false;greenRed=true;pix=skin==FloatSkin.PIXEL;face=chakra();bold=chakraBold();box=0xffa8dcf2;boxInk=0xff061015;
         switch(skin){
-            case FloatSkin.RACE:set(0xeb0e1316,0xff2a353c,0xfff2f6f8,0xff8fa0a8,0xff26323a,0xff5bc8f5);break;
+            case FloatSkin.RACE:set(0xeb0e1316,0xff2a353c,0xfff2f6f8,0xff8fa0a8,0xff26323a,Theme.current().map(0xff5bc8f5));box=Theme.current().map(0xffa4d9ef);break;
             case FloatSkin.F1:set(0xed080a0c,0xff2a343b,0xffffffff,0xff8fa0a8,0xff1d2428,0xff2fe06a);box=0xffffffff;break;
             case FloatSkin.RETRO:set(0xf0060402,0xffb4500f,0xffffb347,0xffc46a1c,0xff2a1606,0xffff9a2e);face=Typeface.MONOSPACE;bold=Typeface.MONOSPACE;box=0xffb4500f;boxInk=0xff140800;greenRed=false;break;
             case FloatSkin.VFD:set(0xf0020a09,0x385ef2d2,0xff5ef2d2,0xb35ef2d2,0x1a5ef2d2,0xff5ef2d2);box=0xff5ef2d2;boxInk=0xff021210;greenRed=false;break;
             case FloatSkin.HUD:set(0x40000000,0xff62ff8a,0xff62ff8a,0xb362ff8a,0x3362ff8a,0xff62ff8a);face=Typeface.MONOSPACE;bold=Typeface.MONOSPACE;box=0xff62ff8a;boxInk=0xff031a0a;greenRed=false;break;
             case FloatSkin.PIXEL:set(0xf0000000,0xffffffff,0xffffffff,0xffffd84a,0xff2a2a2a,0xff3ddc5a);face=Typeface.MONOSPACE;bold=Typeface.MONOSPACE;box=0xffffffff;boxInk=0xff000000;break;
             case FloatSkin.VU:set(0xf2ece0bc,0xff3a3226,0xff14110c,0xff5a4e3a,0xffd8c89c,0xffc8302a);box=0xff3a3226;boxInk=0xffece0bc;greenRed=false;break;
-            case FloatSkin.NIGHT:set(0xcc000000,0xff2b3134,0xffc5ccd0,0xff8a959a,0xff2b3134,0xff8a9499);face=Typeface.DEFAULT;bold=Typeface.DEFAULT;box=0xffc5ccd0;boxInk=0xff000000;greenRed=false;break;
-            default:plain=true;bg=FloatPanel.BG;edge=FloatPanel.EDGE;div=FloatPanel.DIV;txt=FloatPanel.TXT;mut=FloatPanel.MUT;track=FloatPanel.TRACK;acc=FloatPanel.ACC;box=FloatPanel.themed(0xffa8dcf2);boxInk=FloatPanel.themed(0xff061015);break;
+            case FloatSkin.NIGHT:set(0xcc000000,0xff2b3134,0xffc5ccd0,0xff8a959a,0xff2b3134,Theme.current().map(0xff5bc8f5));face=Typeface.DEFAULT;bold=Typeface.DEFAULT;box=0xffc5ccd0;boxInk=0xff000000;greenRed=false;break;
+            default:plain=true;bg=FloatPanel.BG;edge=FloatPanel.EDGE;div=FloatPanel.DIV;txt=FloatPanel.TXT;mut=FloatPanel.MUT;track=FloatPanel.TRACK;acc=FloatPanel.ACC;box=FloatPanel.themed(0xffa4d9ef);boxInk=FloatPanel.themed(0xff061015);break;
         }
         if(!plain){div=(edge&0xffffff)|0x99000000;int al=Math.max(0,Math.min(255,Math.round((bg>>>24)*af)));bg=al<<24|bg&0xffffff;}
     }

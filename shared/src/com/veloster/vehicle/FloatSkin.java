@@ -23,11 +23,14 @@ final class FloatSkin extends ClusterKit {
     protected void draw(Canvas c){}
 
     /** One cell's content, filled by FloatPanel before each cell (main thread only). */
-    static final class Cell{String name,en,val,unit,pk;float f,zero,pf;int lv;boolean first,bar;}
+    static final class Cell{String name,en,val,unit,pk;float f,zero,pf;int lv;boolean first,bar;String[] quad;final String[] q4=new String[4];final int[] l4=new int[4];}
     static final Cell CELL=new Cell();
 
     private static Typeface face(){return LambdaCluster.FACE!=null?LambdaCluster.FACE:Typeface.DEFAULT;}
     private static Typeface faceBold(){return LambdaCluster.FACE_BOLD!=null?LambdaCluster.FACE_BOLD:Typeface.DEFAULT_BOLD;}
+    /** The theme's accent (the N palette's 5bc8f5) and light accent (a4d9ef): the race and night skins follow the theme like their screens. */
+    private static int themeAcc(){return Theme.current().map(0xff5bc8f5);}
+    private static int themeBox(){return Theme.current().map(0xffa4d9ef);}
     private static int a(int argb,float af){int al=Math.max(0,Math.min(255,Math.round((argb>>>24)*af)));return al<<24|argb&0xffffff;}
 
     /** The window body behind the cells, w x h; af scales its opacity (투명도: 보통 = 1). */
@@ -56,18 +59,33 @@ final class FloatSkin extends ClusterKit {
     private static float clamp01(float f){return Math.max(0,Math.min(1,f));}
 
     private void cellImpl(Canvas c,int skin,float x,float y,float cw,float ch,float k,Cell d){
+        if(d.quad!=null){String v=d.val,u=d.unit;d.val="";d.unit="";d.bar=false;cellBody(c,skin,x,y,cw,ch,k,d);d.val=v;d.unit=u;quadIn(c,skin,x,y,cw,ch,k,d);return;}
+        cellBody(c,skin,x,y,cw,ch,k,d);
+    }
+    /** A 4-wheel cell: the skin draws its frame and name, then the wheels go in its value ink and type. */
+    private void quadIn(Canvas c,int skin,float x,float y,float cw,float ch,float k,Cell d){
+        int ink;Typeface tf=faceBold();
+        switch(skin){case RACE:ink=d.first?0xff061015:0xfff2f6f8;break;case RETRO:ink=0xffffb347;tf=Typeface.MONOSPACE;break;case VFD:ink=0xff5ef2d2;break;
+            case HUD:ink=0xff62ff8a;tf=Typeface.MONOSPACE;break;case PIXEL:ink=0xffffffff;break;case VU:ink=0xff3a3226;break;case NIGHT:ink=0xffc5ccd0;tf=Typeface.DEFAULT;break;default:ink=0xffffffff;}
+        float cx=x+cw/2,t=y+(skin==VU?10:24)*k,b=y+ch-(skin==VU?14:6)*k,s=Math.min(15*k,(b-t)/2.1f);
+        line(c,cx,t,cx,b,Math.max(1,k),(ink&0xffffff)|0x55000000);
+        for(int w=0;w<4;w++){int col=d.l4[w]==2?0xffff4b3c:d.l4[w]==1?0xffffaa3c:ink;float yy=w<2?t+s*.95f:b-2*k;String q=d.quad[w];
+            if(skin==PIXEL){int sc=Math.max(1,Math.round(s/7f));float wd=(q.length()*6-1)*sc;pixel(c,q,w%2==0?cx-8*k-wd:cx+8*k,yy-7*sc,sc,col);}
+            else text(c,q,w%2==0?cx-8*k:cx+8*k,yy,s,col,w%2==0?Paint.Align.RIGHT:Paint.Align.LEFT,tf);}
+    }
+    private void cellBody(Canvas c,int skin,float x,float y,float cw,float ch,float k,Cell d){
         boolean has=!Float.isNaN(d.f)&&d.bar;float f=has?clamp01(d.f):0;boolean pk=d.pk!=null&&!Float.isNaN(d.pf);float pf=pk?clamp01(d.pf):0;
         switch(skin){
         case RACE:{   // dark boxes, small caps, big white number; the first cell in the race screen's light-blue gear box
             boolean hot=d.first;
-            if(hot)fill(c,x+3*k,y+3*k,x+cw-3*k,y+ch-3*k,0xffa8dcf2);else box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xff2a353c);
-            int ink=hot?0xff061015:warn(d.lv,0xfff2f6f8),mut=hot?0xff21414f:0xff8fa0a8;
+            if(hot)fill(c,x+3*k,y+3*k,x+cw-3*k,y+ch-3*k,themeBox());else box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xff2a353c);
+            int ink=hot?0xff061015:warn(d.lv,0xfff2f6f8),mut=hot?0xb3061015:0xff8fa0a8;
             fit(c,d.en,x+10*k,y+15*k,8.5f*k,cw*(pk?.5f:.8f),mut,Paint.Align.LEFT,faceBold());
             if(pk)text(c,"MAX "+d.pk,x+cw-10*k,y+15*k,8*k,mut,Paint.Align.RIGHT,face());
             float uw=width(d.unit,9*k,face());text(c,d.unit,x+cw-10*k,y+46*k,9*k,mut,Paint.Align.RIGHT,face());
             fit(c,d.val,x+cw-13*k-uw,y+46*k,25*k,cw-26*k-uw,ink,Paint.Align.RIGHT,faceBold());
             if(has){float bl=x+10*k,br=x+cw-10*k,bt=y+53*k;fill(c,bl,bt,br,bt+3*k,hot?0x2e061015:0xff26323a);
-                float z=d.zero,lo=bl+(br-bl)*Math.min(z,f),hi=bl+(br-bl)*Math.max(z,f);fill(c,lo,bt,Math.max(hi,lo+2),bt+3*k,hot?0xff061015:warn(d.lv,0xff5bc8f5));
+                float z=d.zero,lo=bl+(br-bl)*Math.min(z,f),hi=bl+(br-bl)*Math.max(z,f);fill(c,lo,bt,Math.max(hi,lo+2),bt+3*k,hot?0xff061015:warn(d.lv,themeAcc()));
                 if(pk){float px=bl+(br-bl)*pf;fill(c,px-k,bt-2*k,px+k,bt+5*k,hot?0xff061015:0xffffffff);}}
             break;}
         case F1:{   // the F1 screen's shift lights as the cell's bar (green, red, blue), then the number large
@@ -102,6 +120,7 @@ final class FloatSkin extends ClusterKit {
             line(c,x0,y0,x0+L,y0,sw,g);line(c,x0,y0,x0,y0+L,sw,g);line(c,x1-L,y0,x1,y0,sw,g);line(c,x1,y0,x1,y0+L,sw,g);
             line(c,x0,y1,x0+L,y1,sw,g);line(c,x0,y1-L,x0,y1,sw,g);line(c,x1-L,y1,x1,y1,sw,g);line(c,x1,y1-L,x1,y1,sw,g);
             fit(c,d.en,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);
+            if(d.val.isEmpty()){c.restore();continue;}   // a 4-wheel cell: the wheels go where the box was
             float bx=x+40*k,by=y+22*k,bw=70*k,bh=24*k;path.reset();path.moveTo(bx,by);path.lineTo(bx+bw,by);path.lineTo(bx+bw,by+bh);path.lineTo(bx,by+bh);path.lineTo(bx-8*k,by+bh/2);path.close();
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setColor(g);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
             fit(c,d.val,bx+bw-6*k,by+19*k,19*k,bw-12*k,g,Paint.Align.RIGHT,Typeface.MONOSPACE);fit(c,d.unit,x+12*k,y+40*k,8*k,26*k,g,Paint.Align.LEFT,Typeface.MONOSPACE);
@@ -137,7 +156,7 @@ final class FloatSkin extends ClusterKit {
             if(pk)text(c,com.veloster.i18n.UiText.t("최고")+" "+d.pk,x+cw-10*k,y+17*k,8.5f*k,0xff737d82,Paint.Align.RIGHT,Typeface.DEFAULT);
             text(c,d.unit,x+cw-27*k,y+48*k,9*k,0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
             fit(c,d.val,x+cw-30*k,y+48*k,28*k,cw-44*k,warn(d.lv,0xffc5ccd0),Paint.Align.RIGHT,Typeface.DEFAULT);
-            if(d.bar){fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(has)fill(c,x+12*k,y+55*k,x+12*k+(cw-24*k)*f,y+55*k+1,0xff8a9499);}
+            if(d.bar){fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(has)fill(c,x+12*k,y+55*k,x+12*k+(cw-24*k)*f,y+55*k+1,themeAcc());}
             break;}
         default:break;
         }

@@ -363,6 +363,7 @@ public final class PitRenderer {
         else{centered(c,label,cx,cy-1,ls,ink,true);paint.setTypeface(Typeface.DEFAULT);paint.setTextSize(11);centered(c,sub,cx,cy+14,Math.min(11,11*room/Math.max(1,paint.measureText(sub))),on?BLUE:MUTED,false);}
     }
     private String floatValue(int sig){
+        if(FloatPanel.quad(sig))return samples==null?"—":FloatPanel.inline(samples,sig);
         if(samples==null||sig<0||sig>=samples.length||samples[sig]==null||!samples[sig].valid)return "—";
         String u=Telemetry.UNITS[sig];return Tiles.text(sig,samples[sig].value)+(u==null||u.isEmpty()?"":" "+u);
     }
@@ -392,7 +393,6 @@ public final class PitRenderer {
         // button rows
         for(int r=0;r<SettingsLayout.F_ROW_LABELS.length;r++)text(c,UiText.t(SettingsLayout.F_ROW_LABELS[r]),SettingsLayout.PANE_L+6,SettingsLayout.F_ROW_Y[r]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
         text(c,UiText.t("크기"),SettingsLayout.F_SIZE_X-50,SettingsLayout.F_ROW_Y[1]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
-        fitted(c,UiText.t("투명도"),SettingsLayout.F_ALPHA_X-52,SettingsLayout.F_ROW_Y[3]+SettingsLayout.F_ROW_H/2+5,14,46,MUTED);
         for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE)continue;int g=t/10*10,i=t-g;String label;boolean on;
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
@@ -446,7 +446,7 @@ public final class PitRenderer {
         chip(c,SettingsLayout.sheetTab(0),UiText.t("자동"),UiText.t(FloatPanel.name(FloatPanel.resolve(-1,floatEdit,profile))),floatEditSig<0,false);
         for(int t=0;t<gs.length;t++){float[] b=SettingsLayout.sheetTab(t+1);boolean open=t==tab;   // a group tab: open = its readings are shown
             box(c,b[0],b[1],b[2],b[3],open?0xff1c303b:0xff101315);if(open)box(c,b[0],b[1],b[0]+3,b[3],BLUE);
-            boolean mine=floatEditSig>=0&&Tiles.groupOf(floatEditSig)==gs[t];
+            boolean mine=floatEditSig>=0&&FloatPanel.groupOf(floatEditSig)==gs[t];
             fitted(c,UiText.t(Tiles.GROUPS[gs[t]])+(mine?" ●":""),b[0]+10,b[1]+20,13,b[2]-b[0]-14,open?WHITE:MUTED);}
         int[] vs=gs.length==0?new int[0]:FloatPanel.group(gs[tab],profile);
         for(int i=0;i<Math.min(vs.length,SettingsLayout.S_MAX_VALUES);i++)chip(c,SettingsLayout.sheetValue(i),UiText.t(FloatPanel.name(vs[i])),floatValue(vs[i])+(FloatPanel.peaks(vs[i])?"  ▲":""),vs[i]==floatEditSig,false);

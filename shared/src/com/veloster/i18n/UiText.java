@@ -793,6 +793,7 @@ public final class UiText {
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
+        EN.put("타이어 온도","Tire temp");
         EN.put("타코","Tacho");
         EN.put("태백 스피드웨이","Taebaek Speedway");
         EN.put("택시","Taxi");

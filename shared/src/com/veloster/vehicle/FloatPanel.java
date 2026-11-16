@@ -104,18 +104,19 @@ public final class FloatPanel {
     /** Records the cells without drawing (the dashboard's own frame, while the window is down), so a peak reached there
      *  counts and the line graph has no hole. */
     public static void track(int n,Telemetry.Sample[] q,VehicleProfile prof,long now){
-        for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];record(i,sig,m!=null&&m.valid?m.value:Float.NaN,now);}
+        for(int i=0;i<n;i++){int sig=signal(i,prof);record(i,sig,value(q,sig),now);}
     }
     private static int lastLook;
     /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
      *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
     public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         int h=17;h=h*31+skinNow();h=h*31+alpha;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
-        for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
-            h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
+        for(int i=0;i<n;i++){int sig=signal(i,prof);float v=value(q,sig),f=Tiles.fraction(fmt(sig),v);record(i,sig,v,now);
+            h=h*31+sig;h=h*31+Tiles.text(fmt(sig),v).hashCode();h=h*31+Tiles.level(fmt(sig),v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
-            float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+Tiles.text(sig,pk).hashCode();}
+            float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+Tiles.text(fmt(sig),pk).hashCode();
+            if(quad(sig)){quadTexts(q,sig);for(int w=0;w<4;w++)h=h*31+QV[w].hashCode()+QL[w];}}
         int s=shape==OFF?lastShape:shape;
         if(s==PILL||s==GEARBOX||s==SHIFT){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?Tiles.text(8,gm.value).hashCode():0);}
@@ -145,16 +146,39 @@ public final class FloatPanel {
     /** The signal cell k shows: its choice, or the automatic one when it has none or this car lacks it (a DPF value on a
      *  petrol, the DCT clutches on a 6MT). */
     public static int signal(int k,VehicleProfile p){return resolve(cells[k],k,p);}
+    // ---- 타이어 4개: one cell with all four wheels (pressure or temperature) -------------------------------------------
+    public static final int QUAD_P=2000,QUAD_T=2001;
+    public static boolean quad(int s){return s==QUAD_P||s==QUAD_T;}
+    private static String unit0(int s){String u=Telemetry.UNITS[fmt(s)];return u==null?"":u;}
+    /** Wheel w (0 FL, 1 FR, 2 RL, 3 RR) of a 4-wheel cell. */
+    public static int quadSig(int s,int w){return (s==QUAD_P?Telemetry.TPMS_FL:Telemetry.TIRE_TEMP_FL)+w;}
+    /** The signal a cell formats and scales with: a wheel for the 4-wheel cells. */
+    static int fmt(int s){return quad(s)?quadSig(s,0):s;}
+    public static boolean available(int s,VehicleProfile p){return quad(s)?Tiles.available(quadSig(s,0),p):Tiles.available(s,p);}
+    public static int groupOf(int s){return Tiles.groupOf(fmt(s));}
+    /** A cell's value: the reading, or for 4 wheels the lowest pressure / the highest temperature. */
+    static float value(Telemetry.Sample[] q,int sig){
+        if(!quad(sig)){if(sig<0||sig>=q.length)return Float.NaN;Telemetry.Sample m=q[sig];return m!=null&&m.valid?m.value:Float.NaN;}
+        float r=Float.NaN;for(int w=0;w<4;w++){Telemetry.Sample m=q[quadSig(sig,w)];if(m==null||!m.valid)continue;float v=m.value;r=Float.isNaN(r)?v:sig==QUAD_P?Math.min(r,v):Math.max(r,v);}
+        return r;}
+    static final String[] QV=new String[4];static final int[] QL=new int[4];
+    /** The four wheels' texts and levels into QV / QL. */
+    static void quadTexts(Telemetry.Sample[] q,int sig){for(int w=0;w<4;w++){int s=quadSig(sig,w);Telemetry.Sample m=q[s];float v=m!=null&&m.valid?m.value:Float.NaN;QV[w]=Tiles.text(s,v);QL[w]=Tiles.level(s,v);}}
+    /** The four wheels on one line (FL FR RL RR), for small places. */
+    public static String inline(Telemetry.Sample[] q,int sig){quadTexts(q,sig);return QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];}
     public static int resolve(int c,int k,VehicleProfile p){boolean diesel=p!=null&&p.fuel==VehicleProfile.Fuel.DIESEL;
-        return c>=0&&(p==null||Tiles.available(c,p))?c:(diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
+        return c>=0&&(p==null||available(c,p))?c:(diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
     /** The reading groups a cell can choose from on this car (Tiles.GROUPS indices, single readings only). */
     public static int[] groups(VehicleProfile p){return Tiles.groups(p,false);}
-    public static int[] group(int g,VehicleProfile p){return Tiles.group(g,p,false);}
+    public static int[] group(int g,VehicleProfile p){int[] base=Tiles.group(g,p,false);
+        if(g!=Tiles.groupOf(Telemetry.TPMS_FL))return base;int n=0;int[] o=new int[base.length+2];   // the tyre group starts with the 4-wheel cells
+        for(int s:new int[]{QUAD_P,QUAD_T})if(p==null||available(s,p))o[n++]=s;for(int s:base)o[n++]=s;
+        int[] r=new int[n];System.arraycopy(o,0,r,0,n);return r;}
     /** The next choice for a cell: automatic, then CHOICES in order, then automatic again. */
     public static int next(int current){if(current<0)return CHOICES[0];for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==current)return i+1<CHOICES.length?CHOICES[i+1]:-1;return -1;}
     /** The name as the window shows it (translated). */
     private static String label(int sig){return com.veloster.i18n.UiText.t(name(sig));}
-    public static String name(int sig){for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
+    public static String name(int sig){if(sig==QUAD_P)return "타이어 공기압";if(sig==QUAD_T)return "타이어 온도";if(sig<0||sig>=Telemetry.LABELS.length)return "—";for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
 
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
     private static final int WARM=0xffffaa3c,HOT=0xffff4b3c;
@@ -190,9 +214,10 @@ public final class FloatPanel {
     /** A cell's texts and scale positions for a skin or a layout. */
     private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
         d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);
-        d.val=Tiles.text(sig,v);String u=Telemetry.UNITS[sig];d.unit=u==null?"":u;d.f=Tiles.fraction(sig,v);d.lv=Tiles.level(sig,v);
-        d.zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0;d.pk=Float.isNaN(pk)?null:Tiles.text(sig,pk);d.pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
-        d.first=first;d.bar=g!=NUM;}
+        d.val=Tiles.text(fmt(sig),v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=Tiles.fraction(fmt(sig),v);d.lv=Tiles.level(fmt(sig),v);
+        d.zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(fmt(sig),0))):0;d.pk=Float.isNaN(pk)?null:Tiles.text(fmt(sig),pk);d.pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(fmt(sig),pk);
+        d.first=first;d.bar=g!=NUM;d.quad=null;
+        if(quad(sig)){quadTexts(LAST_Q,sig);System.arraycopy(QV,0,d.q4,0,4);System.arraycopy(QL,0,d.l4,0,4);d.quad=d.q4;d.val=QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];d.f=Float.NaN;d.lv=0;}}
     /** Draws the window (shape, n cells, size) at 0,0 from the samples (index = signal). */
     public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
@@ -220,23 +245,24 @@ public final class FloatPanel {
         still=true;try{draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);}finally{still=false;}
     }
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
+    private static Telemetry.Sample[] LAST_Q;
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
-        colours();
+        colours();LAST_Q=q;
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
         if(round(shape)){   // no window body: each reading is its own disc
-            for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
+            for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);
                 gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig));}
             return;}
         int sk=skinNow();
         if(layout(shape)){   // a layout: its own inside, the skin's colours
             int u=FloatLayouts.used(shape,n);
-            for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
+            for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
             Telemetry.Sample rm=q[0],gm=q[8];float rpm=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
             FloatLayouts.draw(c,shape,n,k,sk,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8,LCELLS,rpm,gear);
             return;}
         if(sk!=FloatSkin.PLAIN){   // a skin: its own body and cells
             FloatSkin.body(c,sk,w,h,k,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8);
-            for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
+            for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);
                 fillCell(FloatSkin.CELL,i,sig,v,gs[j],j==0&&n>1);
                 FloatSkin.cell(c,sk,(j%cols)*cw,(j/cols)*ch,cw,ch,k);}
             return;}
@@ -244,12 +270,13 @@ public final class FloatPanel {
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);
         p.setColor(DIV);for(int i=1;i<cols;i++)c.drawLine(i*cw,8*k,i*cw,h-8*k,p);for(int i=1;i<rows;i++)c.drawLine(8*k,i*ch,w-8*k,i*ch,p);
         p.setStyle(Paint.Style.FILL);
-        for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float x=(j%cols)*cw,y=(j/cols)*ch;Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;
-            int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
+        for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float x=(j%cols)*cw,y=(j/cols)*ch;float v=value(q,sig);
+            int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
             text(c,label(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-            String unit=Telemetry.UNITS[sig],val=Tiles.text(sig,v);float f=Tiles.fraction(sig,v);
-            float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
-            if(!Float.isNaN(pk)&&g!=LINE){String ps="▲ "+Tiles.text(sig,pk);   // the peak, small, top right (left out when the name leaves no room)
+            String unit=Telemetry.UNITS[fmt(sig)],val=Tiles.text(fmt(sig),v);float f=Tiles.fraction(fmt(sig),v);
+            float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(fmt(sig),pk);
+            if(quad(sig)){quadTexts(q,sig);text(c,unit0(sig),x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);quad(c,x,y,cw,ch,k,TXT,DIV,Typeface.DEFAULT_BOLD);continue;}   // the unit where the peak would be
+            if(!Float.isNaN(pk)&&g!=LINE){String ps="▲ "+Tiles.text(fmt(sig),pk);   // the peak, small, top right (left out when the name leaves no room)
                 if(width(label(sig),12*k,Typeface.DEFAULT_BOLD)+width(ps,10*k,Typeface.DEFAULT)+20*k<=cw)text(c,ps,x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);}
             if(Float.isNaN(f)||g==NUM||g==LINE&&!drawn(i,sig)){   // nothing to graph (no value yet, or the line has no history): the value alone, large, in the middle
                 float vw=width(val,30*k,Typeface.DEFAULT_BOLD),uw=width(unit,12*k,Typeface.DEFAULT),x0=x+(cw-(vw+3*k+uw))/2;
@@ -274,7 +301,7 @@ public final class FloatPanel {
                 continue;}
             float bt=y+ch-9*k,bb=bt+4*k;p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);
             f=Math.max(0,Math.min(1,f));
-            float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0,a=bl+(br-bl)*Math.min(zero,f),b=bl+(br-bl)*Math.max(zero,f);
+            float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(fmt(sig),0))):0,a=bl+(br-bl)*Math.min(zero,f),b=bl+(br-bl)*Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);r.set(a,bt,Math.max(b,a+2),bb);c.drawRoundRect(r,2*k,2*k,p);
             if(zero>0){p.setColor(0x99ffffff);float z=bl+(br-bl)*zero;c.drawRect(z-.5f,bt-2*k,z+.5f,bb+2*k,p);}
             if(!Float.isNaN(pf)){p.setColor(0xffffffff);float z=bl+(br-bl)*Math.max(0,Math.min(1,pf));c.drawRect(z-k,bt-2*k,z+k,bb+2*k,p);}   // the peak, a white tick
@@ -284,19 +311,23 @@ public final class FloatPanel {
      *  boost below zero fills the other way), the value in the middle, its unit under it and its name in the gap. */
     private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v,float pk){
         float cx=x+d/2,cy=y+d/2,rad=d/2-2*k,sw=7*k,ar=rad-sw/2-4*k;
-        int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT;float f=Tiles.fraction(sig,v);
+        if(quad(sig)){p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);p.setStyle(Paint.Style.FILL);
+            quadTexts(LAST_Q,sig);float s2=Math.min(15*k,d*.14f);
+            for(int w=0;w<4;w++)text(c,QV[w],cx+(w%2==0?-1:1)*d*.2f,cy+(w<2?-d*.06f:d*.16f),s2,QL[w]==2?HOT:QL[w]==1?WARM:TXT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+            p.setColor(DIV);c.drawRect(cx-.5f,cy-d*.2f,cx+.5f,cy+d*.2f,p);text(c,label(sig),cx,cy+ar*.84f,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);return;}
+        int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT;float f=Tiles.fraction(fmt(sig),v);
         p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);
         r.set(cx-ar,cy-ar,cx+ar,cy+ar);p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);c.drawArc(r,135,270,false,p);
-        if(!Float.isNaN(f)){f=Math.max(0,Math.min(1,f));float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0,a=Math.min(zero,f),b=Math.max(zero,f);
+        if(!Float.isNaN(f)){f=Math.max(0,Math.min(1,f));float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(fmt(sig),0))):0,a=Math.min(zero,f),b=Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawArc(r,135+270*a,Math.max(1,270*(b-a)),false,p);}
         p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
-        float pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
+        float pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(fmt(sig),pk);
         if(!Float.isNaN(pf)){double a=Math.toRadians(135+270*Math.max(0,Math.min(1,pf)));float o=ar+sw/2+1*k,in=ar-sw/2-1*k;   // the peak: a white tick across the ring
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2*k);p.setColor(0xffffffff);
             c.drawLine(cx+(float)Math.cos(a)*in,cy+(float)Math.sin(a)*in,cx+(float)Math.cos(a)*o,cy+(float)Math.sin(a)*o,p);p.setStyle(Paint.Style.FILL);
-            text(c,"▲ "+Tiles.text(sig,pk),cx,cy-ar*.42f,9*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);}
-        String val=Tiles.text(sig,v),unit=Telemetry.UNITS[sig];float size=24*k,room=ar*1.5f;
+            text(c,"▲ "+Tiles.text(fmt(sig),pk),cx,cy-ar*.42f,9*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);}
+        String val=Tiles.text(fmt(sig),v),unit=Telemetry.UNITS[fmt(sig)];float size=24*k,room=ar*1.5f;
         p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);float vw=p.measureText(val);if(vw>room)size*=room/vw;
         text(c,val,cx,cy+size*.36f,size,Float.isNaN(v)?MUT:col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
         if(unit!=null&&!unit.isEmpty())text(c,unit,cx,cy+size*.36f+13*k,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);
@@ -304,22 +335,29 @@ public final class FloatPanel {
     }
     /** Cell k's line graph has at least two samples with a place on the scale. */
     private static boolean drawn(int k,int sig){int n=histN[k],ok=0;if(histSig[k]!=sig)return false;
-        for(int j=0;j<n&&ok<2;j++)if(!Float.isNaN(Tiles.fraction(sig,hist[k][(histHead[k]-n+j+HIST*2)%HIST])))ok++;return ok>=2;}
+        for(int j=0;j<n&&ok<2;j++)if(!Float.isNaN(Tiles.fraction(fmt(sig),hist[k][(histHead[k]-n+j+HIST*2)%HIST])))ok++;return ok>=2;}
     private static final android.graphics.Path path=new android.graphics.Path();
     /** Cell k's last 30 s in the box l,t-r,b: a filled area under a line, scaled to the signal's bar range, the latest value a dot at the right. */
     private static void line(Canvas c,int k,int sig,float l,float t,float r2,float b,float s,int lv){
         int n=histN[k];if(n<2)return;
         float px=(r2-l)/(HIST-1);boolean open=false;float lastX=0,lastY=0,firstX=0;path.reset();
-        for(int j=0;j<n;j++){float v=hist[k][(histHead[k]-n+j+HIST*2)%HIST],f=Tiles.fraction(sig,v);
+        for(int j=0;j<n;j++){float v=hist[k][(histHead[k]-n+j+HIST*2)%HIST],f=Tiles.fraction(fmt(sig),v);
             if(Float.isNaN(f))continue;f=Math.max(0,Math.min(1,f));
             float xx=r2-(n-1-j)*px,yy=b-f*(b-t);if(!open){path.moveTo(xx,b);path.lineTo(xx,yy);firstX=xx;open=true;}else path.lineTo(xx,yy);lastX=xx;lastY=yy;}
         if(!open)return;
-        path.lineTo(lastX,b);path.close();p.setStyle(Paint.Style.FILL);p.setColor(lv==2?0x55ff4b3c:lv==1?0x55ffaa3c:0x445ac8fa);c.drawPath(path,p);
+        path.lineTo(lastX,b);path.close();p.setStyle(Paint.Style.FILL);p.setColor(lv==2?0x55ff4b3c:lv==1?0x55ffaa3c:ACC&0xffffff|0x44000000);c.drawPath(path,p);
         path.reset();open=false;
-        for(int j=0;j<n;j++){float v=hist[k][(histHead[k]-n+j+HIST*2)%HIST],f=Tiles.fraction(sig,v);if(Float.isNaN(f))continue;f=Math.max(0,Math.min(1,f));
+        for(int j=0;j<n;j++){float v=hist[k][(histHead[k]-n+j+HIST*2)%HIST],f=Tiles.fraction(fmt(sig),v);if(Float.isNaN(f))continue;f=Math.max(0,Math.min(1,f));
             float xx=r2-(n-1-j)*px,yy=b-f*(b-t);if(!open){path.moveTo(xx,yy);open=true;}else path.lineTo(xx,yy);}
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.6f*s);p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
         p.setColor(0xffffffff);c.drawCircle(lastX,lastY,2.2f*s,p);
+    }
+    /** The four wheels (QV / QL) in the cell under its name: FL FR on top, RL RR below, a small car outline between. */
+    static void quad(Canvas c,float x,float y,float cw,float ch,float k,int ink,int line,Typeface face){
+        float cx=x+cw/2,t=y+24*k,b=y+ch-6*k;p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1,k));p.setColor(line);r.set(cx-6*k,t,cx+6*k,b);c.drawRoundRect(r,3*k,3*k,p);p.setStyle(Paint.Style.FILL);
+        float s=Math.min(16*k,(ch-28*k)/2.1f);
+        for(int w=0;w<4;w++){int col=QL[w]==2?HOT:QL[w]==1?WARM:ink;float yy=w<2?t+s*.95f:b-2*k;
+            if(w%2==0)text(c,QV[w],cx-10*k,yy,s,col,Paint.Align.RIGHT,face);else text(c,QV[w],cx+10*k,yy,s,col,Paint.Align.LEFT,face);}
     }
     private static void text(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){
         p.setTypeface(face);p.setTextSize(size);p.setTextAlign(a);p.setColor(color);c.drawText(s,x,y,p);}
