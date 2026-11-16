@@ -60,7 +60,7 @@ public final class FloatService extends Service implements Runnable {
     private SharedPreferences prefs(){return getSharedPreferences("pit_vehicle_ui",0);}
 
     public void run(){
-        int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size;
+        int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0);   // the round gauge has square cells: its own window
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
         VehicleDash.chimeTick();
@@ -71,7 +71,7 @@ public final class FloatService extends Service implements Runnable {
         handler.postDelayed(this,FRAME_MS);
     }
     private void add(final int shape,final int n,final int size){
-        final int w=FloatPanel.width(shape,n,size),h=FloatPanel.height(shape,n,size);final String at=shape+"_"+n+"_"+size;
+        final int w=FloatPanel.width(shape,n,size),h=FloatPanel.height(shape,n,size);final boolean rnd=FloatPanel.round();final String at=shape+"_"+n+"_"+size+(rnd?"_r":"");
         layout=new WindowManager.LayoutParams(w,h,WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
             |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
@@ -98,7 +98,7 @@ public final class FloatService extends Service implements Runnable {
                 return false;
             }
         });
-        try{windows.addView(v,layout);panel=v;shown=shape*100+n*10+size;}
+        try{windows.addView(v,layout);panel=v;shown=shape*100+n*10+size+(rnd?1000:0);}
         catch(RuntimeException e){android.util.Log.w("VehicleDash","Floating window refused",e);panel=null;shown=-1;stopSelf();}
     }
     private void remove(){

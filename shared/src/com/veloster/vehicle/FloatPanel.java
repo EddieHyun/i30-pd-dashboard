@@ -13,8 +13,9 @@ import android.graphics.Typeface;
  * choices. Host-testable.
  */
 public final class FloatPanel {
+    /** ROUND: the old 원형 게이지 shape, now the ROUND_SKIN skin; only read from saved settings (loadFloat turns it into CARD + that skin). */
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
-    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로","원형 게이지"};
+    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로"};
     public static final int[] COUNTS={1,2,4};
     public static final String[] SIZE_NAMES={"작게","보통","크게","아주 크게"};
     public static final float[] SIZES={.85f,1,1.5f,2};
@@ -56,6 +57,9 @@ public final class FloatPanel {
     public static final String[] SKIN_NAMES=FloatSkin.NAMES;
     public static volatile int skin=AUTO;
     public static int skinCount(){return FloatSkin.NAMES.length;}
+    public static final int ROUND_SKIN=FloatSkin.ROUND_GAUGE;
+    /** The round gauge skin is drawn now: square cells, a disc each, no window body. */
+    public static boolean round(){return skinNow()==FloatSkin.ROUND_GAUGE;}
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
@@ -104,10 +108,10 @@ public final class FloatPanel {
 
     private FloatPanel(){}
     /** Columns of a shape with n cells: a card is 2 wide from 2 cells, the strip one row, the side one column. */
-    public static int cols(int shape,int n){return shape==STRIP?n:shape==SIDE?1:Math.min(2,n);}   // ROUND: like the card
+    public static int cols(int shape,int n){return shape==STRIP?n:shape==SIDE?1:Math.min(2,n);}
     public static int rows(int shape,int n){return (n+cols(shape,n)-1)/cols(shape,n);}
-    public static int cellW(int shape,int size){return Math.round((shape==ROUND?GAUGE:CELL_W)*SIZES[clampSize(size)]);}
-    public static int cellH(int shape,int size){return Math.round((shape==ROUND?GAUGE:CELL_H)*SIZES[clampSize(size)]);}
+    public static int cellW(int shape,int size){return Math.round((round()?GAUGE:CELL_W)*SIZES[clampSize(size)]);}
+    public static int cellH(int shape,int size){return Math.round((round()?GAUGE:CELL_H)*SIZES[clampSize(size)]);}
     public static int width(int shape,int n,int size){return shape<=OFF?0:cols(shape,n)*cellW(shape,size);}
     public static int height(int shape,int n,int size){return shape<=OFF?0:rows(shape,n)*cellH(shape,size);}
     private static int clampSize(int s){return Math.max(0,Math.min(SIZES.length-1,s));}
@@ -165,13 +169,13 @@ public final class FloatPanel {
     }
     /** One cell showing sig with graph g at 0,0 (the settings' value chooser); its line graph is cell k's memory. */
     public static void drawCell(Canvas c,int shape,int size,Telemetry.Sample[] q,int sig,int g,int k,long now){
-        draw(c,shape==ROUND?ROUND:CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);
+        draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);
     }
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
         colours();
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
-        if(shape==ROUND){   // no window body: each reading is its own disc
+        if(round()){   // no window body: each reading is its own disc
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
                 gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v,peak(i,sig));}
             return;}
