@@ -546,6 +546,8 @@ public final class UiText {
         EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
         EN.put("원형 RPM·다운시프트","Round rpm · downshift");
+        EN.put("원형 게이지","Round gauges");
+        EN.put("원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)","A round gauge fills its ring with the reading (no graph to choose)");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유리 톡","Glass tap");
         EN.put("유리 톡톡","Glass tap");

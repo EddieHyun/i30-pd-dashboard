@@ -821,5 +821,7 @@
   "버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로": "A button changes when you lift your finger · drag away to cancel",
   "%d번 칸에 띄울 값": "Cell %d shows",
   "작은 글씨는 지금 값 · 이 차에 없는 값은 뺌": "Small text is the reading now · readings this car lacks are left out",
-  "숫자만": "Number only"
+  "숫자만": "Number only",
+  "원형 게이지": "Round gauges",
+  "원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)": "A round gauge fills its ring with the reading (no graph to choose)"
 }

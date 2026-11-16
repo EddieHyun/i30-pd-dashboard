@@ -309,6 +309,7 @@ public final class VehicleDash extends View implements Runnable {
         VehicleProfile prof=DATA.profile();
         if(floatEdit>=0){int[] ch=FloatPanel.choices(prof);int g=FloatPanel.GRAPH_NAMES.length;
             int a=SettingsLayout.sheetHit(x,y,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,ch.length,g))return;
+            if(a>=SettingsLayout.S_GRAPH&&a<SettingsLayout.S_CANCEL&&(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND)a=SettingsLayout.S_IN;   // no graph on a round gauge
             if(a>=SettingsLayout.S_GRAPH)floatEditGraph=a<SettingsLayout.S_CANCEL?a-SettingsLayout.S_GRAPH:floatEditGraph;
             if(a>=SettingsLayout.S_VAL&&a<SettingsLayout.S_GRAPH)floatEditSig=ch[a-SettingsLayout.S_VAL];
             if(a==SettingsLayout.S_CANCEL)floatEdit=-1;
@@ -316,7 +317,7 @@ public final class VehicleDash extends View implements Runnable {
                 SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();}
             return;}
         boolean off=FloatPanel.shape==FloatPanel.OFF;int shape=off?FloatPanel.lastShape:FloatPanel.shape;
-        int cols=FloatPanel.cols(shape,FloatPanel.count),rows=FloatPanel.rows(shape,FloatPanel.count);float cw=FloatPanel.cellW(FloatPanel.size),chh=FloatPanel.cellH(FloatPanel.size);
+        int cols=FloatPanel.cols(shape,FloatPanel.count),rows=FloatPanel.rows(shape,FloatPanel.count);float cw=FloatPanel.cellW(shape,FloatPanel.size),chh=FloatPanel.cellH(shape,FloatPanel.size);
         int t=SettingsLayout.floatHit(x,y,cols,rows,cw,chh);
         if(t<0||t!=SettingsLayout.floatHit(downX,downY,cols,rows,cw,chh))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
@@ -335,9 +336,9 @@ public final class VehicleDash extends View implements Runnable {
     public static void loadFloat(android.content.SharedPreferences p){
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
-            FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.SIDE,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
+            FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.ROUND,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
-            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SIDE?last:FloatPanel.CARD;
+            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.ROUND?last:FloatPanel.CARD;
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0);
             FloatPanel.corner=cn>=0&&cn<FloatPanel.CORNER_NAMES.length?cn:0;FloatPanel.color=co>=0&&co<FloatPanel.COLOR_NAMES.length?co:0;
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too

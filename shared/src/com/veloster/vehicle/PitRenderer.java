@@ -367,7 +367,7 @@ public final class PitRenderer {
     }
     private void drawFloatPane(Canvas c){
         boolean off=FloatPanel.shape==FloatPanel.OFF;int shape=off?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count,size=FloatPanel.size;
-        int cols=FloatPanel.cols(shape,n),rows=FloatPanel.rows(shape,n);float cw=FloatPanel.cellW(size),ch=FloatPanel.cellH(size),w=cols*cw,h=rows*ch;
+        int cols=FloatPanel.cols(shape,n),rows=FloatPanel.rows(shape,n);float cw=FloatPanel.cellW(shape,size),ch=FloatPanel.cellH(shape,size),w=cols*cw,h=rows*ch;
         box(c,SettingsLayout.PANE_L-6,SettingsLayout.TOP,800,480,0xff040506);   // opaque: the dashboard behind must not show between the buttons
         // the preview well: the window as it will look (real size when it fits), the chosen cell outlined
         box(c,SettingsLayout.FW_L,SettingsLayout.FW_T,SettingsLayout.FW_R,SettingsLayout.FW_B,0xff0b0f12);
@@ -377,7 +377,8 @@ public final class PitRenderer {
         if(samples!=null){c.save();c.translate(px,py);c.scale(k,k);FloatPanel.draw(c,shape,n,size,samples,profile,frameTime);c.restore();}
         int sel=Math.min(floatSel,n-1);float sx=px+(sel%cols)*cw*k,sy=py+(sel/cols)*ch*k;
         if(off){box(c,px,py,px+w*k,py+h*k,0xb0040506);centered(c,UiText.t("꺼져 있음"),px+w*k/2,py+h*k/2+6,16,MUTED,true);}
-        else{paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawRect(sx+2,sy+2,sx+cw*k-2,sy+ch*k-2,paint);paint.setStyle(Paint.Style.FILL);}
+        else{paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));
+            if(shape==FloatPanel.ROUND)c.drawCircle(sx+cw*k/2,sy+ch*k/2,cw*k/2,paint);else c.drawRect(sx+2,sy+2,sx+cw*k-2,sy+ch*k-2,paint);paint.setStyle(Paint.Style.FILL);}
         text(c,UiText.t("미리보기 · 칸을 누르면 값 고르기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
         // right column
         chip(c,SettingsLayout.F_ON_BOX,UiText.t("플로팅 창")+"  "+UiText.t(off?"끔":"켬"),null,!off,false);
@@ -385,7 +386,7 @@ public final class PitRenderer {
         float[] cb=SettingsLayout.F_CELL_BOX;panel(c,cb[0],cb[1],cb[2]-cb[0],cb[3]-cb[1],0xff101315,LINE);
         int sig=FloatPanel.signal(sel,profile);
         text(c,String.format(Locale.US,UiText.t("선택한 칸 · %d번"),sel+1),cb[0]+12,cb[1]+18,11,MUTED,false);
-        fitted(c,UiText.t(FloatPanel.name(sig))+" · "+UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[sel]]),cb[0]+12,cb[1]+42,16,cb[2]-cb[0]-24,WHITE);
+        fitted(c,UiText.t(FloatPanel.name(sig))+(shape==FloatPanel.ROUND?"":" · "+UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[sel]])),cb[0]+12,cb[1]+42,16,cb[2]-cb[0]-24,WHITE);
         chip(c,SettingsLayout.F_EDIT_BOX,UiText.t("값·그래프 바꾸기")+"  ›",null,false,false);
         // button rows
         for(int r=0;r<SettingsLayout.F_ROW_LABELS.length;r++)text(c,UiText.t(SettingsLayout.F_ROW_LABELS[r]),SettingsLayout.PANE_L+6,SettingsLayout.F_ROW_Y[r]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
@@ -394,9 +395,9 @@ public final class PitRenderer {
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
                 case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;
-                case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i;break;
+                case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i&&shape!=FloatPanel.ROUND;break;
                 default:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i;}
-            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,false);}
+            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,g==SettingsLayout.F_CORNER&&shape==FloatPanel.ROUND);}   // a round gauge has no corners
         text(c,UiText.t("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
         if(floatEdit>=0)drawFloatSheet(c);
     }
@@ -406,14 +407,16 @@ public final class PitRenderer {
         panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
         text(c,String.format(Locale.US,UiText.t("%d번 칸에 띄울 값"),floatEdit+1),SettingsLayout.S_GX,SettingsLayout.SH_T+32,18,WHITE,true);
         text(c,UiText.t("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌"),SettingsLayout.S_GX,SettingsLayout.SH_T+52,11,MUTED,false);
-        if(samples!=null){c.save();c.translate(SettingsLayout.S_CELL_X,SettingsLayout.S_CELL_Y);
-            FloatPanel.drawCell(c,1,samples,FloatPanel.resolve(floatEditSig,floatEdit,profile),floatEditGraph,floatEdit,frameTime);c.restore();}
+        boolean round=(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape)==FloatPanel.ROUND;
+        if(samples!=null){c.save();c.translate(SettingsLayout.S_CELL_X+(round?62-34:0),SettingsLayout.S_CELL_Y-(round?6:0));if(round)c.scale(.63f,.63f);
+            FloatPanel.drawCell(c,round?FloatPanel.ROUND:FloatPanel.CARD,1,samples,FloatPanel.resolve(floatEditSig,floatEdit,profile),floatEditGraph,floatEdit,frameTime);c.restore();}
         int[] ch=FloatPanel.choices(profile);
         for(int i=0;i<ch.length;i++){int sg=ch[i];
             String name=sg<0?UiText.t("자동"):UiText.t(FloatPanel.name(sg)),sub=sg<0?UiText.t(FloatPanel.name(FloatPanel.resolve(-1,floatEdit,profile))):floatValue(sg);
             chip(c,SettingsLayout.sheetValue(i),name,sub,sg==floatEditSig,false);}
         text(c,UiText.t("그래프"),SettingsLayout.S_GX,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,14,MUTED,true);
-        for(int g=0;g<FloatPanel.GRAPH_NAMES.length;g++){float[] b=SettingsLayout.sheetGraph(g);boolean on=g==floatEditGraph;
+        if(round){text(c,UiText.t("원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)"),SettingsLayout.S_GRAPH_X,SettingsLayout.S_GRAPH_Y+SettingsLayout.S_GRAPH_H/2+5,13,MUTED,false);}
+        else for(int g=0;g<FloatPanel.GRAPH_NAMES.length;g++){float[] b=SettingsLayout.sheetGraph(g);boolean on=g==floatEditGraph;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff233b46:0xff111415,on?BLUE:LINE);
             if(on)box(c,b[0]+9,b[3]-3,b[2]-9,b[3]-1,BLUE);
             float il=b[0]+12,ir=b[0]+44,cy=(b[1]+b[3])/2;String nm=UiText.t(FloatPanel.GRAPH_NAMES[g]);int ink=on?WHITE:0xffc8d3d8;

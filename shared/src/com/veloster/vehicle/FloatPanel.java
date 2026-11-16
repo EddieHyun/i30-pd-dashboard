@@ -13,13 +13,15 @@ import android.graphics.Typeface;
  * choices. Host-testable.
  */
 public final class FloatPanel {
-    public static final int OFF=0,CARD=1,STRIP=2,SIDE=3;
-    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로"};
+    public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
+    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로","원형 게이지"};
     public static final int[] COUNTS={1,2,4};
     public static final String[] SIZE_NAMES={"작게","보통","크게","아주 크게"};
     public static final float[] SIZES={.85f,1,1.5f,2};
     /** A cell at size 보통, px. */
     static final int CELL_W=124,CELL_H=64;
+    /** A round gauge (원형 게이지) at size 보통: a disc this wide and high, laid out like the card (2 across). */
+    static final int GAUGE=108;
     /** What a cell can show, in the order a tap on its settings row steps through, with the short name it shows. */
     public static final int[] CHOICES={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,9,7,0,Telemetry.AMBIENT,Telemetry.FUEL_LEVEL,
         Telemetry.ENGINE_LOAD,10,Telemetry.CLUTCH_ODD,Telemetry.CLUTCH_EVEN,Telemetry.DPF_SOOT,Telemetry.DPF_TEMP};
@@ -60,19 +62,19 @@ public final class FloatPanel {
         int h=17;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
         for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
             h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
-            h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(size)));
+            h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];}
         boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
     private FloatPanel(){}
     /** Columns of a shape with n cells: a card is 2 wide from 2 cells, the strip one row, the side one column. */
-    public static int cols(int shape,int n){return shape==STRIP?n:shape==SIDE?1:Math.min(2,n);}
+    public static int cols(int shape,int n){return shape==STRIP?n:shape==SIDE?1:Math.min(2,n);}   // ROUND: like the card
     public static int rows(int shape,int n){return (n+cols(shape,n)-1)/cols(shape,n);}
-    public static int cellW(int size){return Math.round(CELL_W*SIZES[clampSize(size)]);}
-    public static int cellH(int size){return Math.round(CELL_H*SIZES[clampSize(size)]);}
-    public static int width(int shape,int n,int size){return shape<=OFF?0:cols(shape,n)*cellW(size);}
-    public static int height(int shape,int n,int size){return shape<=OFF?0:rows(shape,n)*cellH(size);}
+    public static int cellW(int shape,int size){return Math.round((shape==ROUND?GAUGE:CELL_W)*SIZES[clampSize(size)]);}
+    public static int cellH(int shape,int size){return Math.round((shape==ROUND?GAUGE:CELL_H)*SIZES[clampSize(size)]);}
+    public static int width(int shape,int n,int size){return shape<=OFF?0:cols(shape,n)*cellW(shape,size);}
+    public static int height(int shape,int n,int size){return shape<=OFF?0:rows(shape,n)*cellH(shape,size);}
     private static int clampSize(int s){return Math.max(0,Math.min(SIZES.length-1,s));}
     /** Where the window starts (screen 800 × 480, below the 52 px status bar): the card and the side column top right, the strip bottom middle. */
     public static int defaultX(int shape,int n,int size){return shape==STRIP?(800-width(shape,n,size))/2:800-width(shape,n,size)-8;}
@@ -128,13 +130,17 @@ public final class FloatPanel {
         draw(c,shape,n,size,q,SIG,G,0,true,now);
     }
     /** One cell showing sig with graph g at 0,0 (the settings' value chooser); its line graph is cell k's memory. */
-    public static void drawCell(Canvas c,int size,Telemetry.Sample[] q,int sig,int g,int k,long now){
-        draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);
+    public static void drawCell(Canvas c,int shape,int size,Telemetry.Sample[] q,int sig,int g,int k,long now){
+        draw(c,shape==ROUND?ROUND:CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);
     }
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
         colours();
-        int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(size),ch=cellH(size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
+        int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
+        if(shape==ROUND){   // no window body: each reading is its own disc
+            for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;if(rec)record(i,sig,v,now);
+                gauge(c,(j%cols)*cw,(j/cols)*ch,cw,k,sig,v);}
+            return;}
         outline(c,w,h,k,BG,EDGE);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);
         p.setColor(DIV);for(int i=1;i<cols;i++)c.drawLine(i*cw,8*k,i*cw,h-8*k,p);for(int i=1;i<rows;i++)c.drawLine(8*k,i*ch,w-8*k,i*ch,p);
@@ -166,6 +172,23 @@ public final class FloatPanel {
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);r.set(a,bt,Math.max(b,a+2),bb);c.drawRoundRect(r,2*k,2*k,p);
             if(zero>0){p.setColor(0x99ffffff);float z=bl+(br-bl)*zero;c.drawRect(z-.5f,bt-2*k,z+.5f,bb+2*k,p);}
         }
+    }
+    /** A round gauge in the d x d square at x,y: a dark disc, a 270 degree ring open at the bottom (filled from zero, so
+     *  boost below zero fills the other way), the value in the middle, its unit under it and its name in the gap. */
+    private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v){
+        float cx=x+d/2,cy=y+d/2,rad=d/2-2*k,sw=7*k,ar=rad-sw/2-4*k;
+        int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT;float f=Tiles.fraction(sig,v);
+        p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);
+        r.set(cx-ar,cy-ar,cx+ar,cy+ar);p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);c.drawArc(r,135,270,false,p);
+        if(!Float.isNaN(f)){f=Math.max(0,Math.min(1,f));float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0,a=Math.min(zero,f),b=Math.max(zero,f);
+            p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawArc(r,135+270*a,Math.max(1,270*(b-a)),false,p);}
+        p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
+        String val=Tiles.text(sig,v),unit=Telemetry.UNITS[sig];float size=24*k,room=ar*1.5f;
+        p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);float vw=p.measureText(val);if(vw>room)size*=room/vw;
+        text(c,val,cx,cy+size*.36f,size,Float.isNaN(v)?MUT:col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+        if(unit!=null&&!unit.isEmpty())text(c,unit,cx,cy+size*.36f+13*k,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);
+        text(c,name(sig),cx,cy+ar*.84f,11*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // in the ring's open gap, clear of the disc edge
     }
     /** Cell k's line graph has at least two samples with a place on the scale. */
     private static boolean drawn(int k,int sig){int n=histN[k],ok=0;if(histSig[k]!=sig)return false;

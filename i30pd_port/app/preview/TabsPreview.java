@@ -125,6 +125,13 @@ public final class TabsPreview {
             rec.setSettings(SettingsLayout.FLOAT,"auto",-1,targets);rec.setFloatEdit(-1,0,-1,0);save(out,"9_settings_float_on",rec,model,now,false,false);
             rec.setFloatEdit(1,1,2,FloatPanel.LINE);save(out,"9_settings_float_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0);
             FloatPanel.shape=FloatPanel.STRIP;save(out,"9_settings_float_strip",rec,model,now,false,false);FloatPanel.shape=FloatPanel.CARD;
+            FloatPanel.shape=FloatPanel.ROUND;save(out,"9_settings_float_round",rec,model,now,false,false);
+            rec.setFloatEdit(0,0,-1,0);save(out,"9_settings_float_round_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0);
+            for(int[] cb:new int[][]{{4,1},{2,2},{1,3}}){int n=cb[0],sz=cb[1];   // round gauges over the 개요 page
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(FloatPanel.ROUND,n,sz),FloatPanel.defaultY(FloatPanel.ROUND,n,sz));
+                FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.ROUND,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_round"+n+"_"+sz+".png"));}
+            FloatPanel.shape=FloatPanel.CARD;
             // corners x themes on the window itself
             String keepTheme=Theme.current().id;int keepCorner=FloatPanel.corner;
             for(String th:new String[]{"n","purple","amber","bmw"})for(int cn=0;cn<FloatPanel.CORNER_NAMES.length;cn++){Theme.select(th);FloatPanel.corner=cn;
