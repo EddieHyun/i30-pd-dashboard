@@ -13,7 +13,7 @@ import android.graphics.Typeface;
 final class FloatSkin extends ClusterKit {
     /** ROUND_GAUGE: one 270 degree gauge per reading (FloatPanel draws it; its cells are square). */
     static final int PLAIN=0,RACE=1,F1=2,RETRO=3,VFD=4,HUD=5,PIXEL=6,VU=7,NIGHT=8,ROUND_GAUGE=9;
-    static final String[] NAMES={"기본","레이스","F1","레트로","80년대","HUD","8비트","카세트 VU","야간","원형 게이지"};
+    static final String[] NAMES={"기본","레이스","F1","레트로","80년대","HUD","8비트","카세트","야간","원형 게이지"};
     private static final FloatSkin K=new FloatSkin();
     /** The skin that goes with a dashboard screen (ClusterPicker index), PLAIN for screens without one of their own. */
     static int forScreen(int s){

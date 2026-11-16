@@ -118,15 +118,15 @@ public final class SettingsLayout {
     /** Button rows under the preview: label at PANE_L+6, buttons from F_ROW_X; ROW_H tall, F_GAP apart. */
     public static final float F_ROW_X=PANE_L+70,F_ROW_H=36,F_GAP=8;
     public static final float[] F_ROW_Y={262,306,350,394};
-    public static final String[] F_ROW_LABELS={"모양","칸 수","모서리","색"};
+    public static final String[] F_ROW_LABELS={"디자인","칸 수","모서리","색"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
     public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,SKIN_SHEET=100,F_FORM=5,FORM_SHEET=101;
     /** 모양 at the start of the first row: opens the shape sheet (FloatPanel.FORMS). */
     public static final float[] F_FORM_BOX={248,262,514,298};
     /** 스킨 at the end of the shape row: opens the skin sheet (VehicleDash.floatEdit = SKIN_SHEET). */
     public static final float[] F_SKIN_BOX={522,262,788,298};
-    public static final String[] F_SHAPES={"카드","아래 띠","옆 세로"},F_COUNTS={"1","2","4"},
-        F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마 따라","각진","라운드","다이아 커팅"},F_COLORS={"테마 따라","기본 파랑","흰색"},F_ALPHAS={"진하게","보통","연하게"};
+    public static final String[] F_SHAPES={"카드","가로 띠","세로 띠"},F_COUNTS={"1","2","4"},
+        F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마","직각","둥글게","사선 컷"},F_COLORS={"테마","파랑","흰색"},F_ALPHAS={"진하게","보통","연하게"};
     private static final float[] W_SHAPE={92,92,92},W_COUNT={52,52,52},W_SIZE={62,62,62,88},W_CORNER={100,74,82,112},W_COLOR={100,100,74},W_ALPHA={58,58,58};
     /** 투명도 sits on the colour row, right of the colours (like 크기 beside 칸 수). */
     public static final float F_ALPHA_X=F_ROW_X+100+100+74+2*F_GAP+60;

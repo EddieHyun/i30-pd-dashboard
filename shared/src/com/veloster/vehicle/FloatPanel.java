@@ -17,7 +17,7 @@ public final class FloatPanel {
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
     /** The rectangular layouts with their own inside (FloatLayouts). */
     public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT;
-    public static final String[] SHAPE_NAMES={"끔","카드","아래 띠","옆 세로","카드","짧은 캡슐","주인공 + 목록","단수 중심","사선 분할","반원 계기","변속등 머리"};
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","카드","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등"};
     /** The 모양 sheet's order. */
     public static final int[] FORMS={CARD,STRIP,SIDE,PILL,HERO,GEARBOX,DIAG,DIAL,SHIFT};
     public static boolean layout(int s){return s>=PILL&&s<=SHIFT;}
@@ -48,10 +48,10 @@ public final class FloatPanel {
     public static final String[] GRAPH_NAMES={"막대","선 그래프","칸 막대","숫자만"};
     /** The window's corners: the theme's (N: two cut corners, hex themes: four, BMW / Rose: round), or a fixed one. */
     public static final int CORNER_THEME=0,CORNER_SQUARE=1,CORNER_ROUND=2,CORNER_CUT=3;
-    public static final String[] CORNER_NAMES={"테마 따라","각진","라운드","다이아 커팅"};
+    public static final String[] CORNER_NAMES={"테마","직각","둥글게","사선 컷"};
     /** Colours: the theme's (accent, text, lines), the N blue whatever the theme, or white. Warnings stay amber / red. */
     public static final int COLOR_THEME=0,COLOR_BLUE=1,COLOR_WHITE=2;
-    public static final String[] COLOR_NAMES={"테마 따라","기본 파랑","흰색"};
+    public static final String[] COLOR_NAMES={"테마","파랑","흰색"};
     public static volatile int corner=CORNER_THEME,color=COLOR_THEME;
     /** 투명도: how solid the window's body is over the screen behind (text, bars and lines stay solid). */
     public static final String[] ALPHA_NAMES={"진하게","보통","연하게"};

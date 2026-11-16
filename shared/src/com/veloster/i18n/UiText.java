@@ -27,6 +27,8 @@ public final class UiText {
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
         EN.put("%,d원","%,d won");
+        EN.put("%d번 칸","Cell %d");
+        EN.put("%d번 칸 값","Cell %d value");
         EN.put("%d번 칸에 띄울 값","Cell %d shows");
         EN.put("%s · 서울 요금","%s · Seoul fare");
         EN.put("%s 요금","%s fare");
@@ -121,6 +123,7 @@ public final class UiText {
         EN.put("☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.","The ☆ button setting did not apply. This head unit may not support it.");
         EN.put("☆ 버튼: ","☆ button: ");
         EN.put("☆ 버튼을 원래 기능으로 되돌렸습니다.","☆ button is back to its previous function.");
+        EN.put("가로 띠","Bar");
         EN.put("가속","Accel");
         EN.put("가속 · 스로틀","Pedal/Thr");
         EN.put("가속 페달","Accelerator");
@@ -155,6 +158,7 @@ public final class UiText {
         EN.put("계기판","Dashboard");
         EN.put("계기판 따라","Follow the screen");
         EN.put("계기판 따라 = 지금 계기판 화면의 스킨 (스킨이 없는 화면은 기본)","Follow the screen = the skin of the dashboard screen (Default where it has none)");
+        EN.put("계기판 따라: 지금 계기판 화면과 같은 스킨","Follow the screen: the same skin as the dashboard screen");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");
@@ -175,6 +179,7 @@ public final class UiText {
         EN.put("그대로 표시","shown as usual");
         EN.put("그래프","Graphs");
         EN.put("그래프 ","Graph ");
+        EN.put("그래프는 기본 스킨의 카드·띠에서만 고릅니다","Graphs only with the Default skin on a card or bar");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
         EN.put("그린","Green");
         EN.put("급가속","Hard acceleration");
@@ -214,6 +219,7 @@ public final class UiText {
         EN.put("내 앱","My Apps");
         EN.put("내 앱 / My Apps","My Apps");
         EN.put("내 앱 버튼 숨기기","Hide the My Apps button");
+        EN.put("내 앱 버튼 숨김","Hide My apps button");
         EN.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","Open My Apps; drag to move");
         EN.put("내 앱에 표시할 앱","Apps to show in My Apps");
         EN.put("내비 효과음 · 차에서 무음","Navi effects · silent in car");
@@ -228,6 +234,7 @@ public final class UiText {
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
         EN.put("누르면 바로 바뀝니다 · 칸 값·스킨은 그대로","Applies at once · cells and skin stay");
         EN.put("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로","Applies at once · cells, size and opacity stay");
+        EN.put("누르면 바로 적용","Applies at once");
         EN.put("누르면 배기구 보기","Tap: tailpipe view");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("누르면 페트병 보기","Tap: bottle view");
@@ -259,6 +266,7 @@ public final class UiText {
         EN.put("동전 소리","Coin sound");
         EN.put("두 번 · 길고 짧게","Long then short");
         EN.put("두 음 차임","Two-tone chime");
+        EN.put("둥글게","Round");
         EN.put("뒤 오른쪽 공기압","Rear-right pressure");
         EN.put("뒤 오른쪽 타이어 온도","Rear-right tyre temperature");
         EN.put("뒤 오른쪽 휠","Rear-right wheel");
@@ -268,6 +276,7 @@ public final class UiText {
         EN.put("뒤로","Back");
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
+        EN.put("디자인","Design");
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("디지털 3틱","Digital 3 ticks");
         EN.put("딩","Ding");
@@ -327,6 +336,8 @@ public final class UiText {
         EN.put("반응 시간","Reaction");
         EN.put("배기","Exhaust");
         EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
+        EN.put("배치","Layout");
+        EN.put("배치 고르기","Choose a layout");
         EN.put("배터리","Battery");
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
@@ -346,6 +357,7 @@ public final class UiText {
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속·구동","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
+        EN.put("변속등","Shift lights");
         EN.put("변속등 머리","Shift-light header");
         EN.put("보정 토크","Corrected torque");
         EN.put("보통","Normal");
@@ -388,7 +400,9 @@ public final class UiText {
         EN.put("삐빅 · 낮게","Double beep · low");
         EN.put("삐빅 · 높게","Double beep · high");
         EN.put("삑","Beep");
+        EN.put("사선","Slant");
         EN.put("사선 분할","Slant split");
+        EN.put("사선 컷","Cut");
         EN.put("사용","On");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
@@ -417,6 +431,7 @@ public final class UiText {
         EN.put("설정: ON","Setting: ON");
         EN.put("설정으로 / Back","Back");
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
+        EN.put("세로 띠","Column");
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");
         EN.put("소리 반응 속도","Sound response");
@@ -426,6 +441,7 @@ public final class UiText {
         EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");
         EN.put("속도계가 실제보다 %.1f %% 높게 나옴","The speedometer reads %.1f %% high");
         EN.put("속도계가 실제와 같음","The speedometer reads true");
+        EN.put("손을 떼면 적용 · 끌면 취소","Applies on release · drag off to cancel");
         EN.put("쇼","Show");
         EN.put("쇼 화면","Show screen");
         EN.put("수동(6MT) 전용 화면","For the 6-speed manual only");
@@ -606,6 +622,7 @@ public final class UiText {
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("작게","Small");
         EN.put("작동","Active");
+        EN.put("작은 글씨: 지금 값 · ▲: 최고값 표시 · 이 차에 없는 값은 숨김","Small text: value now · ▲: shows the peak · values this car lacks are hidden");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌","Small text is the reading now · readings this car lacks are left out");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌 · ▲ 최고값은 부스트·RPM·온도 등에만","Small text is the reading now · readings this car lacks are left out · ▲ peak on boost, rpm, temperatures and the like");
         EN.put("잔상 3 s","3 s glow");
@@ -687,6 +704,7 @@ public final class UiText {
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난 랩","Last");
         EN.put("지연 보정","Latency compensation");
+        EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
         EN.put("직전 코너 최저 속도","Last corner's lowest speed");
@@ -746,8 +764,11 @@ public final class UiText {
         EN.put("카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개","Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound");
         EN.put("카키","Khaki");
         EN.put("칸"," cells");
+        EN.put("칸 값 바꾸기","Change value");
         EN.put("칸 막대","Segments");
         EN.put("칸 수","Cells");
+        EN.put("칸을 누르면 값 바꾸기","Tap a cell to change its value");
+        EN.put("캡슐","Pill");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
@@ -757,6 +778,7 @@ public final class UiText {
         EN.put("코퍼","Copper");
         EN.put("크게","Large");
         EN.put("크기","Size");
+        EN.put("큰 값 + 목록","Big + list");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
         EN.put("클러치","Clutch");
@@ -792,6 +814,7 @@ public final class UiText {
         EN.put("트립 평균 ","Trip average ");
         EN.put("틱틱","Double tick");
         EN.put("틸","Teal");
+        EN.put("파랑","Blue");
         EN.put("파이어리 레드","Fiery Red");
         EN.put("팝 빈도","Pop rate");
         EN.put("팬텀 블랙","Phantom Black");
