@@ -392,12 +392,14 @@ public final class PitRenderer {
         // button rows
         for(int r=0;r<SettingsLayout.F_ROW_LABELS.length;r++)text(c,UiText.t(SettingsLayout.F_ROW_LABELS[r]),SettingsLayout.PANE_L+6,SettingsLayout.F_ROW_Y[r]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
         text(c,UiText.t("크기"),SettingsLayout.F_SIZE_X-50,SettingsLayout.F_ROW_Y[1]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
+        fitted(c,UiText.t("투명도"),SettingsLayout.F_ALPHA_X-52,SettingsLayout.F_ROW_Y[3]+SettingsLayout.F_ROW_H/2+5,14,46,MUTED);
         for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE)continue;int g=t/10*10,i=t-g;String label;boolean on;
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
                 case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;
                 case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i&&shape!=FloatPanel.ROUND;break;
-                default:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i;}
+                case SettingsLayout.F_COLOR:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i;break;
+                default:label=SettingsLayout.F_ALPHAS[i];on=FloatPanel.alpha==i;}
             chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,g==SettingsLayout.F_CORNER&&shape==FloatPanel.ROUND);}   // a round gauge has no corners
         text(c,UiText.t("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
         if(floatEdit>=0)drawFloatSheet(c);

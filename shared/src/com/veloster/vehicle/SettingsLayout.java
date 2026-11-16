@@ -120,10 +120,12 @@ public final class SettingsLayout {
     public static final float[] F_ROW_Y={262,306,350,394};
     public static final String[] F_ROW_LABELS={"모양","칸 수","모서리","색"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
-    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60;
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70;
     public static final String[] F_SHAPES={"카드","아래 띠","옆 세로","원형 게이지"},F_COUNTS={"1","2","4"},
-        F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마 따라","각진","라운드","다이아 커팅"},F_COLORS={"테마 따라","기본 파랑","흰색"};
-    private static final float[] W_SHAPE={92,92,92,118},W_COUNT={52,52,52},W_SIZE={62,62,62,88},W_CORNER={100,74,82,112},W_COLOR={100,100,74};
+        F_SIZES={"작게","보통","크게","아주 크게"},F_CORNERS={"테마 따라","각진","라운드","다이아 커팅"},F_COLORS={"테마 따라","기본 파랑","흰색"},F_ALPHAS={"진하게","보통","연하게"};
+    private static final float[] W_SHAPE={92,92,92,118},W_COUNT={52,52,52},W_SIZE={62,62,62,88},W_CORNER={100,74,82,112},W_COLOR={100,100,74},W_ALPHA={58,58,58};
+    /** 투명도 sits on the colour row, right of the colours (like 크기 beside 칸 수). */
+    public static final float F_ALPHA_X=F_ROW_X+100+100+74+2*F_GAP+60;
     /** Where the 크기 buttons start on the 칸 수 row (after the count buttons and the 크기 label). */
     public static final float F_SIZE_X=F_ROW_X+3*52+2*F_GAP+60;
     /** The button for target t ({l, t, r, b}), or null (preview cells are placed by floatPreview*). */
@@ -132,14 +134,14 @@ public final class SettingsLayout {
         int g=t/10*10,i=t-g;float[] w;float x,y;
         switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_ROW_X;y=F_ROW_Y[1];break;
             case F_SIZE:w=W_SIZE;x=F_SIZE_X;y=F_ROW_Y[1];break;case F_CORNER:w=W_CORNER;x=F_ROW_X;y=F_ROW_Y[2];break;
-            case F_COLOR:w=W_COLOR;x=F_ROW_X;y=F_ROW_Y[3];break;default:return null;}
+            case F_COLOR:w=W_COLOR;x=F_ROW_X;y=F_ROW_Y[3];break;case F_ALPHA:w=W_ALPHA;x=F_ALPHA_X;y=F_ROW_Y[3];break;default:return null;}
         if(i<0||i>=w.length)return null;
         for(int k=0;k<i;k++)x+=w[k]+F_GAP;
         return new float[]{x,y,x+w[i],y+F_ROW_H};
     }
     /** Every button target in drawing order. */
     public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SHAPE,F_SHAPE+1,F_SHAPE+2,F_SHAPE+3,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_SIZE+1,F_SIZE+2,F_SIZE+3,
-        F_CORNER,F_CORNER+1,F_CORNER+2,F_CORNER+3,F_COLOR,F_COLOR+1,F_COLOR+2};
+        F_CORNER,F_CORNER+1,F_CORNER+2,F_CORNER+3,F_COLOR,F_COLOR+1,F_COLOR+2,F_ALPHA,F_ALPHA+1,F_ALPHA+2};
     /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
     public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}
     public static float floatPreviewX(float w,float h){return (FW_L+FW_R)/2-w*floatPreviewScale(w,h)/2;}

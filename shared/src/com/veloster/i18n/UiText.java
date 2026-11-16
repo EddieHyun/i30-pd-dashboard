@@ -506,6 +506,7 @@ public final class UiText {
         EN.put("연료 차단 중","Fuel cut");
         EN.put("연비·연료비","Economy · fuel cost");
         EN.put("연타 · 5번","Rapid · 5 taps");
+        EN.put("연하게","Light");
         EN.put("영 수 증","RECEIPT");
         EN.put("옆 세로","Side column");
         EN.put("예상","PREDICTED");
@@ -678,6 +679,7 @@ public final class UiText {
         EN.put("직접 선택","Chosen by you");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
+        EN.put("진하게","Solid");
         EN.put("짝수단","Even");
         EN.put("짧은 펄스 · 낮게","Short pulse · low");
         EN.put("차량 계산값","From the car");
@@ -766,6 +768,7 @@ public final class UiText {
         EN.put("테마 따라","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
         EN.put("통과 속도","Trap speed");
+        EN.put("투명도","Opacity");
         EN.put("트랙·서킷 전용 · 속도 곡선 0~12초","Track use only · speed 0-12 s");
         EN.put("트렁크","Trunk");
         EN.put("트렁크 열림","Trunk open");

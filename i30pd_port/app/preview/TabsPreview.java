@@ -140,6 +140,11 @@ public final class TabsPreview {
                 BufferedImage img=new BufferedImage(260,140,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x1a2226));g2.fillRect(0,0,260,140);g2.translate(6,6);
                 FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_corner_"+th+"_"+cn+".png"));}
             Theme.select(keepTheme);FloatPanel.corner=keepCorner;
+            for(int al=0;al<FloatPanel.ALPHA_NAMES.length;al++){FloatPanel.alpha=al;   // 투명도, over a bright striped ground so it shows
+                BufferedImage img=new BufferedImage(260,140,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
+                for(int sx=0;sx<260;sx+=20){g2.setColor(new java.awt.Color(sx/20%2==0?0x6fa86a:0xd8d2b8));g2.fillRect(sx,0,20,140);}g2.translate(6,6);
+                FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_alpha_"+al+".png"));}
+            FloatPanel.alpha=1;
             // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all
             for(int gg:FloatPanel.groups(VehicleProfile.PETROL_DCT)){int[] vs=FloatPanel.group(gg,VehicleProfile.PETROL_DCT);
                 if(vs.length>SettingsLayout.S_MAX_VALUES)throw new AssertionError("float chooser: group "+gg+" has more readings than the sheet shows");

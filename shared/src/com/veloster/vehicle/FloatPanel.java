@@ -43,6 +43,10 @@ public final class FloatPanel {
     public static final int COLOR_THEME=0,COLOR_BLUE=1,COLOR_WHITE=2;
     public static final String[] COLOR_NAMES={"테마 따라","기본 파랑","흰색"};
     public static volatile int corner=CORNER_THEME,color=COLOR_THEME;
+    /** 투명도: how solid the window's body is over the screen behind (text, bars and lines stay solid). */
+    public static final String[] ALPHA_NAMES={"진하게","보통","연하게"};
+    static final int[] ALPHAS={0xf4,0xd8,0x80};
+    public static volatile int alpha=1;
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
@@ -80,7 +84,7 @@ public final class FloatPanel {
     /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
      *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
     public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
-        int h=17;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
+        int h=17;h=h*31+alpha;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
         for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
             h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
@@ -123,7 +127,7 @@ public final class FloatPanel {
     private static int BG,EDGE,DIV,TXT,MUT,TRACK,ACC;
     private static void colours(){
         Theme th=color==COLOR_THEME?Theme.current():null;
-        BG=m(th,0xd805070a);EDGE=m(th,0xff3a4650);DIV=m(th,0x993a4650);TXT=m(th,0xfff2f6f8);MUT=m(th,0xff8fa0a8);TRACK=m(th,0xff2a343b);
+        BG=m(th,0xd805070a)&0xffffff|ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]<<24;EDGE=m(th,0xff3a4650);DIV=m(th,0x993a4650);TXT=m(th,0xfff2f6f8);MUT=m(th,0xff8fa0a8);TRACK=m(th,0xff2a343b);
         ACC=color==COLOR_WHITE?0xffe8eef2:m(th,0xff5bc8f5);
     }
     private static int m(Theme th,int c){return th==null?c:th.map(c);}
