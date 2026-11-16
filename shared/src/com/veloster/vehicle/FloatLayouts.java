@@ -11,20 +11,20 @@ import android.graphics.Typeface;
  * them too. The round gauge skin has no palette of its own and draws these plain.
  */
 final class FloatLayouts extends ClusterKit {
-    static final int PILL=5,HERO=6,GEAR=7,DIAG=8,DIAL=9,SHIFT=10;
+    static final int PILL=5,HERO=6,GEAR=7,DIAG=8,DIAL=9,SHIFT=10,TICK=11,FILLS=12,BARS=13,TWIN=14,WEDGE=15,TOWER=16,LAST=TOWER;
     private static final FloatLayouts K=new FloatLayouts();
     protected void draw(Canvas c){}
 
     /** Cells shown: the pill has room for two. */
     static int used(int shape,int n){return shape==PILL?Math.min(n,2):n;}
     /** The cell counts a layout fills without a hole (the settings offer these only). */
-    static int[] counts(int shape){return shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:new int[]{2,4};}
+    static int[] counts(int shape){return shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
     private static int rows(int n){return Math.min(3,n-1);}
     static float w(int shape,int n){
-        switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;default:return 248;}
+        switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;case TICK:return n*96;case FILLS:return 180;case BARS:return n*56+8;case TWIN:return Math.min(2,n)*116;case TOWER:return 92;default:return 248;}
     }
     static float h(int shape,int n){
-        switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 104;default:return 64;}
+        switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 104;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 84+n*40;default:return 64;}
     }
     /** Cell i's rectangle in base px, or null when the layout does not show it. */
     static float[] rect(int shape,int n,int i){
@@ -35,6 +35,12 @@ final class FloatLayouts extends ClusterKit {
             case DIAL:return i==0?new float[]{0,0,132,H}:new float[]{132,8+(i-1)*30,W,8+i*30};
             case GEAR:return n<=2?new float[]{i%2==0?0:154,28,i%2==0?94:248,84}:new float[]{i%2==0?0:154,i<2?0:56,i%2==0?94:248,i<2?56:112};
             case DIAG:return new float[]{i%2==0?0:128,(i/2)*72,i%2==0?128:248,(i/2+1)*72};
+            case TICK:return new float[]{i*96,0,(i+1)*96,H};
+            case FILLS:return new float[]{0,4+i*30,W,34+i*30};
+            case BARS:return new float[]{4+i*56,0,60+i*56,H};
+            case TWIN:return new float[]{(i%2)*116,(i/2)*92,(i%2+1)*116,(i/2+1)*92};
+            case WEDGE:return new float[]{(i%2)*124,34+(i/2)*44,(i%2+1)*124,78+(i/2)*44};
+            case TOWER:return new float[]{0,80+i*40,W,120+i*40};
             default:return new float[]{i*70,0,(i+1)*70,H};
         }
     }
@@ -150,6 +156,50 @@ final class FloatLayouts extends ClusterKit {
                 vu(c,a,12*k,y+52*k,28*k,100*k,k,Paint.Align.LEFT);bar(c,a,12*k,y+60*k,96*k,3*k,k,true);
                 if(b*2+1<n){FloatSkin.Cell e=d[b*2+1];line(c,138*k,y+8*k,118*k,y+64*k,2*k,acc);
                     fit(c,nm(e),236*k,y+18*k,9*k,80*k,mut,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);vu(c,e,236*k,y+52*k,26*k,86*k,k,Paint.Align.RIGHT);bar(c,e,150*k,y+60*k,86*k,3*k,k,true);}}
+            break;}
+        case TICK:{   // one thin line: name, value, a hair of a bar
+            body(c,W,H,k,-1);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float x=i*96*k;if(i>0)fill(c,x,6*k,x+1,H-6*k,div);
+                if(pix){fit(c,nm(a),x+8*k,16*k,7*k,42*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);fit(c,a.val,x+86*k,16*k,7*k,34*k,warn(a.lv,txt),Paint.Align.RIGHT,bold);continue;}   // 8-bit: one pixel size, no unit, no bar (the frame is there)
+                else{fit(c,nm(a),x+8*k,16*k,7.5f*k,34*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);vu(c,a,x+90*k,17*k,13*k,48*k,k,Paint.Align.RIGHT);}bar(c,a,x+8*k,21*k,82*k,2*k,k,false);}
+            break;}
+        case FILLS:{   // rows whose ground fills with the reading
+            body(c,W,H,k,-1);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(4+i*30)*k,l=8*k,rr=W-8*k;fill(c,l,y+3*k,rr,y+27*k,track);
+                if(!Float.isNaN(a.f)&&a.bar){float f=Math.max(0,Math.min(1,a.f)),lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);int col=warn(a.lv,acc);
+                    fill(c,l+(rr-l)*lo,y+3*k,Math.max(l+(rr-l)*hi,l+(rr-l)*lo+2),y+27*k,col&0xffffff|0x55000000);float e=l+(rr-l)*f;fill(c,e-k,y+3*k,e+k,y+27*k,col);}
+                fit(c,nm(a),l+8*k,y+19*k,9*k,66*k,txt,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);vu(c,a,rr-8*k,y+20*k,14*k,76*k,k,Paint.Align.RIGHT);}
+            break;}
+        case BARS:{   // a standing bar per reading, the value under it
+            body(c,W,H,k,-1);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float cx=(32+i*56)*k,t0=10*k,b0=66*k;fill(c,cx-8*k,t0,cx+8*k,b0,track);
+                if(!Float.isNaN(a.f)&&a.bar){float f=Math.max(0,Math.min(1,a.f)),lo=Math.min(a.zero,f),hi=Math.max(a.zero,f),yb=b0-(b0-t0)*lo;fill(c,cx-8*k,Math.min(b0-(b0-t0)*hi,yb-2),cx+8*k,yb,warn(a.lv,acc));}
+                for(int j=0;j<=4;j++){float ty=b0-(b0-t0)*j/4;fill(c,cx+11*k,ty,cx+(j%2==0?17:14)*k,ty+1,mut);}
+                fit(c,a.val,cx,86*k,15*k,50*k,warn(a.lv,txt),Paint.Align.CENTER,bold);fit(c,nm(a)+(a.unit.isEmpty()?"":" "+a.unit.replace("°","")),cx,101*k,7.5f*k,52*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}
+            break;}
+        case TWIN:{   // a half dial with a needle per reading
+            body(c,W,H,k,-1);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float cx=((i%2)*116+58)*k,cy=((i/2)*92+54)*k,rad=40*k;
+                r.set(cx-rad,cy-rad,cx+rad,cy+rad);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(track);c.drawArc(r,180,180,false,p);
+                boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
+                if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setColor(warn(a.lv,acc));c.drawArc(r,180+180*lo,Math.max(1,180*(hi-lo)),false,p);}
+                p.setStyle(Paint.Style.FILL);
+                if(has){double an=Math.toRadians(180+180*f);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-7*k),cy+(float)Math.sin(an)*(rad-7*k),2*k,0xffff6b5b);}
+                dot(c,cx,cy,3*k,0xffff6b5b);
+                fit(c,a.val+(a.unit.isEmpty()?"":" "+a.unit),cx,cy+19*k,13*k,96*k,warn(a.lv,txt),Paint.Align.CENTER,bold);fit(c,nm(a),cx,cy+32*k,8*k,96*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}
+            break;}
+        case WEDGE:{   // rpm as a row of bars that grow to the right, the gear at its end, readings under it
+            body(c,W,H,k,-1);int seg=24;
+            for(int i=0;i<seg;i++){float x=(10+i*7.75f)*k,hh=(4+14f*i/(seg-1))*k;boolean on=rOk&&(i+.5f)/seg<rf;fill(c,x,26*k-hh,x+5.75f*k,26*k,on?led(i,seg):track);}
+            fit(c,gear,238*k,27*k,(pix?21:26)*k,36*k,txt,Paint.Align.RIGHT,bold);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float x=(i%2)*124*k,y=(34+(i/2)*44)*k;if(i%2==1)fill(c,x,y+6*k,x+1,y+38*k,div);if(i>=2&&i%2==0)fill(c,8*k,y,W-8*k,y+1,div);
+                fit(c,nm(a),x+12*k,y+13*k,8*k,100*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);vu(c,a,x+12*k,y+35*k,19*k,100*k,k,Paint.Align.LEFT);}
+            break;}
+        case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it
+            body(c,W,H,k,-1);fill(c,10*k,10*k,82*k,66*k,box);fit(c,gear,46*k,56*k,(pix?35:46)*k,60*k,boxInk,Paint.Align.CENTER,bold);
+            fill(c,10*k,70*k,82*k,73*k,track);if(rOk)fill(c,10*k,70*k,10*k+72*k*rf,73*k,rf>.85f?0xffff4b3c:acc);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(80+i*40)*k;if(i>0)fill(c,8*k,y,W-8*k,y+1,div);
+                fit(c,nm(a),10*k,y+13*k,8*k,72*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);vu(c,a,10*k,y+33*k,17*k,72*k,k,Paint.Align.LEFT);}
             break;}
         default:{   // SHIFT: a shift-light strip the window's width, the readings in a row under it
             body(c,W,H,k,-1);int leds=n*5;float lw=(W-16*k)/leds;

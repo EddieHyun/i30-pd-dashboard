@@ -155,7 +155,7 @@ public final class TabsPreview {
                     FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                     ImageIO.write(img,"png",new File(out,"x_float_skin_"+sk+"_"+sh+n+sz+".png"));}}
             // the layouts: each with 4 (and the pill and the dial with 2 / 1) in the plain look and three skins
-            for(int f:new int[]{FloatPanel.PILL,FloatPanel.HERO,FloatPanel.GEARBOX,FloatPanel.DIAG,FloatPanel.DIAL,FloatPanel.SHIFT})for(int sk:new int[]{0,1,4,8,6})for(int n:new int[]{4,2,1}){
+            for(int f:new int[]{FloatPanel.PILL,FloatPanel.HERO,FloatPanel.GEARBOX,FloatPanel.DIAG,FloatPanel.DIAL,FloatPanel.SHIFT,FloatPanel.TICK,FloatPanel.FILLS,FloatPanel.BARS,FloatPanel.TWIN,FloatPanel.WEDGE,FloatPanel.TOWER})for(int sk:new int[]{0,1,4,8,6,7})for(int n:new int[]{4,2,1}){
                 if(n!=4&&sk!=0||!FloatPanel.fits(f,n))continue;FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);
                 BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                 g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.setColor(new java.awt.Color(0xffffff));for(int sx=-hh;sx<w+24;sx+=46)g2.fillPolygon(new int[]{sx,sx+8,sx+8+hh+24,sx+hh+24},new int[]{0,0,hh+24,hh+24},4);

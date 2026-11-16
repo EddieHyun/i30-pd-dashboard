@@ -350,9 +350,9 @@ public final class VehicleDash extends View implements Runnable {
     public static void loadFloat(android.content.SharedPreferences p){
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
-            FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.SHIFT?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
+            FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.LAST_SHAPE?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
-            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.SHIFT?last:FloatPanel.CARD;
+            int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.LAST_SHAPE?last:FloatPanel.CARD;
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);
             if(skn==9){skn=0;   // the round gauge was a skin for a while: on a grid shape it is the 원형 게이지 shape now
                 if(FloatPanel.shape>=FloatPanel.CARD&&FloatPanel.shape<=FloatPanel.SIDE)FloatPanel.shape=FloatPanel.ROUND;if(FloatPanel.lastShape<=FloatPanel.SIDE)FloatPanel.lastShape=FloatPanel.ROUND;}

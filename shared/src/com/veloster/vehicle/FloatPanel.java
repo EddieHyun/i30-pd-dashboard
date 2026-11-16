@@ -16,11 +16,12 @@ public final class FloatPanel {
     /** ROUND: 원형 게이지, a disc per reading laid out like the card, in the theme's colours (no 색감). */
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
     /** The rectangular layouts with their own inside (FloatLayouts). */
-    public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등"};
+    public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT,TICK=FloatLayouts.TICK,FILLS=FloatLayouts.FILLS,BARS=FloatLayouts.BARS,TWIN=FloatLayouts.TWIN,WEDGE=FloatLayouts.WEDGE,TOWER=FloatLayouts.TOWER;
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등","한 줄","채움 목록","세로 막대","쌍 계기","RPM 계단","세로 단수"};
     /** The 모양 sheet's order. */
-    public static final int[] FORMS={CARD,STRIP,SIDE,ROUND,PILL,HERO,DIAL,DIAG,GEARBOX,SHIFT};
-    public static boolean layout(int s){return s>=PILL&&s<=SHIFT;}
+    public static final int[] FORMS={CARD,STRIP,SIDE,TICK, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL, GEARBOX,TOWER,SHIFT,WEDGE};   // rows: grids, gauges, lists, rpm and gear
+    public static final int LAST_SHAPE=FloatLayouts.LAST;
+    public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST;}
     /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
     public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND;}
     /** The cell counts shape s fills without a hole; the settings offer these only. */
@@ -121,7 +122,7 @@ public final class FloatPanel {
             float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+Tiles.text(fmt(sig),pk).hashCode();
             if(quad(sig)){quadTexts(q,sig);for(int w=0;w<4;w++)h=h*31+QV[w].hashCode()+QL[w];}}
         int s=shape==OFF?lastShape:shape;
-        if(s==PILL||s==GEARBOX||s==SHIFT){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
+        if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?Tiles.text(8,gm.value).hashCode():0);}
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
@@ -141,7 +142,7 @@ public final class FloatPanel {
         return o;}
     private static int clampSize(int s){return Math.max(0,Math.min(SIZES.length-1,s));}
     /** Where the window starts (screen 800 × 480, below the 52 px status bar): the card and the side column top right, the strip bottom middle. */
-    private static boolean bottom(int s){return s==STRIP||s==PILL||s==SHIFT;}
+    private static boolean bottom(int s){return s==STRIP||s==PILL||s==SHIFT||s==TICK;}
     public static int defaultX(int shape,int n,int size){return bottom(shape)?(800-width(shape,n,size))/2:800-width(shape,n,size)-8;}
     public static int defaultY(int shape,int n,int size){return bottom(shape)?480-height(shape,n,size)-10:62;}
     /** The next cell count after the current one (1, 2, 4, 1 ...). */
