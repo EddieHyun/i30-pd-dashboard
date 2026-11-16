@@ -45,7 +45,7 @@ public final class FloatPanel {
     public static volatile int corner=CORNER_THEME,color=COLOR_THEME;
     public static final int[] graphs={BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
-    static final int HIST=60;static final long HIST_MS=500;
+    static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
     private static final float[][] hist=new float[4][HIST];private static final int[] histHead=new int[4],histN=new int[4],histSig={-1,-1,-1,-1};
     private static final long[] histAt=new long[4];
     /** The highest reading per cell (최고값), for the readings where a peak means something (boost, rpm, speed, pedal,
@@ -66,17 +66,22 @@ public final class FloatPanel {
     static void record(int k,int sig,float v,long now){
         if(peakSig[k]!=sig||now<peakAt[k]||now-peakAt[k]>PEAK_IDLE_MS){peakSig[k]=sig;peak[k]=Float.NaN;peakAt[k]=now;}
         if(!Float.isNaN(v)&&peaks(sig)){float a=both(sig)?Math.abs(v):v;if(Float.isNaN(peak[k])||a>peak[k])peak[k]=a;peakAt[k]=now;}
-        if(histSig[k]!=sig||now<histAt[k]){histSig[k]=sig;histN[k]=0;histHead[k]=0;histAt[k]=0;}   // a new signal, or the clock went back: start over
+        if(histSig[k]!=sig||now<histAt[k]||histN[k]>0&&now-histAt[k]>HIST_GAP_MS){histSig[k]=sig;histN[k]=0;histHead[k]=0;histAt[k]=0;}   // a new signal, or the clock went back: start over
         if(histN[k]>0&&now-histAt[k]<HIST_MS)return;
         histAt[k]=now;hist[k][histHead[k]]=v;histHead[k]=(histHead[k]+1)%HIST;if(histN[k]<HIST)histN[k]++;
     }
 
+    /** Records the cells without drawing (the dashboard's own frame, while the window is down), so a peak reached there
+     *  counts and the line graph has no hole. */
+    public static void track(int n,Telemetry.Sample[] q,VehicleProfile prof,long now){
+        for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];record(i,sig,m!=null&&m.valid?m.value:Float.NaN,now);}
+    }
     private static int lastLook;
     /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
      *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
     public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         int h=17;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
-        for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
+        for(int i=0;i<n;i++){int sig=signal(i,prof);Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
             h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
@@ -108,6 +113,8 @@ public final class FloatPanel {
     public static int[] group(int g,VehicleProfile p){return Tiles.group(g,p,false);}
     /** The next choice for a cell: automatic, then CHOICES in order, then automatic again. */
     public static int next(int current){if(current<0)return CHOICES[0];for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==current)return i+1<CHOICES.length?CHOICES[i+1]:-1;return -1;}
+    /** The name as the window shows it (translated). */
+    private static String label(int sig){return com.veloster.i18n.UiText.t(name(sig));}
     public static String name(int sig){for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
 
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
@@ -161,16 +168,16 @@ public final class FloatPanel {
         p.setStyle(Paint.Style.FILL);
         for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float x=(j%cols)*cw,y=(j/cols)*ch;Telemetry.Sample m=q[sig];float v=m!=null&&m.valid?m.value:Float.NaN;
             int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
-            text(c,name(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+            text(c,label(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
             String unit=Telemetry.UNITS[sig],val=Tiles.text(sig,v);float f=Tiles.fraction(sig,v);
             float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(sig,pk);
             if(!Float.isNaN(pk)&&g!=LINE){String ps="▲ "+Tiles.text(sig,pk);   // the peak, small, top right (left out when the name leaves no room)
-                if(width(name(sig),12*k,Typeface.DEFAULT_BOLD)+width(ps,10*k,Typeface.DEFAULT)+20*k<=cw)text(c,ps,x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);}
+                if(width(label(sig),12*k,Typeface.DEFAULT_BOLD)+width(ps,10*k,Typeface.DEFAULT)+20*k<=cw)text(c,ps,x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);}
             if(Float.isNaN(f)||g==NUM||g==LINE&&!drawn(i,sig)){   // nothing to graph (no value yet, or the line has no history): the value alone, large, in the middle
                 float vw=width(val,30*k,Typeface.DEFAULT_BOLD),uw=width(unit,12*k,Typeface.DEFAULT),x0=x+(cw-(vw+3*k+uw))/2;
                 text(c,val,x0,y+ch-13*k,30*k,Float.isNaN(v)?MUT:col,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);text(c,unit,x0+vw+3*k,y+ch-13*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT);continue;}
             if(g==LINE){   // the value on the name's line (the unit gives way to a long name), the last 30 s below it
-                float nw=width(name(sig),12*k,Typeface.DEFAULT_BOLD),vw=width(val,21*k,Typeface.DEFAULT_BOLD),uw=width(unit,10*k,Typeface.DEFAULT);
+                float nw=width(label(sig),12*k,Typeface.DEFAULT_BOLD),vw=width(val,21*k,Typeface.DEFAULT_BOLD),uw=width(unit,10*k,Typeface.DEFAULT);
                 boolean fits=nw+vw+uw+26*k<=cw;float right=x+cw-8*k;
                 if(fits){text(c,unit,right,y+20*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);right-=uw+3*k;}
                 text(c,val,right,y+21*k,21*k,col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
@@ -215,7 +222,7 @@ public final class FloatPanel {
         p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);float vw=p.measureText(val);if(vw>room)size*=room/vw;
         text(c,val,cx,cy+size*.36f,size,Float.isNaN(v)?MUT:col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
         if(unit!=null&&!unit.isEmpty())text(c,unit,cx,cy+size*.36f+13*k,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);
-        text(c,name(sig),cx,cy+ar*.84f,11*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // in the ring's open gap, clear of the disc edge
+        text(c,label(sig),cx,cy+ar*.84f,11*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // in the ring's open gap, clear of the disc edge
     }
     /** Cell k's line graph has at least two samples with a place on the scale. */
     private static boolean drawn(int k,int sig){int n=histN[k],ok=0;if(histSig[k]!=sig)return false;

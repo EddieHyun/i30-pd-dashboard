@@ -49,7 +49,7 @@ public final class FloatService extends Service implements Runnable {
     public void onCreate(){
         super.onCreate();
         windows=(WindowManager)getSystemService(Context.WINDOW_SERVICE);
-        wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
+        com.veloster.i18n.LanguageSettings.init(this);wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
         handler.post(this);
     }
     public int onStartCommand(Intent intent,int flags,int startId){
@@ -80,7 +80,7 @@ public final class FloatService extends Service implements Runnable {
         final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.floatSamples(n),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());}};
         v.setOnTouchListener(new View.OnTouchListener(){
             float downX,downY;int startX,startY;boolean moved,held;
-            final Runnable longPress=new Runnable(){public void run(){held=true;open(HUB,"com.veloster.carplayhub.HubActivity");}};
+            final Runnable longPress=new Runnable(){public void run(){if(panel!=v)return;held=true;open(HUB,"com.veloster.carplayhub.HubActivity");}};
             public boolean onTouch(View view,MotionEvent e){
                 switch(e.getAction()){
                     case MotionEvent.ACTION_DOWN:downX=e.getRawX();downY=e.getRawY();startX=layout.x;startY=layout.y;moved=false;held=false;handler.postDelayed(longPress,700);return true;

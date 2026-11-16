@@ -413,6 +413,7 @@ public final class VehicleDash extends View implements Runnable {
     }
     protected void onDraw(Canvas c) {
         long now=SystemClock.elapsedRealtime();
+        if(FloatPanel.shape!=FloatPanel.OFF)FloatPanel.track(FloatPanel.count,floatSamples(FloatPanel.count),DATA.profile(),now);   // peaks and line graphs go on while the window is down
         header.step(SystemClock.uptimeMillis());   // MotionEvent times are uptime
         MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);
         renderer.setArtwork(artwork.bitmap());

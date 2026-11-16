@@ -116,6 +116,8 @@ public final class TabsPreview {
                     if(FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+2100))throw new AssertionError("float tick: same line sample, no draw");
                     if(!FloatPanel.tick(4,1,e,VehicleProfile.PETROL_DCT,ft0+2700))throw new AssertionError("float tick: a new line sample, draw");
                     if(!FloatPanel.tick(4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,ft0+2750))throw new AssertionError("float tick: values changed, draw");
+                    FloatPanel.tick(4,1,new Telemetry.Sample[e.length],VehicleProfile.DIESEL_DCT,ft0+2800);   // no sample for a signal: like no value, no crash
+                    FloatPanel.track(4,model.snapshot(now),VehicleProfile.PETROL_DCT,ft0+2850);
                     System.arraycopy(keep,0,FloatPanel.graphs,0,4);}
             }
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=2;   // the settings shot below shows the window on, two cells
