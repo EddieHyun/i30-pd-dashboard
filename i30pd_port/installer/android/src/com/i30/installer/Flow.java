@@ -44,7 +44,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-17";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-17b";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -239,7 +239,8 @@ final class Flow {
         ui.say(app[2] + " 설치 완료");
     }
 
-    /** Reads only: fixed properties, our two packages' versions, our apps' log. Masked, then saved under dir/diag. */
+    /** Reads only: fixed properties, our two packages' versions, our apps' log and their private error records. Masked, then saved
+     *  under dir/diag. */
     private static File diag(Adb adb, File dir, Ui ui) throws Exception {
         ui.say("\n■ 진단 기록 모으기 (차에는 아무것도 바꾸지 않습니다)");
         StringBuilder b = new StringBuilder("i30 PD 진단 기록 — " + stamp("yyyy-MM-dd HH:mm") + " / 휴대폰 설치 앱 " + VERSION + "\n\n[내비]\n");
@@ -251,12 +252,28 @@ final class Flow {
         }
         ui.waiting("기록 읽는 중");
         b.append("\n[기록: ").append(LOG_TAGS).append("]\n").append(tail(adb.shell("logcat -d -v time -s " + LOG_TAGS, 60_000), 3000));
+        b.append(errorRecords(adb));
         ui.waiting(null);
         File out = new File(new File(dir, "diag"), "i30pd_diag_" + stamp("yyyyMMdd_HHmmss") + ".txt");
         if (!out.getParentFile().isDirectory() && !out.getParentFile().mkdirs()) throw new IOException("저장 폴더를 만들지 못했습니다");
         Files.write(out.toPath(), mask(b.toString()).getBytes(StandardCharsets.UTF_8));
         ui.say("진단 기록을 만들었습니다 (" + Math.max(1, out.length() / 1024) + " KB).");
         return out;
+    }
+
+    /** Each app's own error record (com.veloster.diagnostics.ErrorLog: exception types and code places only, at most two 32 KB
+     *  files in files/diagnostics). Both apps are debuggable, so run-as reads them without root; nothing is changed. */
+    static String errorRecords(Adb adb) throws IOException {
+        StringBuilder b = new StringBuilder("\n[앱 오류 기록]\n");
+        for (String[] app : APPS)
+            for (String f : new String[]{"errors.previous.log", "errors.log"}) {
+                String o = adb.shell("run-as " + app[1] + " cat files/diagnostics/" + f, 15_000).replace("\r", "");
+                b.append(app[2]).append(" ").append(f).append(": ");
+                if (o.trim().isEmpty() || o.contains("No such file")) b.append("없음\n");
+                else if (!o.startsWith("VN-ERROR")) b.append("읽지 못함 (").append(o.trim().split("\n")[0]).append(")\n");
+                else b.append("\n").append(tail(o.trim(), 400));
+            }
+        return b.toString();
     }
 
     static String versionLines(String dumpsys) {
