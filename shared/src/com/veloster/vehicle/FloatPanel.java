@@ -96,6 +96,10 @@ public final class FloatPanel {
     static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
     private static boolean still;
+    /** The kept bitmap of a split layout's unmoving part (FloatLayouts.STAT) and what it was drawn for. */
+    private static android.graphics.Bitmap layer;private static int layerKey;
+    /** Times the kept bitmap was drawn again (for the FLOAT log); off draws every part each frame, for a side-by-side look. */
+    public static int layerBuilds;public static boolean layerOn=true;
     // ---- glide: bars, arcs and the rpm bar move from the last reading to the new one over GLIDE_MS (ease-out), the numbers jump as
     // before. The car sends every 40-80 ms, so a bar stepped about 12 times a second; gliding fills the frames in between. -----------
     public static final long GLIDE_MS=80;
@@ -287,7 +291,18 @@ public final class FloatPanel {
             int u=FloatLayouts.used(shape,n);
             for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
             Telemetry.Sample rm=q[0],gm=q[8];float rpm=glide(GLIDES-1,rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN);String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
-            FloatLayouts.draw(c,shape,n,k,sk,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8,LCELLS,rpm,gear);
+            float af=ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;
+            if(still||!FloatLayouts.splits(shape)||!layerOn){FloatLayouts.draw(c,shape,n,k,sk,af,LCELLS,rpm,gear);return;}
+            // partial redraw: what does not move is drawn once into a bitmap (again when the shape, size, skin, theme or a cell's name changes)
+            int key=17;key=key*31+shape;key=key*31+n;key=key*31+Math.round(k*100);key=key*31+sk;key=key*31+Math.round(af*255);key=key*31+Theme.current().id.hashCode();
+            for(int j=0;j<u;j++){key=key*31+LCELLS[j].name.hashCode();key=key*31+LCELLS[j].en.hashCode();}
+            int bw=Math.max(1,Math.round(FloatLayouts.w(shape,n)*k)),bh=Math.max(1,Math.round(FloatLayouts.h(shape,n)*k));
+            if(layer==null||layerKey!=key||layer.getWidth()!=bw||layer.getHeight()!=bh){
+                if(layer==null||layer.getWidth()!=bw||layer.getHeight()!=bh)layer=android.graphics.Bitmap.createBitmap(bw,bh,android.graphics.Bitmap.Config.ARGB_8888);
+                else layer.eraseColor(0);
+                FloatLayouts.draw(new Canvas(layer),shape,n,k,sk,af,LCELLS,rpm,gear,FloatLayouts.STAT);layerKey=key;layerBuilds++;}
+            c.drawBitmap(layer,0,0,null);
+            FloatLayouts.draw(c,shape,n,k,sk,af,LCELLS,rpm,gear,FloatLayouts.DYN);
             return;}
         if(sk!=FloatSkin.PLAIN){   // a skin: its own body and cells
             FloatSkin.body(c,sk,w,h,k,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8);

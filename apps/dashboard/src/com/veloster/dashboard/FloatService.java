@@ -82,7 +82,7 @@ public final class FloatService extends Service implements Runnable {
         long t0=System.nanoTime(),now0=android.os.SystemClock.elapsedRealtime();
         if(mLastTick>0)mGapMax=Math.max(mGapMax,now0-mLastTick);mLastTick=now0;
         if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;java.io.File sd=android.os.Environment.getExternalStorageDirectory();boolean want=!new java.io.File(sd,SW_FLAG).exists();if(want!=hw){hw=want;remove();}
-            FloatPanel.glideOn=!new java.io.File(sd,"i30pd_float_noglide").exists();}   // a new window with the other renderer
+            FloatPanel.glideOn=!new java.io.File(sd,"i30pd_float_noglide").exists();FloatPanel.layerOn=!new java.io.File(sd,"i30pd_float_nolayer").exists();}   // a new window with the other renderer
         int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0);   // the round gauge has square cells: its own window
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
@@ -94,9 +94,9 @@ public final class FloatService extends Service implements Runnable {
         long dt=System.nanoTime()-t0;mTickNs+=dt;mTickMax=Math.max(mTickMax,dt);mTicks++;
         if(now0-mLogAt>=1000){
             if(mLogAt>0&&panel!=null)android.util.Log.i("VehicleDash",String.format(java.util.Locale.US,
-                "FLOAT fps=%d ticks=%d redraw=%d%% draw_ms=%.1f/%.1f tick_ms=%.1f/%.1f gap_ms=%d hw=%d/%d shape=%d n=%d size=%d",
+                "FLOAT fps=%d ticks=%d redraw=%d%% draw_ms=%.1f/%.1f tick_ms=%.1f/%.1f gap_ms=%d hw=%d/%d shape=%d n=%d size=%d glide=%d layer=%d/%d",
                 mDraws,mTicks,mTicks==0?0:mInval*100/mTicks,mDraws==0?0f:mDrawNs/1e6f/mDraws,mDrawMax/1e6f,mTicks==0?0f:mTickNs/1e6f/mTicks,mTickMax/1e6f,mGapMax,
-                hw?1:0,mHwCanvas?1:0,FloatPanel.shape,FloatPanel.count,FloatPanel.size));
+                hw?1:0,mHwCanvas?1:0,FloatPanel.shape,FloatPanel.count,FloatPanel.size,FloatPanel.glideOn?1:0,FloatPanel.layerOn?1:0,FloatPanel.layerBuilds));
             mLogAt=now0;mTicks=0;mInval=0;mDraws=0;mDrawNs=0;mDrawMax=0;mTickNs=0;mTickMax=0;mGapMax=0;}
     }
     private void add(final int shape,final int n,final int size){
@@ -129,17 +129,29 @@ public final class FloatService extends Service implements Runnable {
                 return false;
             }
         });
-        try{windows.addView(v,layout);panel=v;shown=shape*100+n*10+size+(rnd?1000:0);}
+        try{windows.addView(v,layout);panel=v;shown=shape*100+n*10+size+(rnd?1000:0);foreground(true);}
         catch(RuntimeException e){android.util.Log.w("VehicleDash","Floating window refused",e);panel=null;shown=-1;stopSelf();}
     }
     private void remove(){
-        if(panel!=null){try{windows.removeView(panel);}catch(RuntimeException ignored){/* already gone */}panel=null;}
+        if(panel!=null){try{windows.removeView(panel);}catch(RuntimeException ignored){/* already gone */}panel=null;foreground(false);}
         shown=-1;
         if(hideSent)hide(false);
     }
     private void open(String pkg,String cls){
         try{startActivity(new Intent(Intent.ACTION_MAIN).setComponent(new ComponentName(pkg,cls)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}
         catch(RuntimeException e){android.util.Log.w("VehicleDash","Could not open "+cls,e);}
+    }
+    /** While the window is up the process runs as a foreground service: Android 4.2 otherwise keeps it in the background cgroup, which
+     *  gets a few percent of the CPU when the navi is busy (driving: our draws took 6.5 ms and ticks slipped to 86 ms median, 326 ms worst).
+     *  The notification it needs is the app's icon with "플로팅 창". */
+    private boolean fg;
+    private void foreground(boolean on){
+        if(on==fg)return;fg=on;
+        try{if(on){android.app.Notification n=new android.app.Notification.Builder(this).setSmallIcon(getApplicationInfo().icon)
+                .setContentTitle(getString(getApplicationInfo().labelRes)).setContentText("플로팅 창").setOngoing(true).build();
+                startForeground(7101,n);}
+            else stopForeground(true);}
+        catch(RuntimeException e){android.util.Log.w("VehicleDash","Foreground service refused",e);}
     }
     /** Asks 내 앱 to hide (or bring back) its edge button. Only 내 앱 receives it. */
     private void hide(boolean on){

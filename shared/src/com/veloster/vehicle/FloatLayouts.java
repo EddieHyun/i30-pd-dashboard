@@ -109,7 +109,16 @@ final class FloatLayouts extends ClusterKit {
     private int led(int i,int n){float t=(i+.5f)/n;if(greenRed)return t<.45f?0xff2fe06a:t<.8f?0xffff3b3b:0xff4aa8ff;return t<.6f?acc:t<.85f?0xffffaa3c:0xffff4b3c;}
 
     /** Draws layout shape at 0,0 with cells d[0..], the rpm fraction and the gear's text. */
-    static void draw(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear){K.drawImpl(c,shape,n,k,skin,af,d,rpm,gear);}
+    static void draw(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear){draw(c,shape,n,k,skin,af,d,rpm,gear,ALL);}
+    /** Partial redraw: STAT draws only what does not move (body, scale, ticks, names) for FloatPanel to keep as a bitmap, DYN only what
+     *  does (values, filled arcs, needle, peaks); ALL both. Shapes that do not split draw everything on ALL and STAT, nothing on DYN. */
+    static final int ALL=0,STAT=1,DYN=2;
+    /** Shapes whose drawing is split into STAT and DYN (the others are drawn whole every frame). */
+    static boolean splits(int shape){return shape==DIAL||shape==HERO;}
+    static void draw(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear,int pass){
+        K.pass=splits(shape)?pass:pass==DYN?-1:ALL;if(K.pass<0)return;
+        try{K.drawImpl(c,shape,n,k,skin,af,d,rpm,gear);}finally{K.pass=ALL;}}
+    private int pass=ALL;
     private void drawImpl(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear){
         palette(skin,af);
         float W=w(shape,n)*k,H=h(shape,n)*k;int u=used(shape,n);boolean rOk=!Float.isNaN(rpm);float rf=rOk?Math.max(0,Math.min(1,rpm)):0;
@@ -123,21 +132,23 @@ final class FloatLayouts extends ClusterKit {
                 fit(c,nm(d[i]),x,14*k,7.5f*k,72*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);vu(c,d[i],x,33*k,16*k,72*k,k,Paint.Align.LEFT);}
             break;}
         case HERO:case DIAL:{   // one big reading on the left (a bar, or a half dial with a needle), the next three as rows
-            body(c,W,H,k,-1);FloatSkin.Cell a=d[0];boolean dial=shape==DIAL;float lw=(dial?132:140)*k;
-            fit(c,nm(a),(dial?10:12)*k,(dial?18:20)*k,(dial?9:10)*k,lw*.55f,mut,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-            if(a.pk!=null)t(c,"▲ "+a.pk,lw-12*k,(dial?18:20)*k,8.5f*k,mut,Paint.Align.RIGHT,face);
-            if(!dial){vu(c,a,12*k,66*k,34*k,116*k,k,Paint.Align.LEFT);bar(c,a,12*k,84*k,116*k,6*k,k,true);}
-            else{float cx=66*k,cy=78*k,rad=50*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(track);c.drawArc(r,180,180,false,p);
-                boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
-                if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setColor(warn(a.lv,acc));c.drawArc(r,180+180*lo,Math.max(1,180*(hi-lo)),false,p);}
-                p.setStyle(Paint.Style.FILL);
-                for(int i=0;i<=10;i++){double an=Math.toRadians(180+18*i);float r1=rad-9*k,r2=rad-(i%5==0?15:12)*k;line(c,cx+(float)Math.cos(an)*r1,cy+(float)Math.sin(an)*r1,cx+(float)Math.cos(an)*r2,cy+(float)Math.sin(an)*r2,k,mut);}
-                if(a.pk!=null&&!Float.isNaN(a.pf)){double an=Math.toRadians(180+180*Math.max(0,Math.min(1,a.pf)));line(c,cx+(float)Math.cos(an)*(rad-4*k),cy+(float)Math.sin(an)*(rad-4*k),cx+(float)Math.cos(an)*(rad+4*k),cy+(float)Math.sin(an)*(rad+4*k),2*k,plain?0xffffffff:txt);}
-                if(has){double an=Math.toRadians(180+180*f);p.setStrokeCap(Paint.Cap.ROUND);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-6*k),cy+(float)Math.sin(an)*(rad-6*k),2*k,0xffff6b5b);p.setStrokeCap(Paint.Cap.BUTT);}
-                dot(c,cx,cy,4*k,0xffff6b5b);fit(c,a.val,cx,cy+18*k,15*k,100*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}
-            int rows=rows(n);if(rows>0)fill(c,lw,10*k,lw+1,H-10*k,div);
+            boolean st=pass!=DYN,dy=pass!=STAT;   // partial redraw: the body, scale and names are kept as a bitmap (FloatPanel), the rest drawn each frame
+            FloatSkin.Cell a=d[0];boolean dial=shape==DIAL;float lw=(dial?132:140)*k;
+            if(st){body(c,W,H,k,-1);fit(c,nm(a),(dial?10:12)*k,(dial?18:20)*k,(dial?9:10)*k,lw*.55f,mut,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);}
+            if(dy&&a.pk!=null)t(c,"▲ "+a.pk,lw-12*k,(dial?18:20)*k,8.5f*k,mut,Paint.Align.RIGHT,face);
+            if(!dial){if(dy){vu(c,a,12*k,66*k,34*k,116*k,k,Paint.Align.LEFT);bar(c,a,12*k,84*k,116*k,6*k,k,true);}}
+            else{float cx=66*k,cy=78*k,rad=50*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);
+                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(track);c.drawArc(r,180,180,false,p);p.setStyle(Paint.Style.FILL);
+                    for(int i=0;i<=10;i++){double an=Math.toRadians(180+18*i);float r1=rad-9*k,r2=rad-(i%5==0?15:12)*k;line(c,cx+(float)Math.cos(an)*r1,cy+(float)Math.sin(an)*r1,cx+(float)Math.cos(an)*r2,cy+(float)Math.sin(an)*r2,k,mut);}}
+                if(dy){boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
+                    if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(warn(a.lv,acc));c.drawArc(r,180+180*lo,Math.max(1,180*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
+                    if(a.pk!=null&&!Float.isNaN(a.pf)){double an=Math.toRadians(180+180*Math.max(0,Math.min(1,a.pf)));line(c,cx+(float)Math.cos(an)*(rad-4*k),cy+(float)Math.sin(an)*(rad-4*k),cx+(float)Math.cos(an)*(rad+4*k),cy+(float)Math.sin(an)*(rad+4*k),2*k,plain?0xffffffff:txt);}
+                    if(has){double an=Math.toRadians(180+180*f);p.setStrokeCap(Paint.Cap.ROUND);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-6*k),cy+(float)Math.sin(an)*(rad-6*k),2*k,0xffff6b5b);p.setStrokeCap(Paint.Cap.BUTT);}
+                    dot(c,cx,cy,4*k,0xffff6b5b);fit(c,a.val,cx,cy+18*k,15*k,100*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}}
+            int rows=rows(n);if(st&&rows>0)fill(c,lw,10*k,lw+1,H-10*k,div);
             for(int i=1;i<=rows;i++){FloatSkin.Cell b=d[i];float y=(dial?10+(i-1)*30:12+(i-1)*32)*k,x=lw+10*k,rr=W-(dial?10:12)*k;
-                String nb=nm(b);fit(c,nb,x,y+(dial?(pix?9:12):10)*k,(dial?8:7.5f)*k,rr-x,mut,Paint.Align.LEFT,Typeface.DEFAULT);
+                String nb=nm(b);if(st)fit(c,nb,x,y+(dial?(pix?9:12):10)*k,(dial?8:7.5f)*k,rr-x,mut,Paint.Align.LEFT,Typeface.DEFAULT);
+                if(!dy)continue;
                 float nw=pix?(nb.length()*6-1)*Math.max(1,Math.round(7.5f*k/7f)):width(nb,7.5f*k,Typeface.DEFAULT);   // a row's value keeps clear of its name
                 String v=b.val+(b.unit.isEmpty()?"":" "+b.unit);fit(c,v,rr,y+(dial?24:12)*k,(dial?14:13)*k,dial?rr-x:Math.min((rr-x)*.6f,rr-x-nw-6*k),warn(b.lv,txt),Paint.Align.RIGHT,bold);
                 if(!dial){FloatSkin.Cell bb=b;bar(c,bb,x,y+18*k,rr-x,2*k,k,false);}}
