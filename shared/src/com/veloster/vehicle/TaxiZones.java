@@ -34,6 +34,10 @@ public final class TaxiZones {
         }
         return -1;
     }
+    /** The rings are decoded (at() answers without the few hundred ms of decoding). */
+    public static synchronized boolean ready(){return rings!=null;}
+    /** Lets go of the decoded rings (about 0.2 MB) while the dashboard is out of sight; the next at() decodes again. */
+    public static synchronized void release(){rings=null;box=null;}
     private static void decode(){
         String[][] zs=TaxiZoneData.ZONES;int[][][] rs=new int[zs.length][][];int[][] bs=new int[zs.length][];
         for(int z=0;z<zs.length;z++){

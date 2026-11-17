@@ -191,7 +191,7 @@ public final class PitRenderer {
     private Bitmap body,head;private int bodyKey,headKey;
     /** The dashboard went out of sight: the page and header bitmaps, the screen list's previews and every screen's kept
      *  bitmaps go (about 9 MB after a visit to 에코, RPM and 서킷), and come back as each is drawn again. UI thread. */
-    public void trim(){body=null;head=null;java.util.Arrays.fill(thumbs,null);eco.trim();tacho.trim();clusterRenderer.trim();}
+    public void trim(){body=ClusterKit.recycle(body);head=ClusterKit.recycle(head);ClusterKit.recycle(thumbs);eco.trim();tacho.trim();clusterRenderer.trim();}
     private static Bitmap canvasBitmap(Bitmap old,int w,int h){
         if(old!=null&&old.getWidth()==w&&old.getHeight()==h){old.eraseColor(0);return old;}
         return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);

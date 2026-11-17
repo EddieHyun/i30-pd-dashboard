@@ -73,6 +73,11 @@ abstract class ClusterKit {
     /** Lets go of the bitmaps this screen keeps between frames (the dashboard is out of sight: only the floating window, or
      *  nothing, is drawn); each is made again the next time the screen draws. UI thread. */
     void trim(){}
+    /** Frees a let-go bitmap's pixels now rather than at the next collections (a bitmap waits for its finalizer: on the
+     *  V141 emulator 2.2 MB of trimmed bitmaps were still held a while after trim). Null-safe; returns null for the field. */
+    static Bitmap recycle(Bitmap b){if(b!=null&&!b.isRecycled())b.recycle();return null;}
+    static void recycle(Bitmap[] bs){if(bs!=null)for(int i=0;i<bs.length;i++)bs[i]=recycle(bs[i]);}
+    static void recycle(java.util.Map<?,Bitmap> m){for(Bitmap b:m.values())recycle(b);m.clear();}
     protected static Bitmap bitmap(int w,int h){return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);}
     /** Draws part of a cached bitmap into a screen rectangle, nearest neighbour. */
     protected void blit(Canvas c,Bitmap b,int sx,int sy,int sw,int sh,float l,float t,float rr,float bt){

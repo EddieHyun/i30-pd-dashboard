@@ -14,7 +14,9 @@ public class Bitmap {
     public int getHeight(){return img==null?0:img.getHeight();}
     public static Bitmap createScaledBitmap(Bitmap src,int w,int h,boolean filter){Bitmap b=createBitmap(w,h,Config.ARGB_8888);java.awt.Graphics2D g=b.img.createGraphics();
         g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,filter?java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR:java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);g.drawImage(src.img,0,0,w,h,null);g.dispose();return b;}
-    public void recycle(){}
+    private boolean recycled;
+    public void recycle(){recycled=true;}
+    public boolean isRecycled(){return recycled;}
     public void getPixels(int[] px,int off,int stride,int x,int y,int w,int h){img.getRGB(x,y,w,h,px,off,stride);}
     public void setPixels(int[] px,int off,int stride,int x,int y,int w,int h){img.setRGB(x,y,w,h,px,off,stride);}
     /** Preview only: a PNG the renderer reads as an app resource. */
