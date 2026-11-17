@@ -879,5 +879,14 @@
   "계기 묶음": "Dials",
   "RPM 막대": "RPM bar",
   "세로 단수": "Gear column",
-  "계기 + 목록": "Dial + list"
+  "계기 + 목록": "Dial + list",
+  "이 앱들 지우기": "Remove these apps",
+  "차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n지워지는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 지워야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다.": "For selling or handing over the car.\n\nRemoved:\n· the i30 dashboard app with its settings and records\n· My Apps with its settings\n\nPut back:\n· the ☆ button to its own function\n· the edge shortcut button turned off\n\nTiles added to the stock menu (PC menu installer) are removed from the PC separately. To use them again, install with the installer.",
+  "계속": "Continue",
+  "빨간 버튼을 3초 동안 누르고 있으면 지웁니다. 중간에 떼면 취소됩니다.": "Hold the red button for 3 seconds to remove. Letting go cancels.",
+  "눌러서 지우기": "Hold to remove",
+  "계속 누르세요": "Keep holding",
+  "지우는 중": "Removing",
+  "잠시 기다리세요. 끝나면 이 화면이 닫힙니다.": "Please wait. This screen closes when done.",
+  "이 내비에서는 앱이 스스로 지울 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.": "This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer."
 }
