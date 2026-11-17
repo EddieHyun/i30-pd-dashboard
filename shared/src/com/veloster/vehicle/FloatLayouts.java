@@ -100,8 +100,8 @@ final class FloatLayouts extends ClusterKit {
         else{text(c,d.val,x,y,vs,col,Paint.Align.LEFT,bold);text(c,d.unit,x+vw+3*k,y,us,mut,Paint.Align.LEFT,face);}
     }
     private void bar(Canvas c,FloatSkin.Cell d,float x,float y,float w,float h,float k,boolean peak){
-        if(pix){int nb=Math.max(4,Math.round(w/(9*k)));float bw=w/nb,hh=Math.max(h,4*k);int lit=Float.isNaN(d.f)||!d.bar?0:Math.round(Math.max(0,Math.min(1,d.f))*nb);   // HP blocks
-            for(int i=0;i<nb;i++){boolean lt=i<lit;if(pass==ALL||pass==STAT||lt)fill(c,Math.round(x+i*bw),Math.round(y),Math.round(x+(i+1)*bw-2*k),Math.round(y+hh),lt&&pass!=STAT?(i>=nb*.8f?0xffff3d3d:acc):track);}return;}
+        if(pix){int nb=Math.max(4,Math.round(w/(9*k)));float bw=w/nb,hh=Math.max(h,4*k);boolean has=!Float.isNaN(d.f)&&d.bar;float fc=has?Math.max(0,Math.min(1,d.f)):0;   // HP blocks, lit from the bar's start
+            for(int i=0;i<nb;i++){boolean lt=FloatSkin.lit(i,nb,fc,d.zero,has);if(pass==ALL||pass==STAT||lt)fill(c,Math.round(x+i*bw),Math.round(y),Math.round(x+(i+1)*bw-2*k),Math.round(y+hh),lt&&pass!=STAT?(i>=nb*.8f?0xffff3d3d:acc):track);}return;}
         if(pass!=DYN)fill(c,x,y,x+w,y+h,track);if(pass==STAT||Float.isNaN(d.f)||!d.bar)return;float f=Math.max(0,Math.min(1,d.f)),z=d.zero,a=Math.min(z,f),b=Math.max(z,f);
         fill(c,x+w*a,y,Math.max(x+w*b,x+w*a+2),y+h,warn(d.lv,acc));
         if(peak&&d.pk!=null&&!Float.isNaN(d.pf)){float px=x+w*Math.max(0,Math.min(1,d.pf));fill(c,px-k,y-2*k,px+k,y+h+2*k,plain?0xffffffff:txt);}

@@ -56,6 +56,8 @@ final class FloatSkin extends ClusterKit {
         float w=width(s,size,tf);if(w>max&&w>0)size*=max/w;text(c,s,x,y,size,col,al,tf);}
     private static int warn(int lv,int normal){return lv==2?0xffff4b3c:lv==1?0xffffaa3c:normal;}
     private static float clamp01(float f){return Math.max(0,Math.min(1,f));}
+    /** Segment i of n is lit: it lies between the bar's start z (0, or .5 for a reading centred on 0) and the reading f. */
+    static boolean lit(int i,int n,float f,float z,boolean has){if(!has)return false;int a=Math.round(Math.min(z,f)*n),b=Math.round(Math.max(z,f)*n);return i>=a&&i<b;}
     /** Partial redraw (FloatPanel.PASS): st = kept as a bitmap (frames, names, scales, fixed units), dy = drawn each frame. */
     private static boolean st(){return FloatPanel.PASS!=FloatPanel.DYN;}
     private static boolean dy(){return FloatPanel.PASS!=FloatPanel.STAT;}
@@ -92,7 +94,7 @@ final class FloatSkin extends ClusterKit {
             break;}
         case F1:{   // the F1 screen's shift lights as the cell's bar (green, red, blue), then the number large
             if(st()&&x>.5f)fill(c,x,y+8*k,x+1,y+ch-6*k,0xff2a343b);
-            if(dy()&&d.bar){int n=8;for(int i=0;i<n;i++){boolean on=has&&i<Math.round(f*n);int col=i<3?0xff2fe06a:i<6?0xffff3b3b:0xff4aa8ff;
+            if(dy()&&d.bar){int n=8;for(int i=0;i<n;i++){boolean on=lit(i,n,f,d.zero,has);int col=i<3?0xff2fe06a:i<6?0xffff3b3b:0xff4aa8ff;
                 float cx=x+12*k+i*(cw-24*k)/(n-1);if(on)dot(c,cx,y+10*k,5.5f*k,col&0x44ffffff);dot(c,cx,y+10*k,3.2f*k,on?col:0xff1d2428);}}
             if(st())fit(c,d.en,x+10*k,y+27*k,8*k,cw*(pk?.5f:.8f),0xff8fa0a8,Paint.Align.LEFT,faceBold());
             if(dy()&&pk)text(c,"▲"+d.pk,x+cw-10*k,y+27*k,8*k,0xffff6b5b,Paint.Align.RIGHT,face());
@@ -106,7 +108,7 @@ final class FloatSkin extends ClusterKit {
             if(st())text(c,d.unit,x+cw-28*k,y+48*k,9*k,0xffc46a1c,Paint.Align.LEFT,Typeface.MONOSPACE);
             if(!dy())break;
             fit(c,d.val,x+cw-30*k,y+48*k,26*k,cw-(d.bar?60:40)*k,warn(d.lv==1?0:d.lv,0xffffb347),Paint.Align.RIGHT,Typeface.MONOSPACE);
-            if(d.bar){int segs=8,lit=Math.round(f*segs);for(int s=0;s<segs;s++)fill(c,x+9*k,y+(56-s*5)*k,x+19*k,y+(59.4f-s*5)*k,s<lit?(s>=6?0xffff5a1f:0xffff9a2e):0xff2a1606);}
+            if(d.bar){int segs=8;for(int s=0;s<segs;s++)fill(c,x+9*k,y+(56-s*5)*k,x+19*k,y+(59.4f-s*5)*k,lit(s,segs,f,d.zero,has)?(s>=6?0xffff5a1f:0xffff9a2e):0xff2a1606);}
             break;}
         case VFD:{   // a fluorescent display: seven-segment digits over their unlit ghost, a stepped bar
             int on=warn(d.lv==1?0:d.lv,0xff5ef2d2),ghost=0x145ef2d2,dim=0xb35ef2d2;
@@ -116,19 +118,20 @@ final class FloatSkin extends ClusterKit {
             String s=d.val.startsWith("+")?d.val.substring(1):d.val;if(s.equals("—"))s="--";
             seg7(c,s.replaceAll("[0-9]","8"),x+cw-9*k,y+19*k,24*k,ghost,0,false);float tw=seg7(c,s,x+cw-9*k,y+19*k,24*k,on,0,false);
             if(d.val.startsWith("+")){float px=x+cw-9*k-tw-11*k;fill(c,px,y+30*k,px+7*k,y+32.4f*k,on);fill(c,px+2.3f*k,y+27.7f*k,px+4.7f*k,y+34.7f*k,on);}
-            if(d.bar){int n=12,lit=Math.round(f*n);for(int i=0;i<n;i++){float hh=(2+i*.7f)*k;fill(c,x+(9+i*8.6f)*k,y+58*k-hh,x+(15.4f+i*8.6f)*k,y+58*k,i<lit?(i>=10?0xffff4d6a:on):0x1a5ef2d2);}}
+            if(d.bar){int n=12;for(int i=0;i<n;i++){float hh=(2+i*.7f)*k;fill(c,x+(9+i*8.6f)*k,y+58*k-hh,x+(15.4f+i*8.6f)*k,y+58*k,lit(i,n,f,d.zero,has)?(i>=10?0xffff4d6a:on):0x1a5ef2d2);}}
             break;}
         case HUD:{   // green lines only: corner brackets, the value in the HUD's arrow box, a tick scale with a caret
             for(int pass=0;pass<2;pass++){int g=pass==0?0xb4000000:warn(d.lv,0xff62ff8a);c.save();if(pass==0)c.translate(k,k);   // a dark copy one pixel down-right, then the green: readable on a bright map
             float L=8*k,x0=x+4*k,y0=y+4*k,x1=x+cw-4*k,y1=y+ch-4*k,sw=1.2f*k;
-            if(st()){line(c,x0,y0,x0+L,y0,sw,g);line(c,x0,y0,x0,y0+L,sw,g);line(c,x1-L,y0,x1,y0,sw,g);line(c,x1,y0,x1,y0+L,sw,g);
+            if(dy()){line(c,x0,y0,x0+L,y0,sw,g);   /* corners each frame: the caret's dark copy reaches the bottom-left one */line(c,x0,y0,x0,y0+L,sw,g);line(c,x1-L,y0,x1,y0,sw,g);line(c,x1,y0,x1,y0+L,sw,g);
             line(c,x0,y1,x0+L,y1,sw,g);line(c,x0,y1-L,x0,y1,sw,g);line(c,x1-L,y1,x1,y1,sw,g);line(c,x1,y1-L,x1,y1,sw,g);
-            fit(c,d.en,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);}
+            }
+            if(st())fit(c,d.en,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);
             if(d.val.isEmpty()){c.restore();continue;}   // a 4-wheel cell: the wheels go where the box was
             float bx=x+40*k,by=y+22*k,bw=70*k,bh=24*k;if(dy()){path.reset();path.moveTo(bx,by);path.lineTo(bx+bw,by);path.lineTo(bx+bw,by+bh);path.lineTo(bx,by+bh);path.lineTo(bx-8*k,by+bh/2);path.close();
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setColor(g);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
             fit(c,d.val,bx+bw-6*k,by+19*k,19*k,bw-12*k,g,Paint.Align.RIGHT,Typeface.MONOSPACE);fit(c,d.unit,x+12*k,y+40*k,8*k,26*k,g,Paint.Align.LEFT,Typeface.MONOSPACE);}
-            if(d.bar){float tl=x+12*k,tr=x+cw-12*k,ty=y+54*k;if(st())for(int i=0;i<=10;i++){float tx=tl+(tr-tl)*i/10;line(c,tx,ty,tx,ty-(i%5==0?4:2)*k,sw,g);}
+            if(d.bar){float tl=x+12*k,tr=x+cw-12*k,ty=y+54*k;if(dy())for(int i=0;i<=10;i++){   /* the scale each frame too: the caret's dark copy can fall on its first tick */float tx=tl+(tr-tl)*i/10;line(c,tx,ty,tx,ty-(i%5==0?4:2)*k,sw,g);}
                 if(dy()&&has){float px=tl+(tr-tl)*f;path.reset();path.moveTo(px,ty+k);path.lineTo(px-3*k,ty+6*k);path.lineTo(px+3*k,ty+6*k);path.close();p.setColor(g);c.drawPath(path,p);}
                 if(dy()&&pk){float qx=tl+(tr-tl)*pf;path.reset();path.moveTo(qx,ty-6*k);path.lineTo(qx-2.5f*k,ty-10*k);path.lineTo(qx+2.5f*k,ty-10*k);path.close();p.setColor(g);c.drawPath(path,p);}}
             c.restore();}
@@ -140,7 +143,7 @@ final class FloatSkin extends ClusterKit {
             if(!dy())break;
             if(pk)pixel(c,hi,x+cw-12*k-(hi.length()*6-1)*ls,y+19*k-7*ls,ls,0xffff6aa0);
             pixel(c,clip(d.val.equals("—")?"--":d.val,(cw-20*k)/(6*vs)),x+12*k,y+26*k,vs,warn(d.lv,0xffffffff));
-            if(d.bar){int n=9,lit=Math.round(f*n);for(int i=0;i<n;i++)fill(c,Math.round(x+(12+i*11)*k),Math.round(y+47*k),Math.round(x+(21+i*11)*k),Math.round(y+53*k),i<lit?(i>=7?0xffff3d3d:0xff3ddc5a):0xff2a2a2a);}
+            if(d.bar){int n=9;for(int i=0;i<n;i++)fill(c,Math.round(x+(12+i*11)*k),Math.round(y+47*k),Math.round(x+(21+i*11)*k),Math.round(y+53*k),lit(i,n,f,d.zero,has)?(i>=7?0xffff3d3d:0xff3ddc5a):0xff2a2a2a);}
             break;}
         case VU:{   // the cassette screen's ivory VU meter: an arc, a red zone, a needle, the value at the bottom
             float fx=x+4*k,fy=y+4*k,fw=cw-8*k,fh=ch-8*k,cx=fx+fw/2,cy=fy+fh+16*k,R=fh+4*k;
@@ -163,7 +166,7 @@ final class FloatSkin extends ClusterKit {
             if(dy()&&pk)text(c,com.veloster.i18n.UiText.t("최고")+" "+d.pk,x+cw-10*k,y+17*k,8.5f*k,0xff737d82,Paint.Align.RIGHT,Typeface.DEFAULT);
             if(st())text(c,d.unit,x+cw-27*k,y+48*k,9*k,0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
             if(dy())fit(c,d.val,x+cw-30*k,y+48*k,28*k,cw-44*k,warn(d.lv,0xffc5ccd0),Paint.Align.RIGHT,Typeface.DEFAULT);
-            if(d.bar){if(st())fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(dy()&&has)fill(c,x+12*k,y+55*k,x+12*k+(cw-24*k)*f,y+55*k+1,themeAcc());}
+            if(d.bar){if(st())fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(dy()&&has)fill(c,x+12*k+(cw-24*k)*Math.min(d.zero,f),y+55*k,x+12*k+(cw-24*k)*Math.max(d.zero,f),y+55*k+1,themeAcc());}
             break;}
         default:break;
         }

@@ -180,6 +180,17 @@ public final class TabsPreview {
                 FloatPanel.layerOn=true;System.arraycopy(keepC,0,FloatPanel.cells,0,4);System.arraycopy(keepG,0,FloatPanel.graphs,0,4);FloatPanel.skin=0;FloatPanel.count=4;
                 System.out.println("partial redraw: "+checked+" windows, "+bad+" differ"+why);
                 if(bad>0)throw new AssertionError("partial redraw differs from the whole drawing:"+why);}
+            {   // where bars start: boost from the left end (0 bar idle, then +0.8), lateral G and steering from the middle (left turn)
+                int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=Telemetry.BOOST;FloatPanel.cells[1]=11;FloatPanel.cells[2]=Telemetry.STEERING;FloatPanel.cells[3]=2;
+                Telemetry.Sample[] ex=FloatPanel.example().clone();ex[11]=new Telemetry.Sample(-.4f,true,false,true,false,0);ex[Telemetry.STEERING]=new Telemetry.Sample(-90,true,false,true,false,0);
+                for(float bv:new float[]{0,.8f}){ex[Telemetry.BOOST]=new Telemetry.Sample(bv,true,false,true,false,0);
+                    for(int[] v:new int[][]{{FloatPanel.ROUND,0},{FloatPanel.DIAL,0},{FloatPanel.TWIN,0},{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,2},{FloatPanel.FILLS,0}}){
+                        int f=v[0];FloatPanel.skin=v[1];int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
+                        BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
+                        g2.setColor(new java.awt.Color(0x2a3036));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
+                        FloatPanel.drawStill(new android.graphics.Canvas(g2),f,4,1,ex,VehicleProfile.PETROL_DCT,now);
+                        ImageIO.write(img,"png",new File(out,"x_float_zero_"+f+"_"+v[1]+"_"+(bv>0?"boost":"idle")+".png"));}}
+                System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.skin=0;}
             {   // 타이어 4개: pressure and temperature cells in the plain card, three skins, the round gauge and two layouts
                 int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.cells[1]=FloatPanel.QUAD_T;
                 for(int[] v:new int[][]{{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,6},{FloatPanel.CARD,4},{FloatPanel.ROUND,0},{FloatPanel.HERO,0},{FloatPanel.GEARBOX,1}}){
