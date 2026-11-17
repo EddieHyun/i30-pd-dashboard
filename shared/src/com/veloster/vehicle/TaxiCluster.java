@@ -68,6 +68,7 @@ final class TaxiCluster extends ClusterKit {
     private static final boolean[][] HORSE=horse();
     /** The same frames as small bitmaps, painted on first use (one stamp per frame instead of ~250 squares). */
     private final Bitmap[] horseBmp=new Bitmap[HORSE.length];
+    @Override void trim(){java.util.Arrays.fill(horseBmp,null);}
 
     /** The table in use: the trip's, or while vacant the one where the car is. */
     private TaxiTariff tariff=TaxiTariff.of("서울");

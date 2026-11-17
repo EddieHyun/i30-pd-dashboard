@@ -70,6 +70,9 @@ abstract class ClusterKit {
     protected void line(Canvas c,float x1,float y1,float x2,float y2,float width,int color){
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setColor(col(color));c.drawLine(x1,y1,x2,y2,p);p.setStyle(Paint.Style.FILL);
     }
+    /** Lets go of the bitmaps this screen keeps between frames (the dashboard is out of sight: only the floating window, or
+     *  nothing, is drawn); each is made again the next time the screen draws. UI thread. */
+    void trim(){}
     protected static Bitmap bitmap(int w,int h){return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);}
     /** Draws part of a cached bitmap into a screen rectangle, nearest neighbour. */
     protected void blit(Canvas c,Bitmap b,int sx,int sy,int sw,int sh,float l,float t,float rr,float bt){

@@ -227,6 +227,9 @@ public final class VehicleDash extends View implements Runnable {
         d.resumed=true;d.artwork.open();d.mediaReceiver.start(a);
         d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);
     }
+    /** The dashboard is out of sight (only the floating window is up, or the system asks for memory): let go of the screens'
+     *  kept bitmaps. Switching screens keeps them, so that stays smooth. */
+    public static void trimStandalone(Activity a){VehicleDash d=current.get();if(d!=null&&d.activity==a&&!d.resumed)d.renderer.trim();}
     public static void pauseStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);
