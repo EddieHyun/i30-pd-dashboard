@@ -62,11 +62,20 @@ def main():
     else:
         sources.append(shared / "com/veloster/vehicle/UsbDebugControl.java")
         sources += sorted((shared / "com/veloster/i18n").rglob("*.java"))
+        sources += sorted((shared / "com/veloster/diagnostics").rglob("*.java"))
+    # The file lists go through an argument file and a jar: on Windows the command line has a 32 KB limit, which the
+    # dashboard's sources and classes passed once the shared tree grew.
+    listing = out / "sources.txt"
+    listing.write_text("".join('"' + p.as_posix() + '"\n' for p in sources), encoding="utf-8")
     run("javac", [javac, "-encoding", "UTF-8", "-source", "7", "-target", "7",
-                  "-classpath", classpath, "-d", classes, *sources])
+                  "-classpath", classpath, "-d", classes, "@" + str(listing)])
     # Only app classes enter D8; compile-only OEM declarations never enter the APK.
+    jar = out / "classes.jar"
+    with zipfile.ZipFile(jar, "w") as packed:
+        for cls in sorted(classes.rglob("*.class")):
+            packed.write(cls, cls.relative_to(classes).as_posix())
     run("d8", [java, "-cp", r8, "com.android.tools.r8.D8", "--min-api", "17",
-               "--lib", sdk, "--output", out, *sorted(classes.rglob("*.class"))])
+               "--lib", sdk, "--output", out, jar])
     dex = out / "classes.dex"
     if dex.read_bytes()[:8] != b"dex\n035\0":
         raise SystemExit("Unexpected DEX version; API17 requires DEX035")
