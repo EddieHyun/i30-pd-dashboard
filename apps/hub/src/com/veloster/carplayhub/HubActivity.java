@@ -207,6 +207,8 @@ public final class HubActivity extends Activity {
         TextView help=label(UiText.t("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요."),14,MUT,false);
         help.setLineSpacing(6,1);help.setPadding(18,14,18,14);help.setBackgroundDrawable(shape(0,LINE,12));
         LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,-2);hp.topMargin=12;right.addView(help,hp);
+        // 차를 넘기기 전: dashboard and My Apps removed, ☆ and the edge button put back; two steps, the second a 3 s hold (SelfRemove)
+        card(right,UiText.t("이 앱들 지우기"),0,LINE,MUT,40,0,new Runnable(){public void run(){SelfRemove.ask(HubActivity.this);}});
         // ponytail: 시동 안내 화면 건너뛰기 hidden (did not confirm the notice in the car); consentSkip() and ConsentSkip kept to retry
     }
     private LinearLayout tileRow(){LinearLayout row=new LinearLayout(this);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.topMargin=8;content.addView(row,p);return row;}
