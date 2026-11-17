@@ -17,7 +17,7 @@ import android.widget.TextView;
 import com.veloster.i18n.UiText;
 
 /**
- * 이 앱들 지우기 (before selling the car): puts ☆ back, turns the edge button off, removes the dashboard, then My Apps itself.
+ * 대시보드 앱 삭제 (before selling the car): puts ☆ back, turns the edge button off, removes the dashboard, then My Apps itself.
  * Two steps so a stray tap does nothing: a dialog that says what goes, then a red button held for HOLD_MS (letting go early
  * cancels). Removal goes through PackageManager.deletePackage (hidden; DELETE_PACKAGES is granted to our platform-signed app);
  * where that is refused, the system's own uninstall screen opens for each app instead.
@@ -29,8 +29,8 @@ final class SelfRemove {
 
     /** Step 1: what will go. */
     static void ask(final Activity a){
-        new AlertDialog.Builder(a).setTitle(UiText.t("이 앱들 지우기"))
-            .setMessage(UiText.t("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n지워지는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 지워야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다."))
+        new AlertDialog.Builder(a).setTitle(UiText.t("대시보드 앱 삭제"))
+            .setMessage(UiText.t("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 삭제해야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다."))
             .setPositiveButton(UiText.t("계속"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){hold(a);}})
             .setNegativeButton(UiText.t("취소"),null).show();
     }
@@ -39,12 +39,12 @@ final class SelfRemove {
     private static void hold(final Activity a){
         final Handler h=new Handler();
         LinearLayout box=new LinearLayout(a);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,20,24,8);
-        TextView note=Look.label(a,UiText.t("빨간 버튼을 3초 동안 누르고 있으면 지웁니다. 중간에 떼면 취소됩니다."),16,Look.TXT,false);
+        TextView note=Look.label(a,UiText.t("빨간 버튼을 3초 동안 누르고 있으면 삭제합니다. 중간에 떼면 취소됩니다."),16,Look.TXT,false);
         box.addView(note);
-        final TextView red=Look.label(a,UiText.t("눌러서 지우기"),22,0xffffffff,true);
+        final TextView red=Look.label(a,UiText.t("눌러서 삭제"),22,0xffffffff,true);
         red.setGravity(Gravity.CENTER);red.setBackgroundColor(Look.RED);
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,110);p.topMargin=18;box.addView(red,p);
-        final AlertDialog dialog=new AlertDialog.Builder(a).setTitle(UiText.t("이 앱들 지우기")).setView(box).setNegativeButton(UiText.t("취소"),null).create();
+        final AlertDialog dialog=new AlertDialog.Builder(a).setTitle(UiText.t("대시보드 앱 삭제")).setView(box).setNegativeButton(UiText.t("취소"),null).create();
         final long[] down={0};
         final Runnable count=new Runnable(){public void run(){
             if(down[0]==0)return;
@@ -55,7 +55,7 @@ final class SelfRemove {
         red.setOnTouchListener(new View.OnTouchListener(){public boolean onTouch(View v,MotionEvent e){
             int act=e.getAction();
             if(act==MotionEvent.ACTION_DOWN){down[0]=SystemClock.elapsedRealtime();h.post(count);}
-            else if(act==MotionEvent.ACTION_UP||act==MotionEvent.ACTION_CANCEL){if(down[0]!=0){down[0]=0;h.removeCallbacks(count);red.setText(UiText.t("눌러서 지우기"));}}
+            else if(act==MotionEvent.ACTION_UP||act==MotionEvent.ACTION_CANCEL){if(down[0]!=0){down[0]=0;h.removeCallbacks(count);red.setText(UiText.t("눌러서 삭제"));}}
             return true;
         }});
         dialog.setOnDismissListener(new android.content.DialogInterface.OnDismissListener(){public void onDismiss(android.content.DialogInterface d){if(down[0]!=0){down[0]=0;}h.removeCallbacks(count);}});
@@ -65,7 +65,7 @@ final class SelfRemove {
     /** Puts things back, removes the dashboard (waiting for it to go), then removes this app. */
     private static void remove(final Activity a){
         final Context c=a.getApplicationContext();
-        final AlertDialog progress=new AlertDialog.Builder(a).setTitle(UiText.t("지우는 중")).setMessage(UiText.t("잠시 기다리세요. 끝나면 이 화면이 닫힙니다.")).setCancelable(false).create();
+        final AlertDialog progress=new AlertDialog.Builder(a).setTitle(UiText.t("삭제하는 중")).setMessage(UiText.t("잠시 기다리세요. 끝나면 이 화면이 닫힙니다.")).setCancelable(false).create();
         progress.show();
         new Thread(new Runnable(){public void run(){
             try{StarKey.set(c,false);}catch(Exception e){Log.w("VNCarPlayHub","remove: star key not restored",e);}
@@ -99,6 +99,6 @@ final class SelfRemove {
     private static void uninstallScreen(Activity a,String pkg){
         try{a.startActivity(new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+pkg)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}
         catch(RuntimeException e){Log.w("VNCarPlayHub","remove: uninstall screen unavailable",e);
-            new AlertDialog.Builder(a).setMessage(UiText.t("이 내비에서는 앱이 스스로 지울 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.")).setPositiveButton(UiText.t("확인"),null).show();}
+            new AlertDialog.Builder(a).setMessage(UiText.t("이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.")).setPositiveButton(UiText.t("확인"),null).show();}
     }
 }
