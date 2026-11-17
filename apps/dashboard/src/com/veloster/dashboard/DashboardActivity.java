@@ -27,7 +27,7 @@ public final class DashboardActivity extends Activity {
     protected void onPause(){resumed=false;VehicleDash.pauseStandalone(this);FloatService.startIfOn(this);if(!FloatService.wanted)client.stop();super.onPause();}
     // Out of sight: with only the floating window up (it draws from FloatPanel, not the screens) the screens' bitmaps are
     // let go; also when Android says our UI is hidden or memory is short. Coming back draws them again once.
-    protected void onStop(){super.onStop();if(FloatService.wanted)VehicleDash.trimStandalone(this);}
+    protected void onStop(){super.onStop();android.util.Log.i("VehicleDash","dashboard stopped, floating "+(FloatService.wanted?"up":"off"));if(FloatService.wanted)VehicleDash.trimStandalone(this);}
     @Override public void onTrimMemory(int level){super.onTrimMemory(level);if(level>=TRIM_MEMORY_UI_HIDDEN&&!resumed)VehicleDash.trimStandalone(this);}
     protected void onDestroy(){if(client!=null&&!FloatService.wanted&&!resumed)client.stop();super.onDestroy();}
 }

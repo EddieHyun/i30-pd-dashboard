@@ -225,11 +225,22 @@ public final class VehicleDash extends View implements Runnable {
     public static void resumeStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=true;d.artwork.open();d.mediaReceiver.start(a);
+        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}   // let go while out of sight (trim)
         d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);
     }
     /** The dashboard is out of sight (only the floating window is up, or the system asks for memory): let go of the screens'
      *  kept bitmaps. Switching screens keeps them, so that stays smooth. */
-    public static void trimStandalone(Activity a){VehicleDash d=current.get();if(d!=null&&d.activity==a&&!d.resumed)d.renderer.trim();}
+    public static void trimStandalone(Activity a){VehicleDash d=current.get();boolean go=d!=null&&d.activity==a&&!d.resumed;
+        android.util.Log.i("VehicleDash","trim: "+(go?"screens let go":d==null?"no dashboard":d.activity!=a?"other activity":"still resumed"));
+        if(go){d.renderer.trim();d.invalidate();TaxiZones.release();giveBack();}}   // invalidate: no display list may keep a recycled bitmap
+    /** After a trim: collect now, twice (bitmap finalizers run late), so the let-go pixels leave the heap at once; Dalvik hands
+     *  free heap pages back to the system by itself after a collection (Android 4.2 has no VMRuntime.trimHeap to force it).
+     *  On the V141 emulator: live heap 9.7 MB -> 5.3 MB, the process 13 MB -> about 9 MB once the pages went back. Off the UI thread. */
+    private static void giveBack(){new Thread("vn-trim"){public void run(){
+        try{for(long wait:new long[]{500,5000}){Thread.sleep(wait);System.gc();System.runFinalization();System.gc();}
+            android.util.Log.i("VehicleDash","trim: collected, "+(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1024+" KB in use");}
+        catch(InterruptedException e){/* the app is going away */}
+    }}.start();}
     public static void pauseStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);

@@ -44,7 +44,7 @@ final class Gps implements LocationListener {
         GpsFix.set(l.getLatitude(),l.getLongitude(),l.hasAccuracy()?l.getAccuracy():Float.NaN,l.hasSpeed()?l.getSpeed()*3.6f:Float.NaN);fixes++;
         if(!extrasLogged){extrasLogged=true;logExtras(l);}
         if(now-logAt>=60000){
-            int z=TaxiZones.at(GpsFix.lat,GpsFix.lon);
+            int z=TaxiZones.ready()?TaxiZones.at(GpsFix.lat,GpsFix.lon):-1;   // not decoded again just for this line while the dashboard is away
             android.util.Log.i("VehicleDash","GPS "+fixes+" fixes in "+(now-logAt)/1000+" s, accuracy "+Math.round(GpsFix.accuracy)+" m, speed "+(Float.isNaN(GpsFix.speedKmh)?"none":Math.round(GpsFix.speedKmh)+" km/h")+", fare table "+(z<0?"none":TaxiZones.tariff(z)));
             fixes=0;logAt=now;
         }

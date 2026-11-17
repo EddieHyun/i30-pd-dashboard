@@ -397,8 +397,8 @@ final class PixelCluster extends ClusterKit {
     }
     private final Bitmap[] cityChase=new Bitmap[3];
     @Override void trim(){
-        java.util.Arrays.fill(sideCar,null);java.util.Arrays.fill(cityStrip,null);java.util.Arrays.fill(hillStrip,null);java.util.Arrays.fill(heartBmp,null);
-        java.util.Arrays.fill(cityChase,null);beam=null;highBeam=null;ditherCache.clear();textCache.clear();arcadeCar.clear();plateText=null;
+        recycle(sideCar);recycle(cityStrip);recycle(hillStrip);recycle(heartBmp);recycle(cityChase);beam=recycle(beam);highBeam=recycle(highBeam);
+        recycle(ditherCache);recycle(textCache);recycle(arcadeCar);plateText=recycle(plateText);
     }
     /** All 40 buildings standing on base, windows lit by sky ph. */
     private void buildings(Canvas c,float base,float scaleH,int phase){

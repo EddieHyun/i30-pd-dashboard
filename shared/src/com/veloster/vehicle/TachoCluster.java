@@ -130,7 +130,7 @@ final class TachoCluster extends ClusterKit {
     }
 
     // ---- the still parts, drawn once ----
-    @Override void trim(){face=null;faceKey="";}
+    @Override void trim(){face=recycle(face);faceKey="";}
     private Bitmap buildFace(int acc){
         Bitmap b=bitmap((int)W,(int)H);Canvas c=new Canvas(b);
         fill(c,0,0,W,H,BG);

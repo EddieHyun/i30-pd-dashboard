@@ -39,7 +39,7 @@ public class Canvas {
     public void translate(float x,float y){g.translate(x,y);}
     public void rotate(float deg){g.rotate(Math.toRadians(deg));}
     public void rotate(float deg,float px,float py){g.rotate(Math.toRadians(deg),px,py);}
-    public void drawBitmap(Bitmap b,float x,float y,Paint p){if(b==null||b.img==null)return;g.drawImage(b.img,Math.round(x),Math.round(y),null);}
+    public void drawBitmap(Bitmap b,float x,float y,Paint p){if(b!=null&&b.isRecycled())throw new RuntimeException("Canvas: trying to use a recycled bitmap");if(b==null||b.img==null)return;g.drawImage(b.img,Math.round(x),Math.round(y),null);}
     public boolean clipRect(float l,float t,float r,float b){g.clip(new Rectangle2D.Float(l,t,r-l,b-t));return true;}
     public void drawColor(int color){AffineTransform t=g.getTransform();g.setTransform(new AffineTransform());g.setColor(new Color(color,true));
         g.fillRect(0,0,10000,10000);g.setTransform(t);}
@@ -54,7 +54,7 @@ public class Canvas {
     /** Draws into a Bitmap (the layouts' pixel-art caches). */
     public Canvas(Bitmap b){this(b.img.createGraphics());}
     // Pixel art: nearest neighbour unless the paint asks for filtering. Album art (no image) draws nothing.
-    public void drawBitmap(Bitmap b,Object src,RectF dst,Paint p){
+    public void drawBitmap(Bitmap b,Object src,RectF dst,Paint p){if(b!=null&&b.isRecycled())throw new RuntimeException("Canvas: trying to use a recycled bitmap");
         if(b==null||b.img==null)return;
         Rect s=src instanceof Rect?(Rect)src:null;
         int sx=s==null?0:s.left,sy=s==null?0:s.top,sw=s==null?b.img.getWidth():s.right-s.left,sh=s==null?b.img.getHeight():s.bottom-s.top;
