@@ -6,7 +6,7 @@ import android.os.SystemClock;
 import com.veloster.vehicle.VehicleDash;
 import java.io.InputStream;
 import java.io.IOException;
-import java.net.SocketTimeoutException;
+import java.io.InterruptedIOException;
 import java.util.ArrayDeque;
 
 /** Additional read-only subscriber to captured hscand fanout; no OEM startup or handshake. */
@@ -84,7 +84,7 @@ final class HscanDataClient {
                         while (active) {
                             int n;
                             try { n = input.read(buffer); }
-                            catch (SocketTimeoutException idle) { continue; }
+                            catch (IOException failure) { if (idle(failure)) continue; throw failure; }
                             if (n < 0) break;
                             if (n == 0) continue;
                             Chunk chunk = new Chunk(buffer, n, SystemClock.elapsedRealtime(), ++sequence);
@@ -107,6 +107,15 @@ final class HscanDataClient {
                     catch (InterruptedException stopped) { break; }
                 }
             } finally { close(); }
+        }
+
+        /** A read that only timed out (SO_RCVTIMEO, 500 ms of a quiet bus). API17 LocalSocket can report it as a plain
+         *  IOException (EAGAIN: "Try again") rather than SocketTimeoutException; taken as a lost link it cost a reconnect
+         *  and up to 2.5 s without data. Same rule as the Linuchan5468 i30 PD fork (MIT), HscanReadPolicy. */
+        private boolean idle(IOException e) {
+            if (e instanceof InterruptedIOException) return true;   // SocketTimeoutException is one
+            String m = e.getMessage();
+            return "Try again".equals(m) || "Resource temporarily unavailable".equals(m);
         }
 
         private void decode() {
