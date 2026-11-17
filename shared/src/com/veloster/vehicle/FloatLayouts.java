@@ -191,16 +191,17 @@ final class FloatLayouts extends ClusterKit {
                 if(dy){if(!Float.isNaN(a.f)&&a.bar){float f=Math.max(0,Math.min(1,a.f)),lo=Math.min(a.zero,f),hi=Math.max(a.zero,f),yb=b0-(b0-t0)*lo;fill(c,cx-8*k,Math.min(b0-(b0-t0)*hi,yb-2),cx+8*k,yb,warn(a.lv,acc));}
                     fit(c,a.val,cx,86*k,15*k,50*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}}
             break;}
-        case TWIN:{   // a half dial with a needle per reading
+        case TWIN:{   // a 270 degree dial with a needle per reading (open at the bottom like the round gauges): the value in the opening, name and unit under it
             if(st)body(c,W,H,k,-1);
-            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float cx=((i%2)*116+58)*k,cy=((i/2)*92+54)*k,rad=40*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);
-                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(track);c.drawArc(r,180,180,false,p);p.setStyle(Paint.Style.FILL);fit(c,nm(a),cx,cy+(pix?29:32)*k,8*k,96*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}   // 8-bit: clear of the dialog's inner line
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float cx=((i%2)*116+58)*k,cy=((i/2)*92+40)*k,rad=34*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);
+                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(track);c.drawArc(r,135,270,false,p);p.setStyle(Paint.Style.FILL);
+                    fit(c,nm(a)+(a.unit.isEmpty()||nm(a).endsWith(" "+a.unit)?"":" "+a.unit),cx,cy+(pix?42:46)*k,8*k,104*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}   // 8-bit: clear of the dialog's inner line
                 if(!dy)continue;
                 boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
-                if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(warn(a.lv,acc));c.drawArc(r,180+180*lo,Math.max(1,180*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
-                if(has){double an=Math.toRadians(180+180*f);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-7*k),cy+(float)Math.sin(an)*(rad-7*k),2*k,0xffff6b5b);}
+                if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(warn(a.lv,acc));c.drawArc(r,135+270*lo,Math.max(1,270*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
+                if(has){double an=Math.toRadians(135+270*f);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-7*k),cy+(float)Math.sin(an)*(rad-7*k),2*k,0xffff6b5b);}
                 dot(c,cx,cy,3*k,0xffff6b5b);
-                fit(c,a.val+(a.unit.isEmpty()?"":" "+a.unit),cx,cy+19*k,13*k,96*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}
+                fit(c,a.val,cx,cy+31*k,14*k,44*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}   // under the hub, between the ring's ends, where the needle never goes
             break;}
         case WEDGE:{   // rpm as a row of bars that grow to the right, the gear at its end, readings under it
             if(st)body(c,W,H,k,-1);int seg=24;

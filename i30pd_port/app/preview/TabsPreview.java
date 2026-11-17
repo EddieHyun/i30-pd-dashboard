@@ -183,7 +183,7 @@ public final class TabsPreview {
             {   // where bars start: boost from the left end (0 bar idle, then +0.8), lateral G and steering from the middle (left turn)
                 int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=Telemetry.BOOST;FloatPanel.cells[1]=11;FloatPanel.cells[2]=Telemetry.STEERING;FloatPanel.cells[3]=2;
                 Telemetry.Sample[] ex=FloatPanel.example().clone();ex[11]=new Telemetry.Sample(-.4f,true,false,true,false,0);ex[Telemetry.STEERING]=new Telemetry.Sample(-90,true,false,true,false,0);
-                for(float bv:new float[]{-.6f,0,.8f,1.3f}){ex[Telemetry.BOOST]=new Telemetry.Sample(bv,true,false,true,false,0);
+                for(float bv:new float[]{-.6f,0,.8f,1.8f}){ex[Telemetry.BOOST]=new Telemetry.Sample(bv,true,false,true,false,0);
                     for(int[] v:new int[][]{{FloatPanel.ROUND,0},{FloatPanel.DIAL,0},{FloatPanel.TWIN,0},{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,2},{FloatPanel.FILLS,0}}){
                         int f=v[0];FloatPanel.skin=v[1];int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
                         BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
