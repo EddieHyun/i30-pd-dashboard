@@ -364,5 +364,50 @@ class DeployTests(unittest.TestCase):
             m.free_bytes("Filesystem Size Used Free Blksize\n/data 1000 500 500 4096\n")
 
 
+class JournalTests(unittest.TestCase):
+    """The receipt reaches the disk before the next install step (from upstream 662b4d6)."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.journal = m.Journal(Path(self.temp.name) / "operation", "test", type("Adb", (), {"serial": "test"}))
+        self.original = self.journal.path.read_bytes()
+        self.journal.data["status"] = "applying"
+
+    def test_syncs_complete_file_before_replace_and_directory_after(self):
+        import os, stat
+        events = []
+        real_sync = os.fsync
+
+        def observe(fd):
+            if stat.S_ISDIR(os.fstat(fd).st_mode):
+                events.append("directory")
+                self.assertEqual(m.read_json(self.journal.path)["status"], "applying")
+            else:
+                events.append("file")
+                self.assertEqual(self.journal.path.read_bytes(), self.original)
+                self.assertEqual(m.read_json(self.journal.path.with_suffix(".tmp"))["status"], "applying")
+            real_sync(fd)
+
+        with patch("os.fsync", side_effect=observe):
+            self.journal.save()
+        self.assertEqual(events, ["file", "directory"] if os.name == "posix" else ["file"])
+        self.assertEqual(m.read_json(self.journal.path)["status"], "applying")
+        self.assertFalse(self.journal.path.with_suffix(".tmp").exists())
+
+    def test_file_sync_failure_keeps_previous_receipt(self):
+        with patch("os.fsync", side_effect=OSError("sync failed")):
+            with self.assertRaisesRegex(OSError, "sync failed"):
+                self.journal.save()
+        self.assertEqual(self.journal.path.read_bytes(), self.original)
+        self.assertFalse(self.journal.path.with_suffix(".tmp").exists())
+
+    def test_replace_failure_keeps_previous_receipt(self):
+        with patch.object(Path, "replace", side_effect=OSError("replace failed")):
+            with self.assertRaisesRegex(OSError, "replace failed"):
+                self.journal.save()
+        self.assertEqual(self.journal.path.read_bytes(), self.original)
+        self.assertFalse(self.journal.path.with_suffix(".tmp").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

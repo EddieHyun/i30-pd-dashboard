@@ -5,6 +5,7 @@ No system partition writes, uninstall, data clearing, reboot, or force-stop. Cap
 and --check are read-only on the vehicle. Generated OEM APKs and backups stay local.
 """
 import argparse
+import os
 import hashlib
 import json
 from pathlib import Path
@@ -206,8 +207,21 @@ class Journal:
 
     def save(self):
         temporary = self.path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(self.data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        temporary.replace(self.path)
+        try:
+            with temporary.open("w", encoding="utf-8") as stream:
+                stream.write(json.dumps(self.data, ensure_ascii=False, indent=2) + "\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            temporary.replace(self.path)
+            # the rename too, where folders can be synced; a failed sync stops the install before its next step
+            if os.name == "posix":
+                directory_fd = os.open(self.directory, os.O_RDONLY)
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def step(self, **entry):
         self.data["steps"].append(entry)
