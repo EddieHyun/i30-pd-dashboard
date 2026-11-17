@@ -307,6 +307,7 @@ final class EcoCluster extends ClusterKit {
     }
     /** Grain tile (stones, tar spots) seen in perspective: PH frames one TH-unit period apart, the lane left of the wheel,
      *  the fog toward the car and its shadow baked in. One frame is one bitmap per draw. */
+    @Override void trim(){asphalt=null;car=null;flat=null;spin=null;shelfBmp=null;shelfFor=-1;graphBmp=null;graphKey="";}   // CAR / PAINT stay: they come from the APK once
     private static Bitmap[] buildAsphalt(){
         java.util.Random r=new java.util.Random(3);int[] tile=new int[TW*TH];
         for(int i=0;i<tile.length;i++){float q=r.nextFloat(),v=38+r.nextFloat()*16;if(q<.035f)v=70+r.nextFloat()*45;else if(q<.06f)v=24+r.nextFloat()*8;

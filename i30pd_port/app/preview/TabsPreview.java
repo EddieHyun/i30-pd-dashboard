@@ -73,6 +73,16 @@ public final class TabsPreview {
             "9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp","9o_cluster_circuit"};
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);rec.setPicker(false,false,0);
+        {   // trim (the dashboard out of sight): every screen with kept bitmaps draws the same after letting go of them
+            int[] pages=new int[layouts.length+3];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;pages[layouts.length+2]=PitRenderer.PAGE_CLASSIC;
+            int bad=0;StringBuilder why=new StringBuilder();
+            for(int pg:pages){BufferedImage[] im=new BufferedImage[2];
+                for(int m=0;m<2;m++){if(m==1)rec.trim();rec.setPage(pg);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                    rec.draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);im[m]=img;}
+                int diff=0;for(int yy=0;yy<480;yy++)for(int xx=0;xx<800;xx++)if(im[0].getRGB(xx,yy)!=im[1].getRGB(xx,yy))diff++;
+                if(diff>0){bad++;why.append(" page "+pg+": "+diff+" px");}}
+            rec.setPage(PitRenderer.PAGE_CLASSIC);System.out.println("trim: "+pages.length+" screens redrawn, "+bad+" differ"+why);
+            if(bad>0)throw new AssertionError("a screen draws differently after trim:"+why);}
         Telemetry.Sample sel=model.sample(Telemetry.GEAR_SELECTOR,now);   // G circle in the DCT manual gate (S -> "M" + gear), then the lever back
         model.hscanPd(0xc7,0x1d,new byte[]{0,8,0,0,0,0,0,0},now);rec.setPage(PitRenderer.PAGE_CLASSIC+java.util.Arrays.asList(layouts).indexOf("9i_cluster_gcircle"));
         save(out,"9i_cluster_gcircle_m",rec,model,now,false,false);

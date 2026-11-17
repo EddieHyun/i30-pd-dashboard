@@ -194,6 +194,7 @@ final class CircuitCluster extends ClusterKit {
     private float vk,vox,voy;
     private float sx(double x){return vox+(float)(x-vx)*vk;}
     private float sy(double y){return voy-(float)(y-vy)*vk;}
+    @Override void trim(){trackBmp=null;}
     private void drawTrack(){
         float[] a=track;int an=a.length/2;
         double x0=Double.MAX_VALUE,x1=-Double.MAX_VALUE,y0=Double.MAX_VALUE,y1=-Double.MAX_VALUE;
