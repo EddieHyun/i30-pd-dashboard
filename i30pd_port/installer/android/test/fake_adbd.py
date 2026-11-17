@@ -101,6 +101,9 @@ def session(s, no):
                 out = ('Packages:\r\n  Package [%s] (41a0):\r\n    codePath=/data/app/%s-1.apk\r\n    versionCode=10 targetSdk=17\r\n    versionName=1.9\r\n'
                        '    firstInstallTime=2026-11-02 16:00:00\r\n    lastUpdateTime=2026-11-02 16:10:00\r\n' % (c[16:], c[16:])) if c[16:] in installed else ''
             elif c == 'date': out = 'Mon Nov  2 16:20:00 KST 2026'
+            elif c == 'run-as com.veloster.dashboard cat files/diagnostics/errors.log': out = 'VN-ERROR 1 1794880000000 rear_view\r\ntype java.lang.IllegalStateException\r\n at com.hkmc.pgs.PgsManager._init_:12\r\n'
+            elif c.startswith('run-as com.veloster.carplayhub '): out = "run-as: Package 'com.veloster.carplayhub' is unknown"
+            elif c.startswith('run-as '): out = '/system/bin/sh: cat: files/diagnostics/errors.previous.log: No such file or directory'
             elif c.startswith('logcat -d -v time -s '): out = LOGCAT.replace('\n', '\r\n') * 2000
             elif c.startswith('rm -f '): files.pop(c[6:])
             elif c.startswith('am start '): out = 'Starting: Intent { cmp=com.veloster.carplayhub/.HubActivity }'

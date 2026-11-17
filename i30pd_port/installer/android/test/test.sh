@@ -51,6 +51,7 @@ c 3 | grep -q 'service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.C
 ! c 7 | grep -qE '^push |pm |service call' || fail "7 diagnostics must not change the car"
 D=$(sed -n 's/^DIAG //p' "$T/out7.txt"); [ -f "$D" ] || fail "7 no diagnostics file"
 grep -q 'persist.sys.key.custom: com.hkmc.intent.action.MYMENU_SHORTCUT' "$D" && grep -q 'versionName=1.9' "$D" && grep -q 'draw avg' "$D" || fail "7 diagnostics content"
+grep -q 'VN-ERROR 1 1794880000000 rear_view' "$D" && grep -q 'errors.previous.log: 없음' "$D" && grep -q "읽지 못함 (run-as: Package" "$D" || fail "7 error records"
 ! grep -qE '00:1A:7D|1234-5678|kim@example' "$D" && grep -q '<MAC>' "$D" && grep -q '<전화번호>' "$D" && grep -q '<메일>' "$D" || fail "7 diagnostics must be masked"
 [ "$(grep -c 'draw avg' "$D")" -le 1000 ] || fail "7 log tail is capped"
 grep -q '전에 받아 둔' "$T/out8.txt" && ! c 8 | grep -q '^push ' || fail "8 falls back to the kept APKs"
