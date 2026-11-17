@@ -190,6 +190,14 @@ public final class TabsPreview {
                         g2.setColor(new java.awt.Color(0x2a3036));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
                         FloatPanel.drawStill(new android.graphics.Canvas(g2),f,4,1,ex,VehicleProfile.PETROL_DCT,now);
                         ImageIO.write(img,"png",new File(out,"x_float_zero_"+f+"_"+v[1]+"_"+(bv<0?"a_idle":bv==0?"b_zero":bv<1?"c_08":"d_13")+".png"));}}
+                // text against needles and rings: every shape at idle after a +1.3 bar pull (so the peaks show), in the plain and 8-bit looks
+                for(int f:FloatPanel.FORMS)for(int sk:new int[]{0,6}){FloatPanel.skin=sk;int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
+                    BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
+                    g2.setColor(new java.awt.Color(0x2a3036));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
+                    ex[Telemetry.BOOST]=new Telemetry.Sample(1.3f,true,false,true,false,0);FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(w,hh,BufferedImage.TYPE_INT_RGB).createGraphics()),f,4,1,ex,VehicleProfile.PETROL_DCT,now);
+                    ex[Telemetry.BOOST]=new Telemetry.Sample(-.6f,true,false,true,false,0);FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(w,hh,BufferedImage.TYPE_INT_RGB).createGraphics()),f,4,1,ex,VehicleProfile.PETROL_DCT,now+1000);
+                    FloatPanel.draw(new android.graphics.Canvas(g2),f,4,1,ex,VehicleProfile.PETROL_DCT,now+1200);   // the needles have glided to idle
+                    ImageIO.write(img,"png",new File(out,"x_float_occl_"+f+"_"+sk+".png"));}
                 System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.skin=0;}
             {   // 타이어 4개: pressure and temperature cells in the plain card, three skins, the round gauge and two layouts
                 int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.cells[1]=FloatPanel.QUAD_T;

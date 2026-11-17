@@ -99,9 +99,9 @@ public final class FloatPanel {
     /** Half the scale of a centred reading: ±1.5 G, ±540° steering, ±60 °/s yaw, ±8 N·m steering torque. */
     private static float halfSpan(int s){return s==Telemetry.STEERING?540:s==Telemetry.YAW?60:s==Telemetry.STEER_TORQUE?8:1.5f;}
     /** The reading's place on its scale (0..1, NaN for none): centred ones around .5, the rest as the tiles show them. */
-    /** Boost like a Defi gauge: vacuum (-1..0 bar) squeezed into the first sixth of the sweep, so the needle rests low left at idle
-     *  and 0 bar sits at nine o'clock on a round gauge; boost (0..1.5 bar) has the other five sixths. */
-    static final float VAC=1/6f;
+    /** Boost like a Defi gauge: vacuum (-1..0 bar) squeezed into the first eighteenth of the sweep, so on a 270 degree dial (which
+     *  starts at half past seven) 0 bar sits at eight o'clock and the needle rests there at idle; boost (0..1.5 bar) has the rest. */
+    static final float VAC=1/18f;
     static float frac(int sig,float v){int s=fmt(sig);if(s==Telemetry.BOOST)return Float.isNaN(v)?Float.NaN:v<0?VAC*(Math.max(v,-1)+1):VAC+(1-VAC)*v/1.5f;
         if(centred(sig))return Float.isNaN(v)?Float.NaN:.5f+v/(2*halfSpan(s));return Tiles.fraction(s,v);}
     /** Where a reading's bar starts: the middle for a centred one, the left end otherwise. */

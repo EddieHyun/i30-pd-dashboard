@@ -24,7 +24,7 @@ final class FloatLayouts extends ClusterKit {
         switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;case TICK:return n*96;case FILLS:return 180;case BARS:return n*56+8;case TWIN:return Math.min(2,n)*116;case TOWER:return 92;default:return 248;}
     }
     static float h(int shape,int n){
-        switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 104;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 84+n*40;default:return 64;}
+        switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 112;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 84+n*40;default:return 64;}
     }
     /** Cell i's rectangle in base px, or null when the layout does not show it. */
     static float[] rect(int shape,int n,int i){
@@ -134,7 +134,7 @@ final class FloatLayouts extends ClusterKit {
             break;}
         case HERO:case DIAL:{   // one big reading on the left (a bar, or a round 270 degree dial with a needle), the next three as rows
             FloatSkin.Cell a=d[0];boolean dial=shape==DIAL;float lw=(dial?132:140)*k;
-            if(st){body(c,W,H,k,-1);if(dial)fit(c,nm(a),66*k,94*k,8*k,64*k,mut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // the dial's name in its open bottom, as on the round gauge
+            if(st){body(c,W,H,k,-1);if(dial)fit(c,nm(a),66*k,(pix?101:104)*k,8*k,56*k,mut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // the dial's name at the bottom, under its opening
                 else fit(c,nm(a),12*k,20*k,10*k,lw*.55f,mut,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);}
             if(dy&&!dial&&a.pk!=null)t(c,"▲ "+a.pk,lw-12*k,20*k,8.5f*k,mut,Paint.Align.RIGHT,face);
             if(!dial){if(dy)vu(c,a,12*k,66*k,34*k,116*k,k,Paint.Align.LEFT);bar(c,a,12*k,84*k,116*k,6*k,k,true);}
@@ -145,14 +145,14 @@ final class FloatLayouts extends ClusterKit {
                     if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(warn(a.lv,acc));c.drawArc(r,135+270*lo,Math.max(1,270*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
                     if(a.pk!=null&&!Float.isNaN(a.pf)){double an=Math.toRadians(135+270*Math.max(0,Math.min(1,a.pf)));line(c,cx+(float)Math.cos(an)*(rad-4*k),cy+(float)Math.sin(an)*(rad-4*k),cx+(float)Math.cos(an)*(rad+4*k),cy+(float)Math.sin(an)*(rad+4*k),2*k,plain?0xffffffff:txt);}
                     if(has){double an=Math.toRadians(135+270*f);p.setStrokeCap(Paint.Cap.ROUND);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-6*k),cy+(float)Math.sin(an)*(rad-6*k),2*k,0xffff6b5b);p.setStrokeCap(Paint.Cap.BUTT);}
-                    dot(c,cx,cy,4*k,0xffff6b5b);fit(c,a.val,cx,cy+17*k,14*k,46*k,warn(a.lv,txt),Paint.Align.CENTER,bold);
-                    if(a.pk!=null)t(c,"▲ "+a.pk,lw-4*k,12*k,8*k,mut,Paint.Align.RIGHT,face);}}   // the peak in the top right corner, after the ring (it may touch it)
+                    dot(c,cx,cy,4*k,0xffff6b5b);fit(c,a.val,cx,cy+33*k,13*k,40*k,warn(a.lv,txt),Paint.Align.CENTER,bold);   // in the opening under the hub, where the needle never goes
+                    if(a.pk!=null)fit(c,"▲ "+a.pk,lw-8*k,(pix?101:104)*k,8*k,pix?36*k:28*k,mut,Paint.Align.RIGHT,face);}}   // the peak bottom right, clear of the ring
             int rows=rows(n);if(st&&rows>0)fill(c,lw,10*k,lw+1,H-10*k,div);
             for(int i=1;i<=rows;i++){FloatSkin.Cell b=d[i];float y=(dial?10+(i-1)*30:12+(i-1)*32)*k,x=lw+10*k,rr=W-(dial?10:12)*k;
                 String nb=nm(b);if(st)fit(c,nb,x,y+(dial?(pix?9:12):10)*k,(dial?8:7.5f)*k,rr-x,mut,Paint.Align.LEFT,Typeface.DEFAULT);
                 if(dy){
                 float nw=pix?(nb.length()*6-1)*Math.max(1,Math.round(7.5f*k/7f)):width(nb,7.5f*k,Typeface.DEFAULT);   // a row's value keeps clear of its name
-                String v=b.val+(b.unit.isEmpty()?"":" "+b.unit);fit(c,v,rr,y+(dial?24:12)*k,(dial?14:13)*k,dial?rr-x:Math.min((rr-x)*.6f,rr-x-nw-6*k),warn(b.lv,txt),Paint.Align.RIGHT,bold);}
+                String v=b.val+(b.unit.isEmpty()?"":" "+b.unit);fit(c,v,rr,y+(dial?(pix?26:24):12)*k,(dial?14:13)*k,dial?rr-x:Math.min((rr-x)*.6f,rr-x-nw-6*k),warn(b.lv,txt),Paint.Align.RIGHT,bold);}
                 if(!dial){FloatSkin.Cell bb=b;bar(c,bb,x,y+18*k,rr-x,2*k,k,false);}}
             break;}
         case GEAR:{   // the race screen's gear box in the middle, an rpm line over it, a reading in each corner
@@ -194,7 +194,7 @@ final class FloatLayouts extends ClusterKit {
         case TWIN:{   // a half dial with a needle per reading
             if(st)body(c,W,H,k,-1);
             for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float cx=((i%2)*116+58)*k,cy=((i/2)*92+54)*k,rad=40*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);
-                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(track);c.drawArc(r,180,180,false,p);p.setStyle(Paint.Style.FILL);fit(c,nm(a),cx,cy+32*k,8*k,96*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}
+                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(track);c.drawArc(r,180,180,false,p);p.setStyle(Paint.Style.FILL);fit(c,nm(a),cx,cy+(pix?29:32)*k,8*k,96*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}   // 8-bit: clear of the dialog's inner line
                 if(!dy)continue;
                 boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
                 if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(warn(a.lv,acc));c.drawArc(r,180+180*lo,Math.max(1,180*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
@@ -205,7 +205,7 @@ final class FloatLayouts extends ClusterKit {
         case WEDGE:{   // rpm as a row of bars that grow to the right, the gear at its end, readings under it
             if(st)body(c,W,H,k,-1);int seg=24;
             for(int i=0;i<seg;i++){float x=(10+i*7.75f)*k,hh=(4+14f*i/(seg-1))*k;boolean on=rOk&&(i+.5f)/seg<rf;if(pass!=STAT)fill(c,x,26*k-hh,x+5.75f*k,26*k,on?led(i,seg):track);}   // drawn each frame: the bars sit between pixels, a lit one over a kept track would blend at its edges
-            if(dy)fit(c,gear,238*k,27*k,(pix?21:26)*k,36*k,txt,Paint.Align.RIGHT,bold);
+            if(dy)fit(c,gear,238*k,27*k,(pix?14:26)*k,36*k,txt,Paint.Align.RIGHT,bold);
             for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float x=(i%2)*124*k,y=(34+(i/2)*44)*k;
                 if(st){if(i%2==1)fill(c,x,y+6*k,x+1,y+38*k,div);if(i>=2&&i%2==0)fill(c,8*k,y,W-8*k,y+1,div);fit(c,nm(a),x+12*k,y+13*k,8*k,100*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
                 if(dy)vu(c,a,x+12*k,y+35*k,19*k,100*k,k,Paint.Align.LEFT);}
