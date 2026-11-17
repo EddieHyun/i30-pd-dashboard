@@ -132,19 +132,21 @@ final class FloatLayouts extends ClusterKit {
                 if(st){if(i>0)fill(c,x-7*k,9*k,x-6*k,31*k,div);fit(c,nm(d[i]),x,14*k,7.5f*k,72*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
                 if(dy)vu(c,d[i],x,33*k,16*k,72*k,k,Paint.Align.LEFT);}
             break;}
-        case HERO:case DIAL:{   // one big reading on the left (a bar, or a half dial with a needle), the next three as rows
+        case HERO:case DIAL:{   // one big reading on the left (a bar, or a round 270 degree dial with a needle), the next three as rows
             FloatSkin.Cell a=d[0];boolean dial=shape==DIAL;float lw=(dial?132:140)*k;
-            if(st){body(c,W,H,k,-1);fit(c,nm(a),(dial?10:12)*k,(dial?18:20)*k,(dial?9:10)*k,lw*.55f,mut,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);}
-            if(dy&&a.pk!=null)t(c,"▲ "+a.pk,lw-12*k,(dial?18:20)*k,8.5f*k,mut,Paint.Align.RIGHT,face);
+            if(st){body(c,W,H,k,-1);if(dial)fit(c,nm(a),66*k,94*k,8*k,64*k,mut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // the dial's name in its open bottom, as on the round gauge
+                else fit(c,nm(a),12*k,20*k,10*k,lw*.55f,mut,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);}
+            if(dy&&!dial&&a.pk!=null)t(c,"▲ "+a.pk,lw-12*k,20*k,8.5f*k,mut,Paint.Align.RIGHT,face);
             if(!dial){if(dy)vu(c,a,12*k,66*k,34*k,116*k,k,Paint.Align.LEFT);bar(c,a,12*k,84*k,116*k,6*k,k,true);}
-            else{float cx=66*k,cy=78*k,rad=50*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);
-                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(track);c.drawArc(r,180,180,false,p);p.setStyle(Paint.Style.FILL);
-                    for(int i=0;i<=10;i++){double an=Math.toRadians(180+18*i);float r1=rad-9*k,r2=rad-(i%5==0?15:12)*k;line(c,cx+(float)Math.cos(an)*r1,cy+(float)Math.sin(an)*r1,cx+(float)Math.cos(an)*r2,cy+(float)Math.sin(an)*r2,k,mut);}}
+            else{float cx=66*k,cy=54*k,rad=44*k;r.set(cx-rad,cy-rad,cx+rad,cy+rad);   // 270 degrees open at the bottom, from low left (135) round to low right
+                if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(track);c.drawArc(r,135,270,false,p);p.setStyle(Paint.Style.FILL);
+                    for(int i=0;i<=10;i++){double an=Math.toRadians(135+27*i);float r1=rad-9*k,r2=rad-(i%5==0?15:12)*k;line(c,cx+(float)Math.cos(an)*r1,cy+(float)Math.sin(an)*r1,cx+(float)Math.cos(an)*r2,cy+(float)Math.sin(an)*r2,k,mut);}}
                 if(dy){boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
-                    if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(warn(a.lv,acc));c.drawArc(r,180+180*lo,Math.max(1,180*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
-                    if(a.pk!=null&&!Float.isNaN(a.pf)){double an=Math.toRadians(180+180*Math.max(0,Math.min(1,a.pf)));line(c,cx+(float)Math.cos(an)*(rad-4*k),cy+(float)Math.sin(an)*(rad-4*k),cx+(float)Math.cos(an)*(rad+4*k),cy+(float)Math.sin(an)*(rad+4*k),2*k,plain?0xffffffff:txt);}
-                    if(has){double an=Math.toRadians(180+180*f);p.setStrokeCap(Paint.Cap.ROUND);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-6*k),cy+(float)Math.sin(an)*(rad-6*k),2*k,0xffff6b5b);p.setStrokeCap(Paint.Cap.BUTT);}
-                    dot(c,cx,cy,4*k,0xffff6b5b);fit(c,a.val,cx,cy+18*k,15*k,100*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}}
+                    if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(6*k);p.setColor(warn(a.lv,acc));c.drawArc(r,135+270*lo,Math.max(1,270*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);}
+                    if(a.pk!=null&&!Float.isNaN(a.pf)){double an=Math.toRadians(135+270*Math.max(0,Math.min(1,a.pf)));line(c,cx+(float)Math.cos(an)*(rad-4*k),cy+(float)Math.sin(an)*(rad-4*k),cx+(float)Math.cos(an)*(rad+4*k),cy+(float)Math.sin(an)*(rad+4*k),2*k,plain?0xffffffff:txt);}
+                    if(has){double an=Math.toRadians(135+270*f);p.setStrokeCap(Paint.Cap.ROUND);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-6*k),cy+(float)Math.sin(an)*(rad-6*k),2*k,0xffff6b5b);p.setStrokeCap(Paint.Cap.BUTT);}
+                    dot(c,cx,cy,4*k,0xffff6b5b);fit(c,a.val,cx,cy+17*k,14*k,46*k,warn(a.lv,txt),Paint.Align.CENTER,bold);
+                    if(a.pk!=null)t(c,"▲ "+a.pk,lw-4*k,12*k,8*k,mut,Paint.Align.RIGHT,face);}}   // the peak in the top right corner, after the ring (it may touch it)
             int rows=rows(n);if(st&&rows>0)fill(c,lw,10*k,lw+1,H-10*k,div);
             for(int i=1;i<=rows;i++){FloatSkin.Cell b=d[i];float y=(dial?10+(i-1)*30:12+(i-1)*32)*k,x=lw+10*k,rr=W-(dial?10:12)*k;
                 String nb=nm(b);if(st)fit(c,nb,x,y+(dial?(pix?9:12):10)*k,(dial?8:7.5f)*k,rr-x,mut,Paint.Align.LEFT,Typeface.DEFAULT);

@@ -157,6 +157,7 @@ public final class UiText {
         EN.put("경남","Gyeongnam");
         EN.put("경북","Gyeongbuk");
         EN.put("경유","Diesel");
+        EN.put("계기 + 목록","Dial + list");
         EN.put("계기 묶음","Dials");
         EN.put("계기판","Dashboard");
         EN.put("계기판 따라","Follow the screen");

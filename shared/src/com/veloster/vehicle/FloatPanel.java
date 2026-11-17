@@ -17,7 +17,7 @@ public final class FloatPanel {
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
     /** The rectangular layouts with their own inside (FloatLayouts). */
     public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT,TICK=FloatLayouts.TICK,FILLS=FloatLayouts.FILLS,BARS=FloatLayouts.BARS,TWIN=FloatLayouts.TWIN,WEDGE=FloatLayouts.WEDGE,TOWER=FloatLayouts.TOWER;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","반원 계기","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수"};
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수"};
     /** The 모양 sheet's order. */
     public static final int[] FORMS={CARD,STRIP,SIDE,TICK, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL, GEARBOX,TOWER,SHIFT,WEDGE};   // rows: grids, gauges, lists, rpm and gear
     public static final int LAST_SHAPE=FloatLayouts.LAST;
@@ -99,9 +99,13 @@ public final class FloatPanel {
     /** Half the scale of a centred reading: ±1.5 G, ±540° steering, ±60 °/s yaw, ±8 N·m steering torque. */
     private static float halfSpan(int s){return s==Telemetry.STEERING?540:s==Telemetry.YAW?60:s==Telemetry.STEER_TORQUE?8:1.5f;}
     /** The reading's place on its scale (0..1, NaN for none): centred ones around .5, the rest as the tiles show them. */
-    static float frac(int sig,float v){int s=fmt(sig);if(centred(sig))return Float.isNaN(v)?Float.NaN:.5f+v/(2*halfSpan(s));return Tiles.fraction(s,v);}
+    /** Boost like a Defi gauge: vacuum (-1..0 bar) squeezed into the first sixth of the sweep, so the needle rests low left at idle
+     *  and 0 bar sits at nine o'clock on a round gauge; boost (0..1.5 bar) has the other five sixths. */
+    static final float VAC=1/6f;
+    static float frac(int sig,float v){int s=fmt(sig);if(s==Telemetry.BOOST)return Float.isNaN(v)?Float.NaN:v<0?VAC*(Math.max(v,-1)+1):VAC+(1-VAC)*v/1.5f;
+        if(centred(sig))return Float.isNaN(v)?Float.NaN:.5f+v/(2*halfSpan(s));return Tiles.fraction(s,v);}
     /** Where a reading's bar starts: the middle for a centred one, the left end otherwise. */
-    static float zero(int sig){return centred(sig)?.5f:0;}
+    static float zero(int sig){return centred(sig)?.5f:fmt(sig)==Telemetry.BOOST?VAC:0;}
     /** Cell k's highest reading so far, or NaN. */
     static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
