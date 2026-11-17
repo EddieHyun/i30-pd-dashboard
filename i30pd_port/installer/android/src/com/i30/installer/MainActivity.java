@@ -29,7 +29,8 @@ import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** One screen: channel, 설치 / 삭제 / 취소 / 진단 기록 / 주행 기록 / 공유, a wait line with seconds, and the running log. The steps live in Flow. */
+/** One screen: channel (what each installs now, with a 새로고침 button), 설치 / 삭제 / 취소 / 진단 기록 / 주행 기록 / 공유, a wait line
+ *  with seconds, and the running log. The steps live in Flow. */
 public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
     private TextView log;
     private ScrollView scroll;
@@ -45,7 +46,7 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
             waitLine.postDelayed(this, 1000);
         }
     };
-    private RadioButton test;
+    private RadioButton test, stable;
     private volatile boolean recording;
 
     @Override protected void onCreate(Bundle b) {
@@ -66,7 +67,7 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         root.addView(warn);
 
         RadioGroup channel = new RadioGroup(this);
-        RadioButton stable = new RadioButton(this);
+        stable = new RadioButton(this);
         stable.setText("안정화 (권장) — 실차에서 확인된 버전");
         stable.setId(1);
         test = new RadioButton(this);
@@ -84,17 +85,16 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         notes.setPadding(0, pad / 4, 0, pad / 4);
         notes.setText("버전 정보를 받는 중...");
         notes.setOnClickListener(v -> notesDialog());
-        root.addView(notes);
+        LinearLayout notesRow = new LinearLayout(this);   // the line and 새로고침 beside it: a release published while the app is open shows without restarting
+        notesRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        notesRow.addView(notes, new LinearLayout.LayoutParams(0, -2, 1));
+        refreshBtn = new Button(this);
+        refreshBtn.setText("새로고침");
+        refreshBtn.setOnClickListener(v -> refresh(true));
+        notesRow.addView(refreshBtn, new LinearLayout.LayoutParams(-2, -2));
+        root.addView(notesRow);
         channel.setOnCheckedChangeListener((g, id) -> showNotes());
-        new Thread(() -> {
-            String[] s = Flow.release(false, 4), t = Flow.release(true, 4);
-            runOnUiThread(() -> {
-                rel[0] = s; rel[1] = t;
-                if (s != null) stable.setText("안정화 (권장) " + s[0] + " — 실차에서 확인된 버전");
-                if (t != null) test.setText("테스트 " + t[0] + " — 실차 검증 전");
-                showNotes();
-            });
-        }).start();
+        refresh(false);
 
         LinearLayout buttons = new LinearLayout(this);
         installBtn = button(buttons, "설치", v -> start(Flow.Mode.INSTALL));
@@ -123,7 +123,39 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         setContentView(root);
         say("[진단 기록]은 차를 연결해 상태와 앱 기록만 읽어 공유할 파일을 만듭니다. 차에는 아무것도 바꾸지 않습니다.");
         say("[주행 기록]은 운전하는 동안 차 신호를 읽기만 해서 기록합니다(최대 60분). 연결해 두고 운전한 뒤 [기록 끝]을 누르면 공유 화면이 뜹니다.");
-        new Thread(() -> { String n = Flow.newer(); if (n != null) say("\n" + n); }).start();
+    }
+
+    private Button refreshBtn;
+    private boolean fetching;   // UI thread only
+    private long fetchedAt;
+    private String told;   // the last 'new phone installer' message shown, so a refresh does not repeat it
+    /** Asks GitHub again what each channel installs now (and whether this app has a newer version). user: 새로고침 was pressed, so the
+     *  log says what came back. A few small requests; the button waits while one is under way. */
+    private void refresh(boolean user) {
+        if (fetching) return;
+        fetching = true;
+        refreshBtn.setEnabled(false);
+        notes.setText("버전 정보를 받는 중...");
+        new Thread(() -> {
+            String[] s = Flow.release(false, 4), t = Flow.release(true, 4);
+            String n = Flow.newer();
+            runOnUiThread(() -> {
+                fetching = false;
+                fetchedAt = android.os.SystemClock.elapsedRealtime();
+                refreshBtn.setEnabled(true);
+                if (s != null) { rel[0] = s; stable.setText("안정화 (권장) " + s[0] + " — 실차에서 확인된 버전"); }
+                if (t != null) { rel[1] = t; test.setText("테스트 " + t[0] + " — 실차 검증 전"); }
+                showNotes();
+                if (user) say(s == null && t == null ? "\n버전 정보를 받지 못했습니다. 인터넷 연결을 확인하세요."
+                        : "\n버전 정보를 새로 받았습니다: 안정화 " + (s == null ? "(받지 못함)" : s[0]) + " · 테스트 " + (t == null ? "(받지 못함)" : t[0]));
+                if (n != null && !n.equals(told)) { told = n; say("\n" + n); }
+            });
+        }).start();
+    }
+    /** Back in the app after a while (the phone was put away between car visits): look again without being asked. */
+    @Override protected void onResume() {
+        super.onResume();
+        if (fetchedAt > 0 && android.os.SystemClock.elapsedRealtime() - fetchedAt > 5 * 60_000) refresh(false);
     }
 
     private TextView notes;
