@@ -56,9 +56,12 @@ final class FloatSkin extends ClusterKit {
         float w=width(s,size,tf);if(w>max&&w>0)size*=max/w;text(c,s,x,y,size,col,al,tf);}
     private static int warn(int lv,int normal){return lv==2?0xffff4b3c:lv==1?0xffffaa3c:normal;}
     private static float clamp01(float f){return Math.max(0,Math.min(1,f));}
+    /** Partial redraw (FloatPanel.PASS): st = kept as a bitmap (frames, names, scales, fixed units), dy = drawn each frame. */
+    private static boolean st(){return FloatPanel.PASS!=FloatPanel.DYN;}
+    private static boolean dy(){return FloatPanel.PASS!=FloatPanel.STAT;}
 
     private void cellImpl(Canvas c,int skin,float x,float y,float cw,float ch,float k,Cell d){
-        if(d.quad!=null){String v=d.val,u=d.unit;d.val="";d.unit="";d.bar=false;cellBody(c,skin,x,y,cw,ch,k,d);d.val=v;d.unit=u;quadIn(c,skin,x,y,cw,ch,k,d);return;}
+        if(d.quad!=null){String v=d.val,u=d.unit;d.val="";d.unit="";d.bar=false;cellBody(c,skin,x,y,cw,ch,k,d);d.val=v;d.unit=u;if(dy())quadIn(c,skin,x,y,cw,ch,k,d);return;}
         cellBody(c,skin,x,y,cw,ch,k,d);
     }
     /** A 4-wheel cell: the skin draws its frame and name, then the wheels go in its value ink and type. */
@@ -77,37 +80,39 @@ final class FloatSkin extends ClusterKit {
         switch(skin){
         case RACE:{   // dark boxes, small caps, big white number; the first cell in the race screen's light-blue gear box
             boolean hot=d.first;
-            if(hot)fill(c,x+3*k,y+3*k,x+cw-3*k,y+ch-3*k,themeBox());else box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xff2a353c);
+            if(st()){if(hot)fill(c,x+3*k,y+3*k,x+cw-3*k,y+ch-3*k,themeBox());else box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xff2a353c);}
             int ink=hot?0xff061015:warn(d.lv,0xfff2f6f8),mut=hot?0xb3061015:0xff8fa0a8;
-            fit(c,d.en,x+10*k,y+15*k,8.5f*k,cw*(pk?.5f:.8f),mut,Paint.Align.LEFT,faceBold());
-            if(pk)text(c,"MAX "+d.pk,x+cw-10*k,y+15*k,8*k,mut,Paint.Align.RIGHT,face());
-            float uw=width(d.unit,9*k,face());text(c,d.unit,x+cw-10*k,y+46*k,9*k,mut,Paint.Align.RIGHT,face());
-            fit(c,d.val,x+cw-13*k-uw,y+46*k,25*k,cw-26*k-uw,ink,Paint.Align.RIGHT,faceBold());
-            if(has){float bl=x+10*k,br=x+cw-10*k,bt=y+53*k;fill(c,bl,bt,br,bt+3*k,hot?0x2e061015:0xff26323a);
+            if(st())fit(c,d.en,x+10*k,y+15*k,8.5f*k,cw*(pk?.5f:.8f),mut,Paint.Align.LEFT,faceBold());
+            if(dy()&&pk)text(c,"MAX "+d.pk,x+cw-10*k,y+15*k,8*k,mut,Paint.Align.RIGHT,face());
+            float uw=width(d.unit,9*k,face());if(st())text(c,d.unit,x+cw-10*k,y+46*k,9*k,mut,Paint.Align.RIGHT,face());
+            if(dy())fit(c,d.val,x+cw-13*k-uw,y+46*k,25*k,cw-26*k-uw,ink,Paint.Align.RIGHT,faceBold());
+            if(has){float bl=x+10*k,br=x+cw-10*k,bt=y+53*k;if(st())fill(c,bl,bt,br,bt+3*k,hot?0x2e061015:0xff26323a);if(!dy())break;
                 float z=d.zero,lo=bl+(br-bl)*Math.min(z,f),hi=bl+(br-bl)*Math.max(z,f);fill(c,lo,bt,Math.max(hi,lo+2),bt+3*k,hot?0xff061015:warn(d.lv,themeAcc()));
                 if(pk){float px=bl+(br-bl)*pf;fill(c,px-k,bt-2*k,px+k,bt+5*k,hot?0xff061015:0xffffffff);}}
             break;}
         case F1:{   // the F1 screen's shift lights as the cell's bar (green, red, blue), then the number large
-            if(x>.5f)fill(c,x,y+8*k,x+1,y+ch-6*k,0xff2a343b);
-            if(d.bar){int n=8;for(int i=0;i<n;i++){boolean on=has&&i<Math.round(f*n);int col=i<3?0xff2fe06a:i<6?0xffff3b3b:0xff4aa8ff;
+            if(st()&&x>.5f)fill(c,x,y+8*k,x+1,y+ch-6*k,0xff2a343b);
+            if(dy()&&d.bar){int n=8;for(int i=0;i<n;i++){boolean on=has&&i<Math.round(f*n);int col=i<3?0xff2fe06a:i<6?0xffff3b3b:0xff4aa8ff;
                 float cx=x+12*k+i*(cw-24*k)/(n-1);if(on)dot(c,cx,y+10*k,5.5f*k,col&0x44ffffff);dot(c,cx,y+10*k,3.2f*k,on?col:0xff1d2428);}}
-            fit(c,d.en,x+10*k,y+27*k,8*k,cw*(pk?.5f:.8f),0xff8fa0a8,Paint.Align.LEFT,faceBold());
-            if(pk)text(c,"▲"+d.pk,x+cw-10*k,y+27*k,8*k,0xffff6b5b,Paint.Align.RIGHT,face());
-            float uw=width(d.unit,9*k,face());text(c,d.unit,x+cw-10*k,y+ch-9*k,9*k,0xff8fa0a8,Paint.Align.RIGHT,face());
-            fit(c,d.val,x+cw-13*k-uw,y+ch-9*k,24*k,cw-26*k-uw,warn(d.lv,0xffffffff),Paint.Align.RIGHT,faceBold());
+            if(st())fit(c,d.en,x+10*k,y+27*k,8*k,cw*(pk?.5f:.8f),0xff8fa0a8,Paint.Align.LEFT,faceBold());
+            if(dy()&&pk)text(c,"▲"+d.pk,x+cw-10*k,y+27*k,8*k,0xffff6b5b,Paint.Align.RIGHT,face());
+            float uw=width(d.unit,9*k,face());if(st())text(c,d.unit,x+cw-10*k,y+ch-9*k,9*k,0xff8fa0a8,Paint.Align.RIGHT,face());
+            if(dy())fit(c,d.val,x+cw-13*k-uw,y+ch-9*k,24*k,cw-26*k-uw,warn(d.lv,0xffffffff),Paint.Align.RIGHT,faceBold());
             break;}
         case RETRO:{   // orange-ruled boxes with a header band, amber fixed-width digits, a vertical tick bar
-            box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xffb4500f);fill(c,x+3*k,y+3*k,x+cw-3*k,y+14*k,0xffb4500f);
-            fit(c,d.en,x+8*k,y+12*k,8*k,cw*(pk?.5f:.8f),0xff140800,Paint.Align.LEFT,Typeface.MONOSPACE);
-            if(pk)text(c,"MAX "+d.pk,x+cw-8*k,y+12*k,8*k,0xff140800,Paint.Align.RIGHT,Typeface.MONOSPACE);
-            text(c,d.unit,x+cw-28*k,y+48*k,9*k,0xffc46a1c,Paint.Align.LEFT,Typeface.MONOSPACE);
+            if(st()){box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xffb4500f);fill(c,x+3*k,y+3*k,x+cw-3*k,y+14*k,0xffb4500f);
+                fit(c,d.en,x+8*k,y+12*k,8*k,cw*(pk?.5f:.8f),0xff140800,Paint.Align.LEFT,Typeface.MONOSPACE);}
+            if(dy()&&pk)text(c,"MAX "+d.pk,x+cw-8*k,y+12*k,8*k,0xff140800,Paint.Align.RIGHT,Typeface.MONOSPACE);
+            if(st())text(c,d.unit,x+cw-28*k,y+48*k,9*k,0xffc46a1c,Paint.Align.LEFT,Typeface.MONOSPACE);
+            if(!dy())break;
             fit(c,d.val,x+cw-30*k,y+48*k,26*k,cw-(d.bar?60:40)*k,warn(d.lv==1?0:d.lv,0xffffb347),Paint.Align.RIGHT,Typeface.MONOSPACE);
             if(d.bar){int segs=8,lit=Math.round(f*segs);for(int s=0;s<segs;s++)fill(c,x+9*k,y+(56-s*5)*k,x+19*k,y+(59.4f-s*5)*k,s<lit?(s>=6?0xffff5a1f:0xffff9a2e):0xff2a1606);}
             break;}
         case VFD:{   // a fluorescent display: seven-segment digits over their unlit ghost, a stepped bar
             int on=warn(d.lv==1?0:d.lv,0xff5ef2d2),ghost=0x145ef2d2,dim=0xb35ef2d2;
-            box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0x385ef2d2);
-            fit(c,d.en,x+9*k,y+14*k,8*k,cw*.6f,dim,Paint.Align.LEFT,faceBold());text(c,d.unit,x+cw-9*k,y+14*k,8*k,dim,Paint.Align.RIGHT,faceBold());
+            if(st()){box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0x385ef2d2);
+                fit(c,d.en,x+9*k,y+14*k,8*k,cw*.6f,dim,Paint.Align.LEFT,faceBold());text(c,d.unit,x+cw-9*k,y+14*k,8*k,dim,Paint.Align.RIGHT,faceBold());}
+            if(!dy())break;
             String s=d.val.startsWith("+")?d.val.substring(1):d.val;if(s.equals("—"))s="--";
             seg7(c,s.replaceAll("[0-9]","8"),x+cw-9*k,y+19*k,24*k,ghost,0,false);float tw=seg7(c,s,x+cw-9*k,y+19*k,24*k,on,0,false);
             if(d.val.startsWith("+")){float px=x+cw-9*k-tw-11*k;fill(c,px,y+30*k,px+7*k,y+32.4f*k,on);fill(c,px+2.3f*k,y+27.7f*k,px+4.7f*k,y+34.7f*k,on);}
@@ -116,34 +121,37 @@ final class FloatSkin extends ClusterKit {
         case HUD:{   // green lines only: corner brackets, the value in the HUD's arrow box, a tick scale with a caret
             for(int pass=0;pass<2;pass++){int g=pass==0?0xb4000000:warn(d.lv,0xff62ff8a);c.save();if(pass==0)c.translate(k,k);   // a dark copy one pixel down-right, then the green: readable on a bright map
             float L=8*k,x0=x+4*k,y0=y+4*k,x1=x+cw-4*k,y1=y+ch-4*k,sw=1.2f*k;
-            line(c,x0,y0,x0+L,y0,sw,g);line(c,x0,y0,x0,y0+L,sw,g);line(c,x1-L,y0,x1,y0,sw,g);line(c,x1,y0,x1,y0+L,sw,g);
+            if(st()){line(c,x0,y0,x0+L,y0,sw,g);line(c,x0,y0,x0,y0+L,sw,g);line(c,x1-L,y0,x1,y0,sw,g);line(c,x1,y0,x1,y0+L,sw,g);
             line(c,x0,y1,x0+L,y1,sw,g);line(c,x0,y1-L,x0,y1,sw,g);line(c,x1-L,y1,x1,y1,sw,g);line(c,x1,y1-L,x1,y1,sw,g);
-            fit(c,d.en,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);
+            fit(c,d.en,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);}
             if(d.val.isEmpty()){c.restore();continue;}   // a 4-wheel cell: the wheels go where the box was
-            float bx=x+40*k,by=y+22*k,bw=70*k,bh=24*k;path.reset();path.moveTo(bx,by);path.lineTo(bx+bw,by);path.lineTo(bx+bw,by+bh);path.lineTo(bx,by+bh);path.lineTo(bx-8*k,by+bh/2);path.close();
+            float bx=x+40*k,by=y+22*k,bw=70*k,bh=24*k;if(dy()){path.reset();path.moveTo(bx,by);path.lineTo(bx+bw,by);path.lineTo(bx+bw,by+bh);path.lineTo(bx,by+bh);path.lineTo(bx-8*k,by+bh/2);path.close();
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setColor(g);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
-            fit(c,d.val,bx+bw-6*k,by+19*k,19*k,bw-12*k,g,Paint.Align.RIGHT,Typeface.MONOSPACE);fit(c,d.unit,x+12*k,y+40*k,8*k,26*k,g,Paint.Align.LEFT,Typeface.MONOSPACE);
-            if(d.bar){float tl=x+12*k,tr=x+cw-12*k,ty=y+54*k;for(int i=0;i<=10;i++){float tx=tl+(tr-tl)*i/10;line(c,tx,ty,tx,ty-(i%5==0?4:2)*k,sw,g);}
-                if(has){float px=tl+(tr-tl)*f;path.reset();path.moveTo(px,ty+k);path.lineTo(px-3*k,ty+6*k);path.lineTo(px+3*k,ty+6*k);path.close();p.setColor(g);c.drawPath(path,p);}
-                if(pk){float qx=tl+(tr-tl)*pf;path.reset();path.moveTo(qx,ty-6*k);path.lineTo(qx-2.5f*k,ty-10*k);path.lineTo(qx+2.5f*k,ty-10*k);path.close();p.setColor(g);c.drawPath(path,p);}}
+            fit(c,d.val,bx+bw-6*k,by+19*k,19*k,bw-12*k,g,Paint.Align.RIGHT,Typeface.MONOSPACE);fit(c,d.unit,x+12*k,y+40*k,8*k,26*k,g,Paint.Align.LEFT,Typeface.MONOSPACE);}
+            if(d.bar){float tl=x+12*k,tr=x+cw-12*k,ty=y+54*k;if(st())for(int i=0;i<=10;i++){float tx=tl+(tr-tl)*i/10;line(c,tx,ty,tx,ty-(i%5==0?4:2)*k,sw,g);}
+                if(dy()&&has){float px=tl+(tr-tl)*f;path.reset();path.moveTo(px,ty+k);path.lineTo(px-3*k,ty+6*k);path.lineTo(px+3*k,ty+6*k);path.close();p.setColor(g);c.drawPath(path,p);}
+                if(dy()&&pk){float qx=tl+(tr-tl)*pf;path.reset();path.moveTo(qx,ty-6*k);path.lineTo(qx-2.5f*k,ty-10*k);path.lineTo(qx+2.5f*k,ty-10*k);path.close();p.setColor(g);c.drawPath(path,p);}}
             c.restore();}
             break;}
         case PIXEL:{   // the 8-bit screen's dialog: pixel text, an HP-block bar, the peak as a HI score
             int ls=Math.max(1,Math.round(k*1.2f)),vs=Math.max(2,Math.round(2*k));
             String hi=pk?"HI"+d.pk:"";float hiW=hi.isEmpty()?0:(hi.length()*6-1)*ls+6*k;
-            pixel(c,clip(d.en,(cw-24*k-hiW)/(6*ls)),x+12*k,y+19*k-7*ls,ls,0xffffd84a);
+            if(st())pixel(c,clip(d.en,(cw-24*k-hiW)/(6*ls)),x+12*k,y+19*k-7*ls,ls,0xffffd84a);
+            if(!dy())break;
             if(pk)pixel(c,hi,x+cw-12*k-(hi.length()*6-1)*ls,y+19*k-7*ls,ls,0xffff6aa0);
             pixel(c,clip(d.val.equals("—")?"--":d.val,(cw-20*k)/(6*vs)),x+12*k,y+26*k,vs,warn(d.lv,0xffffffff));
             if(d.bar){int n=9,lit=Math.round(f*n);for(int i=0;i<n;i++)fill(c,Math.round(x+(12+i*11)*k),Math.round(y+47*k),Math.round(x+(21+i*11)*k),Math.round(y+53*k),i<lit?(i>=7?0xffff3d3d:0xff3ddc5a):0xff2a2a2a);}
             break;}
         case VU:{   // the cassette screen's ivory VU meter: an arc, a red zone, a needle, the value at the bottom
-            float fx=x+4*k,fy=y+4*k,fw=cw-8*k,fh=ch-8*k;round(c,fx,fy,fx+fw,fy+fh,3*k,0xffece0bc);fill(c,fx,fy+fh*.62f,fx+fw,fy+fh-3*k,0xffe4d3a6);
-            float cx=fx+fw/2,cy=fy+fh+16*k,R=fh+4*k;r.set(cx-(R-8*k),cy-(R-8*k),cx+(R-8*k),cy+(R-8*k));
+            float fx=x+4*k,fy=y+4*k,fw=cw-8*k,fh=ch-8*k,cx=fx+fw/2,cy=fy+fh+16*k,R=fh+4*k;
+            if(st()){round(c,fx,fy,fx+fw,fy+fh,3*k,0xffece0bc);fill(c,fx,fy+fh*.62f,fx+fw,fy+fh-3*k,0xffe4d3a6);
+            r.set(cx-(R-8*k),cy-(R-8*k),cx+(R-8*k),cy+(R-8*k));
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(k);p.setColor(0xff3a3226);c.drawArc(r,225,90,false,p);
             r.set(cx-(R-9*k),cy-(R-9*k),cx+(R-9*k),cy+(R-9*k));p.setStrokeWidth(2.4f*k);p.setColor(0xffc8302a);c.drawArc(r,291.6f,23.4f,false,p);p.setStyle(Paint.Style.FILL);
             for(int i=0;i<=8;i++){double an=Math.toRadians(225+90.0*i/8);float r1=R-8*k,r2=R-(i%2==1?11:13)*k;
                 line(c,cx+(float)Math.cos(an)*r1,cy+(float)Math.sin(an)*r1,cx+(float)Math.cos(an)*r2,cy+(float)Math.sin(an)*r2,k,i>=6?0xffc8302a:0xff3a3226);}
-            text(c,"VU",cx,fy+fh-14*k,8*k,0xff3a3226,Paint.Align.CENTER,faceBold());
+            text(c,"VU",cx,fy+fh-14*k,8*k,0xff3a3226,Paint.Align.CENTER,faceBold());}
+            if(!dy())break;
             String v=d.val+(d.unit.isEmpty()?"":" "+d.unit);float vw=Math.min(width(v,8.5f*k,faceBold()),fw*.55f);
             fit(c,d.name,fx+5*k,fy+fh-4*k,8.5f*k,fw-vw-14*k,0xff3a3226,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
             fit(c,v,fx+fw-5*k,fy+fh-4*k,8.5f*k,fw*.55f,warn(d.lv,0xff3a3226),Paint.Align.RIGHT,faceBold());
@@ -151,11 +159,11 @@ final class FloatSkin extends ClusterKit {
             if(has){double an=Math.toRadians(225+90*f);c.save();c.clipRect(fx,fy,fx+fw,fy+fh);line(c,cx,cy,cx+(float)Math.cos(an)*(R-6*k),cy+(float)Math.sin(an)*(R-6*k),1.3f*k,0xff14110c);c.restore();}
             break;}
         case NIGHT:{   // the night screen: thin grey figures and one hairline
-            fit(c,d.name,x+12*k,y+17*k,9*k,cw*(pk?.45f:.8f),0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
-            if(pk)text(c,com.veloster.i18n.UiText.t("최고")+" "+d.pk,x+cw-10*k,y+17*k,8.5f*k,0xff737d82,Paint.Align.RIGHT,Typeface.DEFAULT);
-            text(c,d.unit,x+cw-27*k,y+48*k,9*k,0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
-            fit(c,d.val,x+cw-30*k,y+48*k,28*k,cw-44*k,warn(d.lv,0xffc5ccd0),Paint.Align.RIGHT,Typeface.DEFAULT);
-            if(d.bar){fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(has)fill(c,x+12*k,y+55*k,x+12*k+(cw-24*k)*f,y+55*k+1,themeAcc());}
+            if(st())fit(c,d.name,x+12*k,y+17*k,9*k,cw*(pk?.45f:.8f),0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
+            if(dy()&&pk)text(c,com.veloster.i18n.UiText.t("최고")+" "+d.pk,x+cw-10*k,y+17*k,8.5f*k,0xff737d82,Paint.Align.RIGHT,Typeface.DEFAULT);
+            if(st())text(c,d.unit,x+cw-27*k,y+48*k,9*k,0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
+            if(dy())fit(c,d.val,x+cw-30*k,y+48*k,28*k,cw-44*k,warn(d.lv,0xffc5ccd0),Paint.Align.RIGHT,Typeface.DEFAULT);
+            if(d.bar){if(st())fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(dy()&&has)fill(c,x+12*k,y+55*k,x+12*k+(cw-24*k)*f,y+55*k+1,themeAcc());}
             break;}
         default:break;
         }

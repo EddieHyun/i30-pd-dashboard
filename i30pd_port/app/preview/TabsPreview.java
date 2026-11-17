@@ -163,6 +163,23 @@ public final class TabsPreview {
                 FloatPanel.draw(new android.graphics.Canvas(g2),f,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                 ImageIO.write(img,"png",new File(out,"x_float_form_"+f+"_"+sk+"_"+n+".png"));}
             FloatPanel.count=4;FloatPanel.skin=0;
+            {   // partial redraw: the kept bitmap + the moving part must look like the whole drawing, every shape x look x count, two cell sets
+                int[] keepC=FloatPanel.cells.clone(),keepG=FloatPanel.graphs.clone();int bad=0,checked=0;StringBuilder why=new StringBuilder();
+                for(int variant=0;variant<2;variant++){
+                    if(variant==1){FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.graphs[1]=FloatPanel.LED;FloatPanel.graphs[2]=FloatPanel.NUM;FloatPanel.graphs[3]=FloatPanel.LINE;}
+                    for(int f:FloatPanel.FORMS)for(int sk=0;sk<FloatPanel.skinCount();sk++)for(int n:FloatPanel.counts(f)){
+                        FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);BufferedImage[] im=new BufferedImage[2];
+                        for(int m=0;m<2;m++){FloatPanel.layerOn=m==1;
+                            for(int rep=0;rep<2;rep++){BufferedImage img=new BufferedImage(w,hh,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();   // twice: the bitmap is built, the bars have landed
+                                for(int sx=0;sx<w;sx+=10){g2.setColor(new java.awt.Color(sx/10%2==0?0x6fa86a:0xd8d2b8));g2.fillRect(sx,0,10,hh);}
+                                FloatPanel.draw(new android.graphics.Canvas(g2),f,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);im[m]=img;}}
+                        int diff=0,worst=0;for(int yy=0;yy<hh;yy++)for(int xx=0;xx<w;xx++){int c0=im[0].getRGB(xx,yy),c1=im[1].getRGB(xx,yy);
+                            int dd=Math.max(Math.abs((c0>>16&255)-(c1>>16&255)),Math.max(Math.abs((c0>>8&255)-(c1>>8&255)),Math.abs((c0&255)-(c1&255))));worst=Math.max(worst,dd);if(dd>3)diff++;}
+                        checked++;if(diff>0){if(bad++<400)why.append(" shape="+f+" look="+sk+" n="+n+" v="+variant+": "+diff+" px (worst "+worst+")");
+                            if(bad<=3){ImageIO.write(im[0],"png",new File(out,"x_layer_whole_"+f+"_"+sk+"_"+n+".png"));ImageIO.write(im[1],"png",new File(out,"x_layer_split_"+f+"_"+sk+"_"+n+".png"));}}}}
+                FloatPanel.layerOn=true;System.arraycopy(keepC,0,FloatPanel.cells,0,4);System.arraycopy(keepG,0,FloatPanel.graphs,0,4);FloatPanel.skin=0;FloatPanel.count=4;
+                System.out.println("partial redraw: "+checked+" windows, "+bad+" differ"+why);
+                if(bad>0)throw new AssertionError("partial redraw differs from the whole drawing:"+why);}
             {   // 타이어 4개: pressure and temperature cells in the plain card, three skins, the round gauge and two layouts
                 int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.cells[1]=FloatPanel.QUAD_T;
                 for(int[] v:new int[][]{{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,6},{FloatPanel.CARD,4},{FloatPanel.ROUND,0},{FloatPanel.HERO,0},{FloatPanel.GEARBOX,1}}){

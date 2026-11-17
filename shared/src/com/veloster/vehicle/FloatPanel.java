@@ -96,7 +96,12 @@ public final class FloatPanel {
     static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
     private static boolean still;
-    /** The kept bitmap of a split layout's unmoving part (FloatLayouts.STAT) and what it was drawn for. */
+    /** Partial redraw: ALL draws everything, STAT only what does not move (kept as the bitmap below), DYN the rest each frame.
+     *  FloatSkin and the round gauge read PASS; FloatLayouts gets it as an argument. */
+    static final int ALL=FloatLayouts.ALL,STAT=FloatLayouts.STAT,DYN=FloatLayouts.DYN;static int PASS=ALL;
+    private static boolean st(){return PASS!=DYN;}
+    private static boolean dy(){return PASS!=STAT;}
+    /** The kept bitmap of the window's unmoving part (PASS STAT) and what it was drawn for. */
     private static android.graphics.Bitmap layer;private static int layerKey;
     /** Times the kept bitmap was drawn again (for the FLOAT log); off draws every part each frame, for a side-by-side look. */
     public static int layerBuilds;public static boolean layerOn=true;
@@ -280,7 +285,22 @@ public final class FloatPanel {
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
     private static Telemetry.Sample[] LAST_Q;
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
-        colours();LAST_Q=q;drawNow=now;
+        colours();LAST_Q=q;drawNow=now;PASS=ALL;
+        if(still||!layerOn){parts(c,shape,n,size,q,sigs,gs,first,rec,now);return;}
+        // partial redraw: what does not move is drawn once into a bitmap, again when anything it shows changes: the shape, count, size,
+        // look, alpha, theme, language, or a cell's reading, graph, mode (a value or none yet, a peak or none, a line with history) or warning
+        int key=17;key=key*31+shape;key=key*31+n;key=key*31+size;key=key*31+skinNow();key=key*31+alpha;key=key*31+first;key=key*31+Theme.current().id.hashCode();
+        for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);key=key*31+sig;key=key*31+gs[j];key=key*31+label(sig).hashCode();
+            key=key*31+(Float.isNaN(Tiles.fraction(fmt(sig),v))?1:0)+(Float.isNaN(peak(i,sig))?2:0)+(gs[j]==LINE&&drawn(i,sig)?4:0)+8*Tiles.level(fmt(sig),v);}
+        int bw=Math.max(1,width(shape,n,size)),bh=Math.max(1,height(shape,n,size));
+        if(layer==null||layerKey!=key||layer.getWidth()!=bw||layer.getHeight()!=bh){
+            if(layer==null||layer.getWidth()!=bw||layer.getHeight()!=bh)layer=android.graphics.Bitmap.createBitmap(bw,bh,android.graphics.Bitmap.Config.ARGB_8888);
+            else layer.eraseColor(0);
+            PASS=STAT;try{parts(new Canvas(layer),shape,n,size,q,sigs,gs,first,false,now);}finally{PASS=ALL;}layerKey=key;layerBuilds++;}
+        c.drawBitmap(layer,0,0,null);
+        PASS=DYN;try{parts(c,shape,n,size,q,sigs,gs,first,rec,now);}finally{PASS=ALL;}
+    }
+    private static void parts(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
         int cols=cols(shape,n),rows=rows(shape,n),cw=cellW(shape,size),ch=cellH(shape,size),w=cols*cw,h=rows*ch;float k=SIZES[clampSize(size)];
         if(round(shape)){   // no window body: each reading is its own disc
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);
@@ -292,31 +312,22 @@ public final class FloatPanel {
             for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
             Telemetry.Sample rm=q[0],gm=q[8];float rpm=glide(GLIDES-1,rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN);String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
             float af=ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;
-            if(still||!FloatLayouts.splits(shape)||!layerOn){FloatLayouts.draw(c,shape,n,k,sk,af,LCELLS,rpm,gear);return;}
-            // partial redraw: what does not move is drawn once into a bitmap (again when the shape, size, skin, theme or a cell's name changes)
-            int key=17;key=key*31+shape;key=key*31+n;key=key*31+Math.round(k*100);key=key*31+sk;key=key*31+Math.round(af*255);key=key*31+Theme.current().id.hashCode();
-            for(int j=0;j<u;j++){key=key*31+LCELLS[j].name.hashCode();key=key*31+LCELLS[j].en.hashCode();}
-            int bw=Math.max(1,Math.round(FloatLayouts.w(shape,n)*k)),bh=Math.max(1,Math.round(FloatLayouts.h(shape,n)*k));
-            if(layer==null||layerKey!=key||layer.getWidth()!=bw||layer.getHeight()!=bh){
-                if(layer==null||layer.getWidth()!=bw||layer.getHeight()!=bh)layer=android.graphics.Bitmap.createBitmap(bw,bh,android.graphics.Bitmap.Config.ARGB_8888);
-                else layer.eraseColor(0);
-                FloatLayouts.draw(new Canvas(layer),shape,n,k,sk,af,LCELLS,rpm,gear,FloatLayouts.STAT);layerKey=key;layerBuilds++;}
-            c.drawBitmap(layer,0,0,null);
-            FloatLayouts.draw(c,shape,n,k,sk,af,LCELLS,rpm,gear,FloatLayouts.DYN);
+            FloatLayouts.draw(c,shape,n,k,sk,af,LCELLS,rpm,gear,PASS);
             return;}
         if(sk!=FloatSkin.PLAIN){   // a skin: its own body and cells
-            FloatSkin.body(c,sk,w,h,k,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8);
+            if(st())FloatSkin.body(c,sk,w,h,k,ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8);
             for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);
                 fillCell(FloatSkin.CELL,i,sig,v,gs[j],j==0&&n>1);
                 FloatSkin.cell(c,sk,(j%cols)*cw,(j/cols)*ch,cw,ch,k);}
             return;}
-        outline(c,w,h,k,BG,EDGE);
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);
-        p.setColor(DIV);for(int i=1;i<cols;i++)c.drawLine(i*cw,8*k,i*cw,h-8*k,p);for(int i=1;i<rows;i++)c.drawLine(8*k,i*ch,w-8*k,i*ch,p);
+        if(st()){outline(c,w,h,k,BG,EDGE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);
+            p.setColor(DIV);for(int i=1;i<cols;i++)c.drawLine(i*cw,8*k,i*cw,h-8*k,p);for(int i=1;i<rows;i++)c.drawLine(8*k,i*ch,w-8*k,i*ch,p);}
         p.setStyle(Paint.Style.FILL);
         for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float x=(j%cols)*cw,y=(j/cols)*ch;float v=value(q,sig);
             int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT,g=gs[j];if(rec)record(i,sig,v,now);
-            text(c,label(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+            if(st())text(c,label(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+            boolean barred=!(Float.isNaN(Tiles.fraction(fmt(sig),v))||g==NUM||g==LINE||g==LED||quad(sig));   // only the plain bar has a kept part (its track)
+            if(!dy()){if(barred){float bl=x+8*k,br=x+cw-8*k,bt=y+ch-9*k,bb=bt+4*k;p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);}continue;}
             String unit=Telemetry.UNITS[fmt(sig)],val=Tiles.text(fmt(sig),v);float f=g==LINE||g==NUM?Tiles.fraction(fmt(sig),v):glide(i,Tiles.fraction(fmt(sig),v));
             float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:Tiles.fraction(fmt(sig),pk);
             if(quad(sig)){quadTexts(q,sig);text(c,unit0(sig),x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);quad(c,x,y,cw,ch,k,TXT,DIV,Typeface.DEFAULT_BOLD);continue;}   // the unit where the peak would be
@@ -343,7 +354,7 @@ public final class FloatPanel {
                 int pseg=Float.isNaN(pf)?-1:Math.min(segs-1,Math.max(0,Math.round(Math.max(0,Math.min(1,pf))*segs)-1));
                 for(int s2=0;s2<segs;s2++){p.setColor(s2<lit?(s2>=segs*.8f?WARM:lv==2?HOT:ACC):s2==pseg?0x88ffffff:TRACK);c.drawRect(bl+s2*sw+k,bt,bl+(s2+1)*sw-k,bb,p);}
                 continue;}
-            float bt=y+ch-9*k,bb=bt+4*k;p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);
+            float bt=y+ch-9*k,bb=bt+4*k;if(PASS==ALL){p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);}
             f=Math.max(0,Math.min(1,f));
             float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(fmt(sig),0))):0,a=bl+(br-bl)*Math.min(zero,f),b=bl+(br-bl)*Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);r.set(a,bt,Math.max(b,a+2),bb);c.drawRoundRect(r,2*k,2*k,p);
@@ -355,14 +366,19 @@ public final class FloatPanel {
      *  boost below zero fills the other way), the value in the middle, its unit under it and its name in the gap. */
     private static void gauge(Canvas c,float x,float y,float d,float k,int sig,float v,float pk,int slot){
         float cx=x+d/2,cy=y+d/2,rad=d/2-2*k,sw=7*k,ar=rad-sw/2-4*k;
-        if(quad(sig)){p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);p.setStyle(Paint.Style.FILL);
-            quadTexts(LAST_Q,sig);float s2=Math.min(15*k,d*.14f);
+        if(quad(sig)){if(st()){p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);p.setStyle(Paint.Style.FILL);
+                p.setColor(DIV);c.drawRect(cx-.5f,cy-d*.2f,cx+.5f,cy+d*.2f,p);text(c,label(sig),cx,cy+ar*.84f,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);}
+            if(!dy())return;quadTexts(LAST_Q,sig);float s2=Math.min(15*k,d*.14f);
             for(int w=0;w<4;w++)text(c,QV[w],cx+(w%2==0?-1:1)*d*.2f,cy+(w<2?-d*.06f:d*.16f),s2,QL[w]==2?HOT:QL[w]==1?WARM:TXT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
-            p.setColor(DIV);c.drawRect(cx-.5f,cy-d*.2f,cx+.5f,cy+d*.2f,p);text(c,label(sig),cx,cy+ar*.84f,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);return;}
+            return;}
         int lv=Tiles.level(fmt(sig),v),col=lv==2?HOT:lv==1?WARM:TXT;float f=glide(slot,Tiles.fraction(fmt(sig),v));
-        p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);
-        r.set(cx-ar,cy-ar,cx+ar,cy+ar);p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);c.drawArc(r,135,270,false,p);
+        r.set(cx-ar,cy-ar,cx+ar,cy+ar);
+        if(st()){p.setStyle(Paint.Style.FILL);p.setColor(BG);c.drawCircle(cx,cy,rad,p);
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawCircle(cx,cy,rad-.5f,p);
+            p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);c.drawArc(r,135,270,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
+            text(c,label(sig),cx,cy+ar*.84f,11*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);}   // in the ring's open gap, clear of the disc edge
+        if(!dy())return;
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);
         if(!Float.isNaN(f)){f=Math.max(0,Math.min(1,f));float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(fmt(sig),0))):0,a=Math.min(zero,f),b=Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawArc(r,135+270*a,Math.max(1,270*(b-a)),false,p);}
         p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
@@ -375,7 +391,6 @@ public final class FloatPanel {
         p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);float vw=p.measureText(val);if(vw>room)size*=room/vw;
         text(c,val,cx,cy+size*.36f,size,Float.isNaN(v)?MUT:col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
         if(unit!=null&&!unit.isEmpty())text(c,unit,cx,cy+size*.36f+13*k,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);
-        text(c,label(sig),cx,cy+ar*.84f,11*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);   // in the ring's open gap, clear of the disc edge
     }
     /** Cell k's line graph has at least two samples with a place on the scale. */
     private static boolean drawn(int k,int sig){int n=histN[k],ok=0;if(histSig[k]!=sig)return false;
