@@ -30,7 +30,7 @@ final class SelfRemove {
     /** Step 1: what will go. */
     static void ask(final Activity a){
         new AlertDialog.Builder(a).setTitle(UiText.t("대시보드 앱 삭제"))
-            .setMessage(UiText.t("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 삭제해야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다."))
+            .setMessage(UiText.t("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n다시 쓰려면 설치기로 새로 설치하면 됩니다."))
             .setPositiveButton(UiText.t("계속"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){hold(a);}})
             .setNegativeButton(UiText.t("취소"),null).show();
     }

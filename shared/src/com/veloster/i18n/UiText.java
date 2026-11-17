@@ -739,7 +739,7 @@ public final class UiText {
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
-        EN.put("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 삭제해야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다.","For selling or handing over the car.\n\nRemoved:\n· the i30 dashboard app with its settings and records\n· My Apps with its settings\n\nPut back:\n· the ☆ button to its own function\n· the edge shortcut button turned off\n\nTiles added to the stock menu (PC menu installer) are removed from the PC separately. To use them again, install with the installer.");
+        EN.put("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n다시 쓰려면 설치기로 새로 설치하면 됩니다.","For selling or handing over the car.\n\nRemoved:\n· the i30 dashboard app with its settings and records\n· My Apps with its settings\n\nPut back:\n· the ☆ button to its own function\n· the edge shortcut button turned off\n\nTo use them again, install with the installer.");
         EN.put("차임 소리","Chime sound");
         EN.put("창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'","While the window is up, My Apps' edge button hides · long-press the window for My Apps");
         EN.put("처리 실패: ","Operation failed: ");
