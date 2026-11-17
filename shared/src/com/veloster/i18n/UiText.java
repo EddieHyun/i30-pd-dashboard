@@ -249,7 +249,7 @@ public final class UiText {
         EN.put("누를 때마다 바뀌고 한 번 들려줌","Tap to change · plays it once");
         EN.put("눌러서 계기판과 앱 목록 열기","Tap to open the dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
-        EN.put("눌러서 지우기","Hold to remove");
+        EN.put("눌러서 삭제","Hold to remove");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
@@ -265,6 +265,7 @@ public final class UiText {
         EN.put("단수 중심","Gear centre");
         EN.put("닫기","Close");
         EN.put("대구","Daegu");
+        EN.put("대시보드 앱 삭제","Remove the dashboard apps");
         EN.put("대시보드 열기","Open the dashboard");
         EN.put("대전","Daejeon");
         EN.put("대칭","Sym");
@@ -402,7 +403,7 @@ public final class UiText {
         EN.put("빠른 상승 4음","Quick rising 4 tones");
         EN.put("빠름","Fast");
         EN.put("빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로","Fast: less sound delay · if the sound breaks up when the screen slows down, go back to Normal");
-        EN.put("빨간 버튼을 3초 동안 누르고 있으면 지웁니다. 중간에 떼면 취소됩니다.","Hold the red button for 3 seconds to remove. Letting go cancels.");
+        EN.put("빨간 버튼을 3초 동안 누르고 있으면 삭제합니다. 중간에 떼면 취소됩니다.","Hold the red button for 3 seconds to remove. Letting go cancels.");
         EN.put("삐빅","Double beep");
         EN.put("삐빅 · 3번","Beep · 3 times");
         EN.put("삐빅 · 4번 빠르게","Beep · 4 quick");
@@ -417,6 +418,7 @@ public final class UiText {
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
         EN.put("사운드","Sound");
+        EN.put("삭제하는 중","Removing");
         EN.put("산화촉매 앞 배기 온도","Exhaust temperature before the catalyst");
         EN.put("상승 2음","Rising 2 tones");
         EN.put("상승 3음","Rising tones");
@@ -606,9 +608,8 @@ public final class UiText {
         EN.put("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요.","No control unit answered. Turn the ignition on and read again.");
         EN.put("이 기기는 페어링을 진행 중입니다.","This device is already pairing.");
         EN.put("이 기기에서 재시작 기능을 사용할 수 없습니다.","Restart is unavailable on this device.");
-        EN.put("이 내비에서는 앱이 스스로 지울 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.","This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.");
+        EN.put("이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.","This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.");
         EN.put("이 시스템에서 바로가기 서비스를 시작할 수 없습니다.","This system cannot start the shortcut service.");
-        EN.put("이 앱들 지우기","Remove these apps");
         EN.put("이 화면에서 시작한 검색을 종료했습니다.","Stopped discovery started from this screen.");
         EN.put("이름 없는 기기","Unnamed device");
         EN.put("이미 기기를 검색 중입니다.","Discovery is already running.");
@@ -723,7 +724,6 @@ public final class UiText {
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난 랩","Last");
         EN.put("지연 보정","Latency compensation");
-        EN.put("지우는 중","Removing");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
@@ -739,7 +739,7 @@ public final class UiText {
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
-        EN.put("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n지워지는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 지워야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다.","For selling or handing over the car.\n\nRemoved:\n· the i30 dashboard app with its settings and records\n· My Apps with its settings\n\nPut back:\n· the ☆ button to its own function\n· the edge shortcut button turned off\n\nTiles added to the stock menu (PC menu installer) are removed from the PC separately. To use them again, install with the installer.");
+        EN.put("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n순정 메뉴에 넣은 칸(PC 메뉴 설치기)은 PC에서 따로 삭제해야 합니다. 다시 쓰려면 설치기로 새로 설치하면 됩니다.","For selling or handing over the car.\n\nRemoved:\n· the i30 dashboard app with its settings and records\n· My Apps with its settings\n\nPut back:\n· the ☆ button to its own function\n· the edge shortcut button turned off\n\nTiles added to the stock menu (PC menu installer) are removed from the PC separately. To use them again, install with the installer.");
         EN.put("차임 소리","Chime sound");
         EN.put("창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'","While the window is up, My Apps' edge button hides · long-press the window for My Apps");
         EN.put("처리 실패: ","Operation failed: ");
