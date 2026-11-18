@@ -22,6 +22,8 @@ import java.util.Locale;
  * plays (EngineSynth.flames), by the lift itself when it is off.
  * Static art (both cars per lamp state, skyline and hill strips per sky, hearts, the headlamp beam) is painted once into
  * small bitmaps and stamped; the chase road stays one rectangle per row (about 200), the rest is a few dozen calls.
+ * Parked in P (a 6MT: the park brake) with the brake held, the Arcade view counts down into 앞차 피하기 (ArcadeGame): the
+ * road runs on its own, cars come up in three lanes and the steering wheel dodges them; any roll ends it.
  */
 final class PixelCluster extends ClusterKit {
     private static final int K=0xff17191d,K2=0xff2a2d33,SV=0xffc9ced4,
@@ -170,6 +172,12 @@ final class PixelCluster extends ClusterKit {
     private String lastGear="";
 
     PixelCluster(boolean chase){this.chase=chase;}
+    /** 앞차 피하기 (Arcade view only); parkedNow: speed 0 in P / park brake this frame (the HUD's hint). */
+    final ArcadeGame game=new ArcadeGame(7);
+    private boolean parkedNow;
+    /** The game's other cars: red, white, orange, black (CarPaint indices), baked once facing ahead. */
+    private static final int[] TRAFFIC={2,1,8,3};
+    private final Bitmap[] trafficCar=new Bitmap[TRAFFIC.length];
     /** Chase car's sideways offset in lo-res pixels (+ right), eased toward the steering. */
     private float sway;
 
@@ -218,9 +226,13 @@ final class PixelCluster extends ClusterKit {
         String g=gear();if(!g.equals(lastGear)){if(!lastGear.isEmpty())shiftAt=now;lastGear=g;}
         boolean brake=v(10)>5,left=v(Telemetry.TURN_LEFT)>0,right=v(Telemetry.TURN_RIGHT)>0;   // the bits blink with the real lamps
         if(chase){
-            scroll+=vk*dt*0.06f;
-            float steer=v(Telemetry.STEERING),turn=Float.isNaN(steer)?0:Math.max(-1.3f,Math.min(1.3f,-steer/110f));   // the road bends with the steering wheel (steer left -> road curves left), not lateral G
-            curve+=(-turn*1.7f-curve)*Math.min(1,dt*2.2f);bgX+=curve*vk*dt*0.05f;
+            float steer=v(Telemetry.STEERING);
+            parkedNow=!Float.isNaN(v)&&v<1&&("P".equals(g)||prof.trans==VehicleProfile.Trans.MT&&v(Telemetry.PARK_BRAKE)>0);
+            game.update(now,dt,parkedNow,Telemetry.braking(v(Telemetry.BRAKE_SWITCH),v(10)),v(10),steer);   // v(): the shown angle, right positive
+            if(game.on()){scroll=game.pos;curve+=(game.curve*1.3f-curve)*Math.min(1,dt*2.2f);bgX+=curve*game.kmh()*dt*0.05f;}   // the game's road: it bends by itself, the skyline turns only with it
+            else{scroll+=vk*dt*0.06f;
+            float turn=Float.isNaN(steer)?0:Math.max(-1.3f,Math.min(1.3f,-steer/110f));   // the road bends with the steering wheel (steer left -> road curves left), not lateral G
+            curve+=(-turn*1.7f-curve)*Math.min(1,dt*2.2f);bgX+=curve*vk*dt*0.05f;}
             // The car leans a few pixels toward the steering: enough to see it respond, never enough to distract. The
             // first 2 deg are the SAS wobble straight ahead; past ~30 deg it stays at 6 px.
             float sv=Float.isNaN(steer)?0:steer,dz=sv>0?Math.max(0,sv-2):Math.min(0,sv+2);
@@ -398,7 +410,7 @@ final class PixelCluster extends ClusterKit {
     private final Bitmap[] cityChase=new Bitmap[3];
     @Override void trim(){
         recycle(sideCar);recycle(cityStrip);recycle(hillStrip);recycle(heartBmp);recycle(cityChase);beam=recycle(beam);highBeam=recycle(highBeam);
-        recycle(ditherCache);recycle(textCache);recycle(arcadeCar);plateText=recycle(plateText);
+        recycle(ditherCache);recycle(textCache);recycle(arcadeCar);plateText=recycle(plateText);recycle(trafficCar);
     }
     /** All 40 buildings standing on base, windows lit by sky ph. */
     private void buildings(Canvas c,float base,float scaleH,int phase){
@@ -454,7 +466,7 @@ final class PixelCluster extends ClusterKit {
             // the car's heading (60 px at the horizon per unit bend), and ahead it bends as a perspective arc. Behind the
             // car it continues that line, so the near road never slides against the car.
             float pc=Math.max(0.3f,(105+bump-hz)/(float)(bottom-hz)),sd=1/Math.max(p,0.016f)-1/pc;
-            rowX[y]=100+sway+lat*60*(1-p/pc)+lat*1.3f*p*sd*sd;rowW[y]=6+184*p;
+            rowW[y]=6+184*p;rowX[y]=100+sway+lat*60*(1-p/pc)+lat*1.3f*p*sd*sd-(game.on()?game.x:0)*rowW[y]*0.5f;   // the game: the camera follows the car across the road
             if(y>hz&&bands[y]!=bands[y-1]){px(c,0,runAt,200,y-runAt,bands[y-1]?GRASS_A[phase]:GRASS_B[phase]);runAt=y;}
         }
         px(c,0,runAt,200,bottom+1-runAt,bands[bottom]?GRASS_A[phase]:GRASS_B[phase]);
@@ -484,6 +496,7 @@ final class PixelCluster extends ClusterKit {
             float t=((now/40+i*11)%36)/36f,dx=i%2==0?-1:1,dy=0.18f+(i/2)*0.22f,n=(float)Math.hypot(dx,dy),r=16+t*t*140,len=2+t*12;
             int col=t<0.2f||t>0.8f?0xff5a5a6a:0xff9a9eaa;   // dim at both ends instead of a fade
             for(int j=0;j<len;j++)px(c,100+dx/n*(r+j),hz+dy/n*(r+j),1,1,col);}
+        if(game.on())traffic(c,hz,bottom,rowX,rowW);
         rear(c,lat,bump,brake,left,right,boost,rpm);
         precip(c,frameDt,hz);
     }
@@ -499,7 +512,8 @@ final class PixelCluster extends ClusterKit {
             if(left)dither(c,ox-7,oy+10,7,6,0xff8a5a10);if(right)dither(c,ox+49,oy+10,7,6,0xff8a5a10);}
         // lat here is the eased road bend (the same value the road uses, so both turn together); the car yaws 20 times
         // that into the bend (30 deg wheel -> 4 deg, 90 -> 16, max 24)
-        final int fi=ArcadeCarFrames.frameFor(-lat*20);final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;
+        float sa=v(Telemetry.STEERING);   // the game: the car leans with the wheel (to 90 deg), the way the mock-up was approved
+        final int fi=game.on()?6-Math.round(clamp(Float.isNaN(sa)?0:sa/90f,-1,1)*6):ArcadeCarFrames.frameFor(-lat*20);final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;
         int key=fi|(brake?32:0)|(left?64:0)|(right?128:0)|(lp?256:0);Bitmap car=arcadeCar.get(key);
         if(car==null){car=bake(ArcadeCarFrames.W,ArcadeCarFrames.H,new Art(){public void paint(Canvas b){arcadeArt(b,fi,b0,l0,r0,lp);}});arcadeCar.put(key,car);}
         put(c,car,ox+ArcadeCarFrames.DX,oy+ArcadeCarFrames.DY);
@@ -512,6 +526,21 @@ final class PixelCluster extends ClusterKit {
         spray(c,ox-4,oy+34,ox+41,oy+34,12);   // a wet road throws spray off both rear tyres
         if(mode==ECO)for(int i=0;i<3;i++){float ag=((now/90+i*11)%32)/32f;int side=i%2==0?-1:1;   // ECO: leaves kicked off the rear wheels: a hop, then out and toward the camera (growing)
             leaf(c,ox+24+side*(20+ag*60),oy+34-(float)Math.sin(ag*Math.PI)*12+ag*6,i,ag<0.5f?1:2);}
+    }
+    /** The game's cars on the road, far to near, at the roadside lamps' depth scale, each in its lane and sized to the road. */
+    private void traffic(Canvas c,int hz,int bottom,float[] rowX,float[] rowW){
+        Integer[] order=new Integer[ArcadeGame.CARS];for(int i=0;i<order.length;i++)order[i]=i;
+        java.util.Arrays.sort(order,new java.util.Comparator<Integer>(){public int compare(Integer a,Integer b){return Float.compare(game.carM[b],game.carM[a]);}});
+        for(int i:order){float z=(game.carM[i]-scroll)/3*2;if(z<0.75f||z>14)continue;
+            float y=hz+(bottom-hz)/z;if(y>bottom)continue;int yi=Math.round(y);
+            float k=rowW[yi]/190f,w=ArcadeCarFrames.W*k,h=ArcadeCarFrames.H*k,cx=rowX[yi]+(game.carLane[i]-1)*ArcadeGame.LANE*rowW[yi]/2;
+            Bitmap b=trafficCar(game.carCol[i]);blit(c,b,0,0,b.getWidth(),b.getHeight(),(cx-w/2)*4,52+(y-h)*4,(cx+w/2)*4,52+y*4);}
+    }
+    private Bitmap trafficCar(int k){
+        if(trafficCar[k]==null){int b0=B,b1=BH,b2=BD,b3=BS;int[] b=CarPaint.body(TRAFFIC[k]);B=b[0];BH=b[1];BD=b[2];BS=b[3];
+            trafficCar[k]=bake(ArcadeCarFrames.W,ArcadeCarFrames.H,new Art(){public void paint(Canvas d){arcadeArt(d,6,false,false,false,true);}});
+            B=b0;BH=b1;BD=b2;BS=b3;}
+        return trafficCar[k];
     }
     /** Plate box per frame {x0,x1,y0,y1} from the frames' plate codes (20 rim, 21 face). */
     private static int[][] plateBox;
@@ -573,6 +602,7 @@ final class PixelCluster extends ClusterKit {
 
     // ---- HUD (both views) -----------------------------------------------------------------------------------
     private void hud(Canvas c,String g,float rpm,float boost,float v){
+        if(chase&&game.state!=ArcadeGame.IDLE){gameHud(c);return;}
         sh(c,"LV",20,82,15,W);sh(c,g,56,90,34,Y);
         sh(c,"EXP",20,114,13,W);
         int blocks=24,litN=Float.isNaN(rpm)?0:Math.round(rpm/prof.maxRpm*blocks),red=Math.round(prof.redline/prof.maxRpm*blocks);
@@ -604,6 +634,27 @@ final class PixelCluster extends ClusterKit {
             sh(c,msg!=null?msg:mode==SPORT?"BATTLE MODE... PUSH IT!":mode==ECO?"ECO RUN... EASY ON THE GAS":"CRUISING...",46,446,17,W);if(blink(now,600))sh(c,"v",752,448,15,Y);
         }
     }
+    /** The game's HUD: hearts and distance, best, the wheel (a lit block, yellow past 90 deg where it stops), speed, and the
+     *  banner: the countdown, GO!, CRASH!, GAME OVER. */
+    private void gameHud(Canvas c){
+        for(int i=0;i<3;i++)heart(c,20+i*22,70,i<game.hp||game.state==ArcadeGame.COUNT?1:0);
+        sh(c,String.format(Locale.US,"%.2fKM",game.dist),20,112,18,W);
+        sh(c,"BEST",780,82,13,W,Paint.Align.RIGHT);sh(c,String.format(Locale.US,"%.2fKM",game.best),780,104,18,Y,Paint.Align.RIGHT);
+        float deg=v(Telemetry.STEERING);deg=Float.isNaN(deg)?0:deg;boolean past=Math.abs(deg)>90;int at=6+Math.round(clamp(deg/90,-1,1)*6);
+        sh(c,"STEER",20,436,13,past?Y:W);
+        for(int i=0;i<13;i++){fill(c,20+i*10,444,29+i*10,458,0xff000000);fill(c,21+i*10,445,28+i*10,457,i==at?(past?Y:0xff3ad8ff):i==6?0xff4a4a5a:0xff2a2a3a);}
+        sh(c,String.format(Locale.US,"%03d",Math.round(game.kmh())),720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);
+        String big=null,small=null;
+        if(game.state==ArcadeGame.COUNT){big=String.valueOf(game.count(now));small="HOLD BRAKE";}
+        else if(game.state==ArcadeGame.OVER){big="GAME OVER";small=String.format(Locale.US,"%.2fKM",game.dist);}
+        else if(now-game.hitAt<900)big="CRASH!";
+        else if(now-game.at<800)big="GO!";
+        if(big==null)return;
+        float w=Math.max(fontWidth(big,34),small==null?0:fontWidth(small,17))+40,bot=small==null?222:250;
+        fill(c,400-w/2,160,400+w/2,bot,0xff000000);outline(c,400-w/2+2,162,400+w/2-2,bot-2,0,2,Y);
+        sh(c,big,400,208,34,game.state==ArcadeGame.OVER||now-game.hitAt<900?0xffff3b3b:Y,Paint.Align.CENTER);
+        if(small!=null)sh(c,small,400,238,17,W,Paint.Align.CENTER);
+    }
     /** Backfire on screen: a hard lift (450 ms, with the banner) or a big pop of the engine sound (160 ms). */
     private boolean flame(){return now-fireAt<450||now-popAt<160;}
     /** The event of the moment, or null for a plain cruise. */
@@ -619,6 +670,7 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(brake)&&brake>35)return String.format(Locale.US,"BRAKE!! %.2fG",Float.isNaN(lon)?0:lon);
         if(!Float.isNaN(lat)&&Math.abs(lat)>0.35f)return String.format(Locale.US,"DRIFT! LAT %.2fG",Math.abs(lat));
         if(!Float.isNaN(fuel)&&fuel==0&&v>0)return mode==ECO?"FUEL CUT  +2 COIN/s":"FUEL CUT  +1 COIN/s";
+        if(chase&&parkedNow)return "HOLD BRAKE TO PLAY";   // the game's way in
         if(Float.isNaN(v)||v<1)return "READY? PRESS GAS!";
         return !Float.isNaN(pedal)&&pedal>80?"FULL THROTTLE!!":null;
     }

@@ -32,6 +32,8 @@ public final class CarPaint {
     public static String label(){return LABELS[current];}
     /** Body, highlight, dark side, shadow line. */
     public static int[] body(){return BODY[current].clone();}
+    /** Paint i's body shades (the Arcade game's other cars). */
+    public static int[] body(int i){return BODY[Math.max(0,Math.min(BODY.length-1,i))].clone();}
     /** Body colour of paint i (the settings swatch). */
     public static int color(int i){return BODY[i][0];}
     public static void select(int i){if(i>=0&&i<IDS.length)current=i;}

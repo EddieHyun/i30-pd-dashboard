@@ -284,6 +284,27 @@ public final class TabsPreview {
                 ImageIO.write(img,"png",new File(out,pass==0?"9g_cluster_8bit_music.png":pass==1?"9g_cluster_8bit_music_en.png":pass==2?"9g_cluster_8bit_music_scroll.png":pass==3?"9g_cluster_8bit_chase_music.png":"9g_cluster_8bit_chase_music_nocover.png"));}
             ClusterKit.artwork=null;
         }
+        {   // 앞차 피하기 on the Arcade view: parked in P, brake held -> countdown, then playing (wheel right), a crash, game over
+            PixelCluster pk=new PixelCluster(true);long t=now;Telemetry.Sample[] q=model.snapshot(now);ClusterKit.artwork=null;
+            q[7]=new Telemetry.Sample(0,true,false,true,false,0);q[8]=new Telemetry.Sample(0,false,false,true,false,0);q[Telemetry.GEAR_SELECTOR]=new Telemetry.Sample(0,true,false,true,false,0);
+            q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(1,true,false,true,false,0);q[10]=new Telemetry.Sample(30,true,false,true,false,0);q[Telemetry.STEERING]=new Telemetry.Sample(0,true,false,true,false,0);
+            String[] shots={"count","go","play","steer_past","crash","over"};long[] gAt={1520,3320,9000,9600,0,0};int si=0;
+            for(long e=0;e<=9600;e+=40){t=now+e;if(e>=3400){q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(0,true,false,true,false,0);q[10]=new Telemetry.Sample(1,true,false,true,false,0);
+                    q[Telemetry.STEERING]=new Telemetry.Sample(e<9200?-(float)(45*Math.sin(e/900.0)):-140,true,false,true,false,0);}
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+                boolean shot=si<4&&e==gAt[si];if(shot)new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
+                if(shot)ImageIO.write(img,"png",new File(out,"x_arcade_game_"+shots[si++]+".png"));}
+            for(int k=0;k<3&&pk.game.state==ArcadeGame.PLAY;k++){for(int i=0;i<ArcadeGame.CARS;i++)pk.game.carM[i]=pk.game.pos+30+i*3;pk.game.carM[0]=pk.game.pos+1.6f;pk.game.carLane[0]=1;pk.game.carV[0]=0;pk.game.x=0;pk.game.hitAt=Long.MIN_VALUE/2;
+                t+=40;pk.frame(new android.graphics.Canvas(new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB).createGraphics()),q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
+                if(k==0){t+=40;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                    pk.game.carM[0]=pk.game.pos+0.95f;pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_crash.png"));}}
+            {t+=40;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_over.png"));}
+            {Telemetry.Sample[] q2=q.clone();q2[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(0,true,false,true,false,0);q2[10]=new Telemetry.Sample(1,true,false,true,false,0);   // parked, brake off: the hint
+                PixelCluster p2=new PixelCluster(true);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                p2.frame(c,q2,model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_hint.png"));}
+        }
         taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
         taxiArea(out,"9d_cluster_taxi_busan_out",model,now,ms.snapshot(now));
         for(int ci=0;ci<Circuits.count();ci++)circuit(out,"9o_circuit_"+Circuits.id(ci),ci,model,now);

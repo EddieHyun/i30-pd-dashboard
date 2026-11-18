@@ -51,6 +51,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/RevMatch.java",
                ROOT / "shared/src/com/veloster/vehicle/ShiftCoach.java",
                ROOT / "shared/src/com/veloster/vehicle/GearRatios.java",
+               ROOT / "shared/src/com/veloster/vehicle/ArcadeGame.java",
                ROOT / "shared/src/com/veloster/vehicle/SpeedCal.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "shared/src/com/veloster/diagnostics/ErrorLog.java",
@@ -62,7 +63,7 @@ def main():
         subprocess.run([str(javac), "-encoding", "UTF-8", "-d", temporary,
                         *map(str, sources)], check=True)
         for test in tests:
-            cls = ("com.veloster.dashboard." if test.stem == "HscanFrameDecoderTest" else "") + test.stem
+            cls = {"HscanFrameDecoderTest": "com.veloster.dashboard.", "ArcadeGameTest": "com.veloster.vehicle."}.get(test.stem, "") + test.stem   # tests of package-private classes
             subprocess.run([str(java), "-ea", "-cp", temporary, cls], check=True)
     print("PASS: " + str(len(tests)) + " synthetic host test programs. Vehicle operation is outside this scope.")
 
