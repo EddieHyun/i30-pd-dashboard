@@ -15,7 +15,7 @@ public final class Telemetry {
     public static final int DPF_DP=60,DPF_TEMP=61,DPF_REGEN=62,DPF_TRIGGER=63;   // diesel, standard OBD PIDs 0x7A/0x7C/0x8B
     public static final int DPF_SINCE_KM=64,DPF_AVG_KM=65;   // km since the last regeneration the app saw end; ECU average between regenerations
     public static final int DPF_SOOT=68;
-    public static final int TIRE_TEMP_FL=70,TIRE_TEMP_FR=71,TIRE_TEMP_RL=72,TIRE_TEMP_RR=73;   // tyre temperatures, °C: BCM 22 C00B, wheels in FL FR RL RR order (the order is assumed, the bytes are from a PD)
+    public static final int TIRE_TEMP_FL=70,TIRE_TEMP_FR=71,TIRE_TEMP_RL=72,TIRE_TEMP_RR=73;   // tyre temperatures, °C: BCM 22 C00B, wheels in FL FR RR RL order (the rear two swapped on the owner's car, 2026-11-18)
     /** 7DCT clutch life candidates (percent, u16 / 100): TCU 22 01A6, two blocks (assumed odd, even) of [60, 1000, 3000, 3340, 0, 0, V1, V2 ...]; A = V1, B = V2. Which pair is the real remaining life is not settled (i30pd_port/DCT_WEAR.md). */
     public static final int DCT_LIFE_A_ODD=74,DCT_LIFE_A_EVEN=75,DCT_LIFE_B_ODD=76,DCT_LIFE_B_EVEN=77;
     public static final int DID_TCU_LIFE=0x1A6;
@@ -320,7 +320,7 @@ public final class Telemetry {
             case DID_TCU_LIFE: if(n>=66&&u16(d,22)==60&&u16(d,24)==1000&&u16(d,50)==60&&u16(d,52)==1000){
                 put(DCT_LIFE_A_ODD,u16(d,34)/100f,u16(d,34)<=10000,now);put(DCT_LIFE_B_ODD,u16(d,36)/100f,u16(d,36)<=10000,now);
                 put(DCT_LIFE_A_EVEN,u16(d,62)/100f,u16(d,62)<=10000,now);put(DCT_LIFE_B_EVEN,u16(d,64)/100f,u16(d,64)<=10000,now);} break;
-            case DID_TIRE: if(n>=20)for(int w=0;w<4;w++){int raw=d[5+4*w]&255;put(TIRE_TEMP_FL+w,raw-50f,raw>0&&raw<255,now);} break;
+            case DID_TIRE: if(n>=20)for(int w=0;w<4;w++){int raw=d[5+4*w]&255;put(TIRE_TEMP_FL+(w<2?w:5-w),raw-50f,raw>0&&raw<255,now);} break;   // bytes FL FR RR RL
             case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29),true,now);put(CLUTCH_EVEN,u16(d,31),true,now);} break;
             // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
             // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
