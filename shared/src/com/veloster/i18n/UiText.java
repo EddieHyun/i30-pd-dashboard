@@ -603,6 +603,7 @@ public final class UiText {
         EN.put("유온(대체)","Oil (ECT)");
         EN.put("음량","Volume");
         EN.put("음악","Music");
+        EN.put("음악 띠","Music strip");
         EN.put("음악 제어 요청을 보낼 수 없습니다","Could not send the playback command");
         EN.put("응답 없음 (미장착일 수 있음)","no reply (may not be fitted)");
         EN.put("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요.","No control unit answered. Turn the ignition on and read again.");
