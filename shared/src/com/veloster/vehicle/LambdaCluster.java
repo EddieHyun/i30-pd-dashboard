@@ -167,10 +167,10 @@ final class LambdaCluster extends ClusterKit {
         float m=v(Telemetry.DRIVE_MODE);int mode=Float.isNaN(m)?-1:(int)m;   // the drive mode, in its own colour (SPORT red, ECO green)
         mono(c,mode<0?"MODE —":Telemetry.driveModeLabel(mode),cx-wt/2,bot+18,12,mode==1?RED:mode==3?GREEN:GREY,Paint.Align.LEFT);
         mini(c,364,196,"COOLANT",v(2),40,120,"%.0f");mini(c,436,196,"BOOST",v(Telemetry.BOOST),-1,1.5f,"%+.1f");
-        mini(c,364,290,"INTAKE",v(Telemetry.INTAKE),0,80,"%.0f");mini(c,436,290,"BATT",v(Telemetry.BAT_VOLTAGE),10,15,"%.1f");
-        if(!mt){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);   // one row above the shift numbers, in the hotter one's colour
-            int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
-            mono(c,"CLUTCH °C",346,322,11,GREY,Paint.Align.LEFT);mono(c,fmt("%.0f",o)+" / "+fmt("%.0f",e),454,322,12,lv==2?RED:lv==1?AMBER:WH,Paint.Align.RIGHT);}
+        float y2=mt?290:254;   // DCT: the second row up, for the clutch temperatures under it
+        mini(c,364,y2,"INTAKE",v(Telemetry.INTAKE),0,80,"%.0f");mini(c,436,y2,"BATT",v(Telemetry.BAT_VOLTAGE),10,15,"%.1f");
+        if(!mt){mono(c,"CLUTCH",cx,284,10,GREY,Paint.Align.CENTER);
+            clutchTemp(c,364,"ODD",v(Telemetry.CLUTCH_ODD));clutchTemp(c,436,"EVEN",v(Telemetry.CLUTCH_EVEN));}
         ShiftCoach co=st==null?null:st.coach;ShiftCoach.Shift sh=co==null?null:co.last;
         mono(c,"LAST SHIFT",cx,344,11,GREY,Paint.Align.CENTER);
         if(sh!=null){bold(c,sh.from+" > "+sh.to,cx,376,26,WH,Paint.Align.CENTER);
@@ -180,6 +180,10 @@ final class LambdaCluster extends ClusterKit {
             stat(c,450,"JOLT",Float.isNaN(sh.jolt)?"—":String.format(Locale.US,"%.2f G",sh.jolt));}
     }
     private void stat(Canvas c,float y,String k,String val){mono(c,k,346,y,11,GREY,Paint.Align.LEFT);mono(c,val,454,y,12,WH,Paint.Align.RIGHT);}
+    private void clutchTemp(Canvas c,float x,String name,float t){
+        int lv=Telemetry.clutchLevel(t);
+        bold(c,fmt("%.0f",t),x,311,24,lv==2?RED:lv==1?AMBER:WH,Paint.Align.CENTER);mono(c,name+" °C",x,325,10,GREY,Paint.Align.CENTER);
+    }
     private void mini(Canvas c,float cx,float cy,String name,float val,float lo,float hi,String f){
         float r=24,a0=-55,a1=55,on=Float.isNaN(val)?-1:clamp((val-lo)/(hi-lo),0,1);
         for(int i=0;i<=14;i++){float a=a0+(a1-a0)*i/14f;line(c,px(cx,r,a),py(cy,r,a),px(cx,r+6,a),py(cy,r+6,a),2,i/14f<=on?acc:DIM);}
