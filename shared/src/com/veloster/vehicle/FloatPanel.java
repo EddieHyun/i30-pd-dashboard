@@ -72,6 +72,8 @@ public final class FloatPanel {
     /** 투명도: how solid the window's body is over the screen behind (text, bars and lines stay solid). */
     public static final String[] ALPHA_NAMES={"진하게","보통","연하게"};
     static final int[] ALPHAS={0xf4,0xd8,0x80};
+    /** The 투명도 setting as a factor on the skins' own body alpha (0xd8 = as drawn). */
+    static float alphaF(){return ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;}
     public static volatile int alpha=1;
     /** 스킨: the cells drawn like a dashboard layout (FloatSkin.NAMES); 0 = the plain window with its corners and colours;
      *  AUTO (계기판 따라, the default) = the skin of the dashboard screen last shown (screen, a ClusterPicker index). */
@@ -183,7 +185,7 @@ public final class FloatPanel {
         int s=shape==OFF?lastShape:shape;
         if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
-        if(s==MUSIC||strip(s))h=h*31+FloatMusic.key();
+        if(s==MUSIC||strip(s))h=h*31+FloatMusic.key(strip(s)?now:-1);   // a scrolling 음악 띠 line moves every tick
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
@@ -315,7 +317,7 @@ public final class FloatPanel {
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
         if(shape==MUSIC){colours();LAST_Q=q;drawNow=now;PASS=ALL;FloatMusic.shape(c,SIZES[clampSize(size)],n,q,sigs,first,rec,now);return;}   // drawn whole: its text changes every second
         body(c,shape,n,size,q,sigs,gs,first,rec,now);
-        if(strip(shape))FloatMusic.strip(c,width(shape,n,size),bodyH(shape,n,size)+FloatMusic.GAP*SIZES[clampSize(size)],SIZES[clampSize(size)]);
+        if(strip(shape))FloatMusic.strip(c,width(shape,n,size),bodyH(shape,n,size)+FloatMusic.GAP*SIZES[clampSize(size)],SIZES[clampSize(size)],now);
     }
     /** The window without the 음악 띠. */
     private static void body(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){

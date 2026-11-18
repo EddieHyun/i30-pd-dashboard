@@ -10,8 +10,8 @@ import android.graphics.Typeface;
  * Music on the floating window (FloatPanel): the 음악 띠 under any shape (play state, title · artist, time, a thin progress
  * line) and the 음악 shape (album art, title, artist, progress, then cell 0 large with the gear and cell 1 small). The track is
  * the OEM widget broadcasts' (MediaState) that VehicleDash and FloatService hand over before each tick and draw, in the
- * window's plain colours. Long titles are cut with an ellipsis.
- * ponytail: no scrolling title, it would redraw the window every frame over the navi; a marquee if a cut title proves a nuisance.
+ * window's plain colours; the strip takes the 색감 (FloatSkin) body and ink. The strip reads 가수 - 제목 and scrolls when it
+ * does not fit (the window then redraws every tick, about 20 a second, only while it scrolls); the shape cuts with an ellipsis.
  */
 final class FloatMusic {
     /** The strip's height under the body and the gap above it, the music shape's size, at size 보통. */
@@ -26,24 +26,61 @@ final class FloatMusic {
     static long position(MediaState.Snapshot t){return Math.min(t.durationMs,t.positionMs+(t.playState==1?Math.max(0,t.timeAgeMs):0));}
     static float progress(MediaState.Snapshot t){return t!=null&&t.hasProgress()?Math.max(0,Math.min(1,position(t)/(float)t.durationMs)):0;}
     /** What the music part shows, for FloatPanel.tick's change hash: the texts, play state, the second and the art. */
-    static int key(){MediaState.Snapshot t=track;if(t==null)return 0;
+    static int key(long now){MediaState.Snapshot t=track;if(t==null)return 0;
         int h=t.title.hashCode()*31+t.artist.hashCode();h=h*31+t.playState;h=h*31+(t.hasProgress()?(int)(position(t)/1000):-1);
+        if(now>=0&&marquee)h=h*31+(int)(now/50);   // the strip's line is scrolling: a new frame each tick
         Bitmap a=art;return h*31+(a==null?0:System.identityHashCode(a));}
+    /** The strip's line was wider than its room at the last draw, so it scrolls. */
+    static volatile boolean marquee;
+    /** The strip's line: 가수 - 제목, or whichever of the two there is. */
+    static String line(MediaState.Snapshot t){return t.artist.isEmpty()?t.title:t.title.isEmpty()?t.artist:t.artist+" - "+t.title;}
+    /** Scroll speed (px a second at size 1), the gap before the line comes round again, the pause at the start of each round. */
+    static final float SPEED=30,ROUND_GAP=40;static final long PAUSE=1500;
+    /** How far the line has scrolled at now: still for PAUSE, then SPEED*k a second until it has gone round (span = line + gap). */
+    static float offset(long now,float span,float k){long cycle=PAUSE+(long)(span/(SPEED*k)*1000),t=(now%cycle+cycle)%cycle;return t<PAUSE?0:(t-PAUSE)*SPEED*k/1000f;}
     /** The cells of the music shape (size 보통): cell 0 the large value under the progress line, cell 1 the small one right of it. */
     static float[] rect(int n,int i){return n<2?new float[]{118,62,W,H}:i==0?new float[]{118,62,200,H}:new float[]{200,62,W,H};}
 
-    /** The strip at 0,y, w wide (the body's width), for size k. */
-    static void strip(Canvas c,float w,float y,float k){
-        MediaState.Snapshot t=track;boolean on=playing(t);float h=STRIP_H*k;
+    /** The strip in the 색감's colours: ink, muted, accent, progress track, typeface (FloatSkin's cells use the same). */
+    private static int sInk,sMut,sAcc,sTrack;private static Typeface sFace;private static boolean sShadow;
+    private static void look(int skin){
+        int acc=Theme.current().map(0xff5bc8f5);sFace=Typeface.DEFAULT_BOLD;sShadow=false;
+        switch(skin){
+            case FloatSkin.RACE:sInk=0xfff2f6f8;sMut=0xff8fa0a8;sAcc=acc;break;
+            case FloatSkin.F1:sInk=0xffffffff;sMut=0xff8fa0a8;sAcc=0xff2fe06a;break;
+            case FloatSkin.RETRO:sInk=0xffffb347;sMut=0xffc46a1c;sAcc=0xffff9a2e;sFace=Typeface.MONOSPACE;break;
+            case FloatSkin.VFD:sInk=0xff5ef2d2;sMut=0xb35ef2d2;sAcc=0xff5ef2d2;break;
+            case FloatSkin.HUD:sInk=0xff62ff8a;sMut=0xff62ff8a;sAcc=0xff62ff8a;sFace=Typeface.MONOSPACE;sShadow=true;break;   // no body: a dark copy under the green
+            case FloatSkin.PIXEL:sInk=0xffffffff;sMut=0xffffd84a;sAcc=0xff3ddc5a;break;
+            case FloatSkin.VU:sInk=0xffece0bc;sMut=0xffb8ab88;sAcc=0xffc8302a;break;
+            case FloatSkin.NIGHT:sInk=0xffc5ccd0;sMut=0xff8a959a;sAcc=acc;sFace=Typeface.DEFAULT;break;
+            default:sInk=FloatPanel.TXT;sMut=FloatPanel.MUT;sAcc=FloatPanel.ACC;sTrack=FloatPanel.TRACK;return;
+        }
+        sTrack=sAcc&0xffffff|0x38000000;
+    }
+    private static void say(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){
+        if(sShadow)text(c,s,x+1,y+1,size,0xb4000000,a,face);text(c,s,x,y,size,color,a,face);}
+    /** The strip at 0,y, w wide (the body's width), for size k, at now (the scroll). */
+    static void strip(Canvas c,float w,float y,float k,long now){
+        MediaState.Snapshot t=track;boolean on=playing(t);float h=STRIP_H*k;int sk=FloatPanel.skinNow();look(sk);
         c.save();c.translate(0,y);
-        FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);
-        if(on)glyph(c,10*k,h/2-k,5*k,t.playState==1,FloatPanel.ACC);else text(c,"♪",12*k,h/2+4*k,12*k,FloatPanel.MUT,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+        if(sk==FloatSkin.PLAIN)FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);
+        else if(sk==FloatSkin.PIXEL)FloatPanel.outline(c,w,h,k,0xf0000000,0xffffffff);   // the 8-bit box's double border would leave the line no room
+        else FloatSkin.body(c,sk,w,h,k,FloatPanel.alphaF());
+        float in=0;
+        if(on)glyph(c,10*k+in,h/2-k,5*k,t.playState==1,sAcc);else say(c,"♪",12*k+in,h/2+4*k,12*k,sMut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
         String time=on&&t.hasProgress()&&w>=200*k?MediaState.time(position(t))+" / "+MediaState.time(t.durationMs):"";   // a narrow window keeps its width for the title
-        float tw=time.isEmpty()?0:width(time,10*k,Typeface.DEFAULT)+8*k;
-        if(!time.isEmpty())text(c,time,w-9*k,h/2+3*k,10*k,FloatPanel.MUT,Paint.Align.RIGHT,Typeface.DEFAULT);
-        String line=!on?com.veloster.i18n.UiText.t("재생 중인 곡 없음"):t.artist.isEmpty()?t.title:t.title.isEmpty()?t.artist:t.title+"  ·  "+t.artist;
-        text(c,fit(line,12*k,Typeface.DEFAULT_BOLD,w-tw-32*k),24*k,h/2+3*k,12*k,on?FloatPanel.TXT:FloatPanel.MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-        bar(c,10*k,h-5*k,w-10*k,2.5f*k,progress(t));
+        float tw=time.isEmpty()?0:width(time,10*k,sFace)+8*k;
+        if(!time.isEmpty())say(c,time,w-9*k-in,h/2+3*k,10*k,sMut,Paint.Align.RIGHT,sFace);
+        float lx=24*k+in,room=w-tw-lx-8*k-in,size=12*k;
+        if(!on){marquee=false;say(c,fit(com.veloster.i18n.UiText.t("재생 중인 곡 없음"),size,sFace,room),lx,h/2+3*k,size,sMut,Paint.Align.LEFT,sFace);}
+        else{String line=line(t);float lw=width(line,size,sFace);marquee=lw>room;
+            c.save();c.clipRect(lx,0,lx+room,h);
+            float span=lw+ROUND_GAP*k,off=marquee?offset(now,span,k):0;
+            say(c,line,lx-off,h/2+3*k,size,sInk,Paint.Align.LEFT,sFace);if(marquee)say(c,line,lx-off+span,h/2+3*k,size,sInk,Paint.Align.LEFT,sFace);   // the next round follows the gap
+            c.restore();}
+        p.setStyle(Paint.Style.FILL);p.setColor(sTrack);r.set(10*k+in,h-5*k-in,w-10*k-in,h-2.5f*k-in);c.drawRoundRect(r,1.25f*k,1.25f*k,p);
+        float f=progress(t);if(f>0){p.setColor(sAcc);r.set(10*k+in,h-5*k-in,10*k+in+(w-20*k-2*in)*f,h-2.5f*k-in);c.drawRoundRect(r,1.25f*k,1.25f*k,p);}
         c.restore();
     }
     /** The music shape at 0,0 for size k: n cells (1 or 2) of signals sigs, slots from first; rec feeds the peaks and line graphs. */
