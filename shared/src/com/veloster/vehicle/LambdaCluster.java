@@ -170,7 +170,7 @@ final class LambdaCluster extends ClusterKit {
         for(int j=0;j<=4;j++){float f=j/4f,y=top+(bot-top)*f,w=wt+(wb-wt)*f,bow=5*(1-Math.abs(f-.5f)*2);
             line(c,cx-w/2,y,cx,y+bow,1,j==2?acc:LINE_);line(c,cx,y+bow,cx+w/2,y,1,j==2?acc:LINE_);}
         float lat=v(11),lon=v(12);
-        if(!Float.isNaN(lat)&&!Float.isNaN(lon)){float k=Telemetry.pinG(lat,lon,1.2f)/1.2f,fy=clamp(.5f-lon*k*.5f,0,1),w=wt+(wb-wt)*fy;
+        if(!Float.isNaN(lat)&&!Float.isNaN(lon)){float k=Telemetry.pinG(lat,lon,1.2f)/1.2f,fy=clamp(.5f+lon*k*.5f,0,1),w=wt+(wb-wt)*fy;
             dot(c,cx+lat*k*w/2,top+(bot-top)*fy,6,GREEN);}
         mono(c,String.format(Locale.US,"%.2f G",Float.isNaN(lat)||Float.isNaN(lon)?0:Math.hypot(lat,lon)),cx+wt/2,bot+18,12,WH,Paint.Align.RIGHT);
         float m=v(Telemetry.DRIVE_MODE);int mode=Float.isNaN(m)?-1:(int)m;   // the drive mode, in its own colour (SPORT red, ECO green)
