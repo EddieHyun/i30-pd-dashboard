@@ -17,7 +17,9 @@ public final class SettingsLayout {
      *  RPM_BEEP_VOL is the beep volume in percent (the downshift sounds too). RPM_DOWN_SCOPE cycles DOWN_SCOPES, the
      *  screens with the downshift sounds (and the shift beep held while the clutch is in); RPM_DOWN1..+2 pick the sound
      *  for a blip matched one, two or three gears down (cycles 끔 and BEEP_SOUNDS). */
-    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3,RPM_BEEP_VOL=4,RPM_DOWN_SCOPE=5,RPM_DOWN1=6;
+    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3,RPM_BEEP_VOL=4,RPM_DOWN_SCOPE=5,RPM_DOWN1=6,RPM_FLOAT=9;   // RPM_FLOAT: the beeps also while only the floating window is up
+    /** 플로팅 중 변속 알림 (pref float_beep): the shift beep and the downshift sounds also while only the floating window is up (VehicleDash.shiftTick). */
+    static volatile boolean floatBeep;
     public static final String[] DOWN_SCOPES={"람다 · RPM","람다 · RPM · 레이스 · F1 · 퍼포먼스","모든 화면"};
     /** Whether screen (ClusterPicker index) is in downshift-sound scope s: 람다 and RPM (its dial shows the downshift targets) always, the rev-match screens (F1,
      *  퍼포먼스, 레이스: their rpm turns green on a match too) from 1, every screen at 2. */
@@ -72,7 +74,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_CHIME_SOUND+1:1;case LANG:return LANGS.length;case DIAG:return 4;case FLOAT:return FLOAT_CELL+4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_FLOAT+1;case SOUND:return ENGINE_SOUND?SOUND_CHIME_SOUND+1:1;case LANG:return LANGS.length;case DIAG:return 4;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}
@@ -81,7 +83,9 @@ public final class SettingsLayout {
     public static float itemW(int cat){int n=cols(cat);return (PANE_R-PANE_L-GAP*(n-1))/n;}
     /** The 사운드 pane keeps a fixed, comfortably tappable row and scrolls when the rows overflow; every other pane fits its rows to the height. */
     public static final float SOUND_ROW_H=46;
-    public static float itemH(int cat){if(cat==SOUND)return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
+    /** The panes that keep SOUND_ROW_H rows and scroll: 사운드, and RPM since 플로팅 중 변속 알림 made it ten rows. */
+    public static boolean scrolls(int cat){return cat==SOUND||cat==RPM;}
+    public static float itemH(int cat){if(scrolls(cat))return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
     public static float left(int cat,int i){return PANE_L+(i%cols(cat))*(itemW(cat)+GAP);}
     public static float top(int cat,int i){return paneTop(cat)+(i/cols(cat))*(itemH(cat)+GAP);}
     /** How far a pane can scroll (0 = it fits). The 화면 list and the 사운드 pane overflow; the rest fit. */

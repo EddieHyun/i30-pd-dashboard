@@ -276,7 +276,7 @@ public final class PitRenderer {
         if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){drawFloatPane(c);return;}
         int cat=pickSlot>=0?SettingsLayout.PICK:settingsCat;float w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
         if(pickSlot>=0)text(c,ClusterPicker.MODE_NAMES[pickSlot]+" "+UiText.t("모드 화면"),SettingsLayout.PANE_L,SettingsLayout.TOP+20,16,BLUE,true);
-        boolean paneScroll=cat==SettingsLayout.SOUND;float paneSc=paneScroll?settingsScroll:0;   // the 사운드 pane scrolls: its rows overflow the pane
+        boolean paneScroll=SettingsLayout.scrolls(cat);float paneSc=paneScroll?settingsScroll:0;   // the 사운드 pane scrolls: its rows overflow the pane
         if(paneScroll){c.save();c.clipRect(SettingsLayout.PANE_L-6,SettingsLayout.TOP,800,SettingsLayout.BOTTOM);}
         for(int i=0;i<SettingsLayout.count(cat);i++){
             float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i)-paneSc;
@@ -300,6 +300,7 @@ public final class PitRenderer {
                     if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
                     if(i==SettingsLayout.RPM_BEEP_VOL){name="알림음 음량";dim=!beepOn&&downSounds[0]<0&&downSounds[1]<0&&downSounds[2]<0;sub="− / + 로 조절 · 한 번 들려줌";break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){name="맞춤 소리 화면";sub="다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜";value=SettingsLayout.DOWN_SCOPES[downScope];break;}
+                    if(i==SettingsLayout.RPM_FLOAT){sel=SettingsLayout.floatBeep;name="플로팅 중 변속 알림";sub="계기판을 닫고 플로팅 창만 있을 때도 알림음 · 맞춤 소리를 울림";value=SettingsLayout.floatBeep?"켬":"끔";break;}
                     if(i>=SettingsLayout.RPM_DOWN1){int k=i-SettingsLayout.RPM_DOWN1,d=downSounds[k];
                         name=k==0?"1단 아래 맞춤 소리":k==1?"2단 아래 맞춤 소리":"3단 아래 맞춤 소리";sub="클러치 밟고 블립이 그 단의 목표 RPM에 맞을 때";
                         dim=d<0;value=d<0?"끔":SettingsLayout.BEEP_SOUNDS[d];break;}

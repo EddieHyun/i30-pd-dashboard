@@ -19,7 +19,7 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.count(SettingsLayout.MODE)==SettingsLayout.MODE_FIRST+ClusterPicker.MODES.length,"a row per mode after the two switches");
         check(SettingsLayout.count(SettingsLayout.PICK)==ClusterPicker.COUNT+1&&SettingsLayout.top(SettingsLayout.PICK,0)>=SettingsLayout.TOP+SettingsLayout.TITLE_H,"chooser: every screen and 원래 화면, under its title");
         for(int cat=0;cat<=SettingsLayout.PICK;cat++){
-            if(cat==SettingsLayout.SOUND)continue;   // scrollable pane: checked below
+            if(SettingsLayout.scrolls(cat))continue;   // scrollable panes (사운드, RPM): checked below
             for(int i=0;i<SettingsLayout.count(cat);i++){
                 float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i),w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
                 check(l>=SettingsLayout.PANE_L&&l+w<=SettingsLayout.PANE_R+0.01f&&t>=SettingsLayout.TOP&&t+h<=SettingsLayout.BOTTOM+0.01f,"cat "+cat+" item "+i+" inside the pane");
@@ -29,6 +29,7 @@ public final class SettingsLayoutTest {
         }
         // The 사운드 pane keeps a tappable row and scrolls: every row is reachable when scrolled into the viewport.
         check(SettingsLayout.itemH(SettingsLayout.SOUND)>=40,"sound rows tall enough to tap");
+        check(SettingsLayout.scrolls(SettingsLayout.RPM)&&SettingsLayout.maxPaneScroll(SettingsLayout.RPM)>0&&SettingsLayout.top(SettingsLayout.RPM,SettingsLayout.RPM_FLOAT)-SettingsLayout.maxPaneScroll(SettingsLayout.RPM)+SettingsLayout.itemH(SettingsLayout.RPM)<=SettingsLayout.BOTTOM+0.01f,"RPM scrolls to its last row (플로팅 중 변속 알림)");
         check(SettingsLayout.maxPaneScroll(SettingsLayout.SOUND)>0,"the sound pane scrolls (its rows overflow)");
         float mid=SettingsLayout.TOP+(SettingsLayout.BOTTOM-SettingsLayout.TOP)/2,max=SettingsLayout.maxPaneScroll(SettingsLayout.SOUND);
         for(int i=0;i<SettingsLayout.count(SettingsLayout.SOUND);i++){

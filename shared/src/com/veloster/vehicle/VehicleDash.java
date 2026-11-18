@@ -157,7 +157,7 @@ public final class VehicleDash extends View implements Runnable {
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
         sound=new EngineSound(a.getApplicationContext(),DATA);beep=new ShiftBeep(a);
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=p.getBoolean("float_beep",false);
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
             beepVol=Math.max(0,Math.min(100,p.getInt("shift_beep_vol",70)));
             downScope=Math.max(0,Math.min(SettingsLayout.DOWN_SCOPES.length-1,p.getInt("downshift_scope",0)));
@@ -398,6 +398,18 @@ public final class VehicleDash extends View implements Runnable {
         long now=SystemClock.elapsedRealtime();Telemetry.Sample sp=DATA.sample(7,now);
         if(d.chime.due(sp.valid?sp.value:Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,d.beepVol/100f))d.chime.rang(now);
     }
+    /** The floating window's tick (FloatService): while the dashboard is away its onDraw does not run, so the shift beep and
+     *  the downshift sounds are worked out here from the samples, with the same edges and settings (the 맞춤 소리 화면 scope
+     *  against the screen last shown). Only with 플로팅 중 변속 알림 on. */
+    public static void shiftTick(){
+        VehicleDash d=current.get();if(d==null||d.beep==null||!SettingsLayout.floatBeep||d.resumed)return;
+        long now=SystemClock.elapsedRealtime();Telemetry.Sample[] s=DATA.snapshot(now);VehicleProfile p=DATA.profile();
+        boolean scoped=SettingsLayout.downScreen(d.downScope,d.screen),clutch=p.trans==VehicleProfile.Trans.MT&&s[Telemetry.CLUTCH].valid&&s[Telemetry.CLUTCH].value>0;
+        EngineSound mix=d.soundOn&&d.soundRoute==0?d.sound:null;
+        if(d.beepEdge.fire(ShiftGuide.evaluate(s,d.shiftTarget,p).shift&&!(scoped&&clutch),now)&&d.beepOn)d.beep.play(mix,d.beepSound,d.beepVol/100f);
+        int dn=d.downCue.fire(scoped?RevMatch.downs(s,p):0,now);
+        if(dn>0&&d.downSounds[dn-1]>=0)d.beep.play(mix,d.downSounds[dn-1],d.beepVol/100f);
+    }
     public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
     public static VehicleProfile profileNow(){return DATA.profile();}
     private static ArtworkLoader floatArt;
@@ -541,7 +553,7 @@ public final class VehicleDash extends View implements Runnable {
             if(!blocked&&!picker&&renderer.ecoShown()&&EcoCluster.onFare(x,y)){EcoCluster.holding=true;postDelayed(ecoHold,1000);}
             return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&pickSlot<0&&(settingsCat==SettingsLayout.SCREENS||settingsCat==SettingsLayout.SOUND)&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&pickSlot<0&&(settingsCat==SettingsLayout.SCREENS||SettingsLayout.scrolls(settingsCat))&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
             settingsScroll=Math.max(0,Math.min(SettingsLayout.maxPaneScroll(settingsCat),settingsScroll-(y-lastMoveY)));lastMoveY=y;
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
@@ -574,7 +586,7 @@ public final class VehicleDash extends View implements Runnable {
                 return true;
             }
             if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){floatTap(x,y);invalidate();return true;}
-            int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat;float paneSc=pane==SettingsLayout.SOUND?settingsScroll:0;
+            int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat;float paneSc=SettingsLayout.scrolls(pane)?settingsScroll:0;
             int i=SettingsLayout.item(pane,x,y,paneSc);
             if(i<0||i!=SettingsLayout.item(pane,downX,downY,paneSc))return true;
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();
@@ -600,6 +612,7 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==SettingsLayout.RPM_BEEP){beepOn=!beepOn;e.putBoolean("shift_beep",beepOn);if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
                     if(i==SettingsLayout.RPM_BEEP_SOUND){if(!beepOn)break;beepSound=(beepSound+1)%SettingsLayout.BEEP_SOUNDS.length;e.putInt("shift_beep_sound",beepSound);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){downScope=(downScope+1)%SettingsLayout.DOWN_SCOPES.length;e.putInt("downshift_scope",downScope);break;}
+                    if(i==SettingsLayout.RPM_FLOAT){SettingsLayout.floatBeep=!SettingsLayout.floatBeep;e.putBoolean("float_beep",SettingsLayout.floatBeep);break;}
                     if(i>=SettingsLayout.RPM_DOWN1){int dk=i-SettingsLayout.RPM_DOWN1;   // 끔 -> each sound in turn -> 끔
                         downSounds[dk]=downSounds[dk]+1>=SettingsLayout.BEEP_SOUNDS.length?-1:downSounds[dk]+1;e.putInt("downshift_sound_"+(dk+1),downSounds[dk]);
                         if(downSounds[dk]>=0)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dk],beepVol/100f);break;}

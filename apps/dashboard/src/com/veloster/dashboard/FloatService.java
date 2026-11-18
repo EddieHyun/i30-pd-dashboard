@@ -90,7 +90,7 @@ public final class FloatService extends Service implements Runnable {
         boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
         if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
-        VehicleDash.chimeTick();
+        VehicleDash.chimeTick();VehicleDash.shiftTick();
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}
