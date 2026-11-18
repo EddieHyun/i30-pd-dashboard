@@ -123,8 +123,8 @@ abstract class ClusterKit {
 
     // Seven-segment digits: lit segments in on, unlit ones as a faint ghost (off may be 0 to skip them).
     private static final String[] SEG={"abcdef","bc","abdeg","abcdg","bcfg","acdfg","acdefg","abc","abcdefg","abcdfg"};
-    private static String segs(char ch){return ch>='0'&&ch<='9'?SEG[ch-'0']:ch=='-'?"g":ch=='n'?"ceg":"";}
-    /** Draws str (digits, '-', ' ', '.', ':') right-aligned at x (or left when left), height h; returns its width. */
+    private static String segs(char ch){return ch>='0'&&ch<='9'?SEG[ch-'0']:ch=='-'?"g":ch=='n'||ch=='N'?"ceg":ch=='P'?"abefg":ch=='R'?"eg":ch=='D'?"bcdeg":"";}   // gears P r n d
+    /** Draws str (digits, '-', ' ', '.', ':', the gear letters P R N D) right-aligned at x (or left when left), height h; returns its width. */
     protected float seg7(Canvas c,String str,float x,float y,float h,int on,int off,boolean left){
         float w=h*0.5f,gap=h*0.17f,t=Math.max(2,h*0.115f),tw=-gap;
         for(int i=0;i<str.length();i++){char ch=str.charAt(i);tw+=ch=='.'||ch==':'?t*1.6f:w+gap;}

@@ -86,6 +86,8 @@ public final class TabsPreview {
         Telemetry.Sample sel=model.sample(Telemetry.GEAR_SELECTOR,now);   // G circle in the DCT manual gate (S -> "M" + gear), then the lever back
         model.hscanPd(0xc7,0x1d,new byte[]{0,8,0,0,0,0,0,0},now);rec.setPage(PitRenderer.PAGE_CLASSIC+java.util.Arrays.asList(layouts).indexOf("9i_cluster_gcircle"));
         save(out,"9i_cluster_gcircle_m",rec,model,now,false,false);
+        for(int[] pv:new int[][]{{7,'R'},{6,'N'}}){model.hscanPd(0xc7,0x1d,new byte[]{0,(byte)pv[0],0,0,0,0,0,0},now);   // 80s: R / N lit in the gear segments (P needs no gear, the preview drives in 4th)
+            rec.setPage(PitRenderer.PAGE_CLASSIC+java.util.Arrays.asList(layouts).indexOf("9e_cluster_80s"));save(out,"x_80s_gear_"+(char)pv[1],rec,model,now,false,false);}
         int back=!sel.valid?5:sel.value==0?0:sel.value==1?7:sel.value==2?6:sel.value==4?8:5;model.hscanPd(0xc7,0x1d,new byte[]{0,(byte)back,0,0,0,0,0,0},now);
         // Which layouts follow the theme: render a few under Copper. Night/Engine/Warp (and G-circle/Drag) recolour; 8-bit and HUD keep their own palette.
         rec.setPicker(false,false,0);Theme.select("copper");
