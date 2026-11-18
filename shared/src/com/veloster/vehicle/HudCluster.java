@@ -36,7 +36,7 @@ final class HudCluster extends ClusterKit {
         path.reset();path.moveTo(px(CX,164,a),py(CY,164,a));path.lineTo(px(CX,150,a-3),py(CY,150,a-3));path.lineTo(px(CX,150,a+3),py(CY,150,a+3));path.close();poly(c,G);
         // waterline and flight-path marker on the G vector
         line(c,CX-34,CY,CX-16,CY,2,G);line(c,CX-16,CY,CX-8,CY+10,2,G);line(c,CX-8,CY+10,CX,CY,2,G);line(c,CX,CY,CX+8,CY+10,2,G);line(c,CX+8,CY+10,CX+16,CY,2,G);line(c,CX+16,CY,CX+34,CY,2,G);
-        float fx=CX-la*130,fy=CY+lo*130;   // braking up
+        float fx=CX+la*130,fy=CY+lo*130;   // where the body is thrown: braking up, a left turn right
         ring(c,fx,fy,9,2,G);line(c,fx-24,fy,fx-9,fy,2,G);line(c,fx+9,fy,fx+24,fy,2,G);line(c,fx,fy-9,fx,fy-18,2,G);
         // tapes
         tape(c,60,v,5,20,3.2f,-1,"KM/H",Float.NaN,1);
