@@ -46,10 +46,12 @@ public final class DriveStats {
 
     /** 6MT shift measurements for the 수동 screen, and the gear ratios learned for gearboxes without a table (7DCT, diesel). */
     public final ShiftCoach coach=new ShiftCoach();public final GearRatios ratios=new GearRatios();
+    /** A petrol 7DCT (set by PitRenderer from the profile): shifts are measured from the gear value, the CLUTCH bit there means P/N. */
+    public boolean dct;
     public void update(Telemetry.Sample[] s,long now){
         update(now,f(s,7)*Telemetry.speedScale,at(s,7,now),f(s,0),f(s,Telemetry.BOOST),f(s,11),f(s,12),at(s,12,now),f(s,2),f(s,9));
         Telemetry.Sample cl=s[Telemetry.CLUTCH];float gear=s[8].valid?s[8].value:Float.NaN;boolean in=cl.valid&&cl.value>0;
-        coach.update(now,f(s,0),f(s,7),gear,in,f(s,10),f(s,9),f(s,12));ratios.update(now,gear,f(s,0),f(s,7),in);
+        if(dct)coach.updateAuto(now,f(s,0),f(s,7),gear,f(s,12),ratios);else coach.update(now,f(s,0),f(s,7),gear,in,f(s,10),f(s,9),f(s,12));ratios.update(now,gear,f(s,0),f(s,7),in);
         for(int k=0;k<2;k++){Telemetry.Sample x=s[Telemetry.CLUTCH_ODD+k];if(!x.valid||x.ageMs>5000)continue;
             if(k==0)maxClutchOdd=max(maxClutchOdd,x.value);else maxClutchEven=max(maxClutchEven,x.value);}
     }
