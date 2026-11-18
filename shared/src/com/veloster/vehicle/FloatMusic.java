@@ -58,15 +58,19 @@ final class FloatMusic {
         }
         sTrack=sAcc&0xffffff|0x38000000;
     }
+    /** The window's background in the 색감: its body (FloatSkin), the plain outline, or for 8-bit one white frame (the double
+     *  border would leave the strip's line no room). */
+    private static void back(Canvas c,int sk,float w,float h,float k){
+        if(sk==FloatSkin.PLAIN)FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);
+        else if(sk==FloatSkin.PIXEL)FloatPanel.outline(c,w,h,k,0xf0000000,0xffffffff);
+        else FloatSkin.body(c,sk,w,h,k,FloatPanel.alphaF());}
     private static void say(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){
         if(sShadow)text(c,s,x+1,y+1,size,0xb4000000,a,face);text(c,s,x,y,size,color,a,face);}
     /** The strip at 0,y, w wide (the body's width), for size k, at now (the scroll). */
     static void strip(Canvas c,float w,float y,float k,long now){
         MediaState.Snapshot t=track;boolean on=playing(t);float h=STRIP_H*k;int sk=FloatPanel.skinNow();look(sk);
         c.save();c.translate(0,y);
-        if(sk==FloatSkin.PLAIN)FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);
-        else if(sk==FloatSkin.PIXEL)FloatPanel.outline(c,w,h,k,0xf0000000,0xffffffff);   // the 8-bit box's double border would leave the line no room
-        else FloatSkin.body(c,sk,w,h,k,FloatPanel.alphaF());
+        back(c,sk,w,h,k);
         float in=0;
         if(on)glyph(c,10*k+in,h/2-k,5*k,t.playState==1,sAcc);else say(c,"♪",12*k+in,h/2+4*k,12*k,sMut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
         String time=on&&t.hasProgress()&&w>=200*k?MediaState.time(position(t))+" / "+MediaState.time(t.durationMs):"";   // a narrow window keeps its width for the title
@@ -85,35 +89,35 @@ final class FloatMusic {
     }
     /** The music shape at 0,0 for size k: n cells (1 or 2) of signals sigs, slots from first; rec feeds the peaks and line graphs. */
     static void shape(Canvas c,float k,int n,Telemetry.Sample[] q,int[] sigs,int first,boolean rec,long now){
-        MediaState.Snapshot t=track;boolean on=playing(t);float w=W*k,h=H*k;
-        FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);
+        MediaState.Snapshot t=track;boolean on=playing(t);float w=W*k,h=H*k;int sk=FloatPanel.skinNow();look(sk);
+        back(c,sk,w,h,k);
         float a=h-20*k,x=a+20*k,right=w-10*k;Bitmap b=art;
         r.set(10*k,10*k,10*k+a,10*k+a);
         if(b!=null&&!b.isRecycled())c.drawBitmap(b,null,r,p);   // Paint(3): filtered
-        else{p.setStyle(Paint.Style.FILL);p.setColor(FloatPanel.TRACK);c.drawRoundRect(r,8*k,8*k,p);text(c,"♪",10*k+a/2,10*k+a*.68f,a*.5f,FloatPanel.ACC,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);}
-        if(on){text(c,fit(t.title.isEmpty()?t.artist:t.title,15*k,Typeface.DEFAULT_BOLD,right-x),x,27*k,15*k,FloatPanel.TXT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-            if(!t.title.isEmpty())text(c,fit(t.artist,11*k,Typeface.DEFAULT,right-x),x,42*k,11*k,FloatPanel.MUT,Paint.Align.LEFT,Typeface.DEFAULT);}
-        else text(c,fit(com.veloster.i18n.UiText.t("재생 중인 곡 없음"),13*k,Typeface.DEFAULT_BOLD,right-x),x,30*k,13*k,FloatPanel.MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+        else{p.setStyle(Paint.Style.FILL);p.setColor(sTrack);c.drawRoundRect(r,8*k,8*k,p);say(c,"♪",10*k+a/2,10*k+a*.68f,a*.5f,sAcc,Paint.Align.CENTER,sFace);}
+        if(on){say(c,fit(t.title.isEmpty()?t.artist:t.title,15*k,sFace,right-x),x,27*k,15*k,sInk,Paint.Align.LEFT,sFace);
+            if(!t.title.isEmpty())say(c,fit(t.artist,11*k,sFace,right-x),x,42*k,11*k,sMut,Paint.Align.LEFT,sFace);}
+        else say(c,fit(com.veloster.i18n.UiText.t("재생 중인 곡 없음"),13*k,sFace,right-x),x,30*k,13*k,sMut,Paint.Align.LEFT,sFace);
         bar(c,x,50*k,right,3*k,progress(t));
-        p.setColor(FloatPanel.DIV);c.drawRect(x,62*k,right,62*k+1,p);
+        p.setColor(sTrack);c.drawRect(x,62*k,right,62*k+1,p);
         // the right column first (the gear, and the small value under it), so the large value knows the room it has left of it
         Telemetry.Sample g=q[8];String gear=g!=null&&g.valid?Tiles.text(8,g.value):"-";   // the gear, in the accent, above the small value
-        text(c,gear,right,(n<2?h-12*k:h-30*k),18*k,FloatPanel.ACC,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
-        float side=width(gear,18*k,Typeface.DEFAULT_BOLD);
+        say(c,gear,right,(n<2?h-12*k:h-30*k),18*k,sAcc,Paint.Align.RIGHT,sFace);
+        float side=width(gear,18*k,sFace);
         for(int j=Math.min(n,2)-1;j>=0;j--){int sig=sigs[j];float v=FloatPanel.value(q,sig);if(rec)FloatPanel.record(first+j,sig,v,now);
-            int f=FloatPanel.fmt(sig),lv=Tiles.level(f,v),col=lv==2?0xffff4b3c:lv==1?0xffffaa3c:FloatPanel.TXT;
+            int f=FloatPanel.fmt(sig),lv=Tiles.level(f,v),col=lv==2?0xffff4b3c:lv==1?0xffffaa3c:sInk;
             String val=Tiles.text(f,v),unit=Telemetry.UNITS[f]==null?"":Telemetry.UNITS[f];
-            if(j==0){text(c,FloatPanel.label(sig),x,76*k,10*k,FloatPanel.MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+            if(j==0){say(c,FloatPanel.label(sig),x,76*k,10*k,sMut,Paint.Align.LEFT,sFace);
                 // 26 down to 14 until value and unit end 8 short of the right column: -0.65 bar beside 1561 rpm ran into it
-                float uw=unit.isEmpty()?0:3*k+width(unit,10*k,Typeface.DEFAULT),room=right-side-8*k-x,size=26*k;
-                while(size>14*k&&width(val,size,Typeface.DEFAULT_BOLD)+uw>room)size-=k;
-                float vw=width(val,size,Typeface.DEFAULT_BOLD);text(c,val,x,h-12*k,size,Float.isNaN(v)?FloatPanel.MUT:col,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-                text(c,unit,x+vw+3*k,h-12*k,10*k,FloatPanel.MUT,Paint.Align.LEFT,Typeface.DEFAULT);}
-            else{String s=fit(val+(unit.isEmpty()?"":" "+unit),11*k,Typeface.DEFAULT,62*k);side=Math.max(side,width(s,11*k,Typeface.DEFAULT));
-                text(c,s,right,h-12*k,11*k,Float.isNaN(v)?FloatPanel.MUT:col,Paint.Align.RIGHT,Typeface.DEFAULT);}}
+                float uw=unit.isEmpty()?0:3*k+width(unit,10*k,sFace),room=right-side-8*k-x,size=26*k;
+                while(size>14*k&&width(val,size,sFace)+uw>room)size-=k;
+                float vw=width(val,size,sFace);say(c,val,x,h-12*k,size,Float.isNaN(v)?sMut:col,Paint.Align.LEFT,sFace);
+                say(c,unit,x+vw+3*k,h-12*k,10*k,sMut,Paint.Align.LEFT,sFace);}
+            else{String s=fit(val+(unit.isEmpty()?"":" "+unit),11*k,sFace,62*k);side=Math.max(side,width(s,11*k,sFace));
+                say(c,s,right,h-12*k,11*k,Float.isNaN(v)?sMut:col,Paint.Align.RIGHT,sFace);}}
     }
-    private static void bar(Canvas c,float l,float t,float rt,float h,float f){p.setStyle(Paint.Style.FILL);p.setColor(FloatPanel.TRACK);r.set(l,t,rt,t+h);c.drawRoundRect(r,h/2,h/2,p);
-        if(f>0){p.setColor(FloatPanel.ACC);r.set(l,t,l+(rt-l)*f,t+h);c.drawRoundRect(r,h/2,h/2,p);}}
+    private static void bar(Canvas c,float l,float t,float rt,float h,float f){p.setStyle(Paint.Style.FILL);p.setColor(sTrack);r.set(l,t,rt,t+h);c.drawRoundRect(r,h/2,h/2,p);
+        if(f>0){p.setColor(sAcc);r.set(l,t,l+(rt-l)*f,t+h);c.drawRoundRect(r,h/2,h/2,p);}}
     /** ▶ while it plays, ❚❚ otherwise. */
     private static void glyph(Canvas c,float x,float y,float s,boolean play,int col){p.setStyle(Paint.Style.FILL);p.setColor(col);
         if(play){android.graphics.Path a=new android.graphics.Path();a.moveTo(x,y-s);a.lineTo(x+s*1.6f,y);a.lineTo(x,y+s);a.close();c.drawPath(a,p);}

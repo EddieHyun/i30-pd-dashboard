@@ -125,6 +125,9 @@ public final class TabsPreview {
                  for(int sk=0;sk<FloatSkin.NAMES.length;sk++)for(long dt:new long[]{0,2500}){FloatPanel.skin=sk;int w=FloatPanel.width(FloatPanel.CARD,4,1),h=FloatPanel.height(FloatPanel.CARD,4,1);
                      BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
                      long t0=(now/100000)*100000;FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,t0+dt);ImageIO.write(img,"png",new File(out,"x_float_music_strip_skin"+sk+"_"+dt+".png"));}
+                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++){FloatPanel.skin=sk;FloatPanel.musicStrip=false;int w=FloatPanel.width(FloatPanel.MUSIC,2,1),h=FloatPanel.height(FloatPanel.MUSIC,2,1);   // the 음악 shape in every 색감
+                     BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
+                     FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.MUSIC,2,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_music_shape_skin"+sk+".png"));}
                  FloatPanel.skin=sk0;}
                 FloatPanel.musicStrip=false;FloatPanel.music(null,null);}
             {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
