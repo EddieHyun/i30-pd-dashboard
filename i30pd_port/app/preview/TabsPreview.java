@@ -48,6 +48,8 @@ public final class TabsPreview {
         PitRenderer show=new PitRenderer();show.setSymmetric(true);show.setPage(PitRenderer.PAGE_SHOW);
         save(out,"4e_show",show,model,now,false,false);
         rec.setPage(PitRenderer.PAGE_RACE);save(out,"4c_race",rec,model,now,false,false);
+        model.hscanPd(0xc7,0x1c,new byte[]{2,1,0,0},now);save(out,"4c_race_tcs_off",rec,model,now,false,false);   // stability switches: TCS off, then TCS and ESC off
+        model.hscanPd(0xc7,0x1c,new byte[]{2,2,0,0},now);save(out,"4c_race_esc_off",rec,model,now,false,false);model.hscanPd(0xc7,0x1c,new byte[]{0,0,0,0},now);
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
         race(out,"4c_race_mt",rec,model,now,VehicleProfile.PETROL_MT,1);       // 6MT: clutch cell left of the brake, pressed
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
