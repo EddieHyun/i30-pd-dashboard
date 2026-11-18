@@ -890,5 +890,6 @@
   "삭제하는 중": "Removing",
   "잠시 기다리세요. 끝나면 이 화면이 닫힙니다.": "Please wait. This screen closes when done.",
   "이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.": "This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.",
-  "플로팅에서도": "Also floating"
+  "항상": "Always",
+  "변속 목표에서 울림 · 항상 = 플로팅 창에서도 · 맞춤 소리 화면에선 클러치 뗐을 때만": "At the shift target · Always = with the floating window too · match-sound screens: clutch out"
 }

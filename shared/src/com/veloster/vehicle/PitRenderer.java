@@ -296,7 +296,7 @@ public final class PitRenderer {
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
                     if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
                 case SettingsLayout.RPM:
-                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 울림 · 맞춤 소리 화면에선 클러치를 뗐을 때만";value=!beepOn?"끔":SettingsLayout.floatBeep?"플로팅에서도":"켬";break;}
+                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 울림 · 항상 = 플로팅 창에서도 · 맞춤 소리 화면에선 클러치 뗐을 때만";value=!beepOn?"끔":SettingsLayout.floatBeep?"항상":"계기판";break;}
                     if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
                     if(i==SettingsLayout.RPM_BEEP_VOL){name="알림음 음량";dim=!beepOn&&downSounds[0]<0&&downSounds[1]<0&&downSounds[2]<0;sub="− / + 로 조절 · 한 번 들려줌";break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){name="맞춤 소리 화면";sub="다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜";value=SettingsLayout.DOWN_SCOPES[downScope];break;}

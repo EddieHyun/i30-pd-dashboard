@@ -609,7 +609,7 @@ public final class VehicleDash extends View implements Runnable {
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;
                 case SettingsLayout.RPM:{   // − / + step 100 rpm; the rest of the row puts the default back
-                    if(i==SettingsLayout.RPM_BEEP){boolean was=beepOn;SettingsLayout.floatBeep=beepOn&&!SettingsLayout.floatBeep;beepOn=!was||SettingsLayout.floatBeep;   // 끔 -> 켬 -> 플로팅에서도 -> 끔
+                    if(i==SettingsLayout.RPM_BEEP){boolean was=beepOn;SettingsLayout.floatBeep=beepOn&&!SettingsLayout.floatBeep;beepOn=!was||SettingsLayout.floatBeep;   // 끔 -> 계기판 -> 항상 -> 끔
                         e.putBoolean("shift_beep",beepOn);e.putBoolean("float_beep",SettingsLayout.floatBeep);if(was)break;if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
                     if(i==SettingsLayout.RPM_BEEP_SOUND){if(!beepOn)break;beepSound=(beepSound+1)%SettingsLayout.BEEP_SOUNDS.length;e.putInt("shift_beep_sound",beepSound);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){downScope=(downScope+1)%SettingsLayout.DOWN_SCOPES.length;e.putInt("downshift_scope",downScope);break;}
