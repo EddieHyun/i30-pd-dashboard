@@ -54,7 +54,7 @@ final class ArcadeGame {
         pos+=speed*RATE*dt;dist+=speed*TOP_KMH/3600*dt;
         for(int i=0;i<CARS;i++){carM[i]+=carV[i]*RATE*dt;if(carM[i]<pos-3)place(i,pos+40+rnd.nextFloat()*60);
             float d=carM[i]-pos;
-            if(d>NEAR&&d<FAR&&Math.abs(x-(carLane[i]-1)*LANE)<HIT_X&&now-hitAt>1200){hitAt=now;hp--;speed=carV[i]*0.6f;
+            if(d>NEAR&&d<FAR&&Math.abs(x-(carLane[i]-1)*LANE)<HIT_X&&now-hitAt>1200){hitAt=now;hp--;speed=carV[i]*0.6f;carM[i]=pos+FAR+4;   // knocked ahead, not left sitting on the player's car
                 if(hp<=0){state=OVER;at=now;brakeArmed=false;if(dist>best)best=dist;}}}
     }
     private void start(long now){
