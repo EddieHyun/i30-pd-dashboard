@@ -372,6 +372,8 @@ public final class HscanPdTelemetryTest {
         byte[] w=java.util.Arrays.copyOfRange(r,3,r.length);w[5+4*2]=0;w[5+4*3]=(byte)0xFF;   // a sensor that has not reported: 00 or FF
         Telemetry z=new Telemetry();z.obd(Telemetry.DID_TIRE,w,3436);
         check(z.sample(Telemetry.TIRE_TEMP_FL,3436).valid&&!z.sample(Telemetry.TIRE_TEMP_RL,3436).valid&&!z.sample(Telemetry.TIRE_TEMP_RR,3436).valid,"an unreported wheel stays unpublished");
+        byte[] q=java.util.Arrays.copyOfRange(r,3,r.length);q[5+4*2]=(byte)(50+31);q[5+4*3]=(byte)(50+32);Telemetry y=new Telemetry();y.obd(Telemetry.DID_TIRE,q,3436);
+        check(y.sample(Telemetry.TIRE_TEMP_RR,3436).value==31&&y.sample(Telemetry.TIRE_TEMP_RL,3436).value==32,"the third wheel is the rear right, the fourth the rear left");
         k.obd(Telemetry.DID_TIRE,new byte[10],3437);check(k.sample(Telemetry.TIRE_TEMP_FL,3437).value==20,"a short reply leaves them alone");}
         // TCU 22 01A6 clutch life candidates (a PD, parked): two blocks at data bytes 22 and 50, V1 / V2 as u16 / 100
         {Telemetry k=new Telemetry();byte[] d=new byte[100];
