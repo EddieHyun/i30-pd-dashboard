@@ -151,7 +151,7 @@ final class LambdaCluster extends ClusterKit {
     /** A lamp as a pill with its name in English (the whole screen is English; three letters: CLU BRK THR H/T, DCT MAN BRK THR CLT), every pill the
      *  same width whatever its word: filled in its colour while on. */
     private static final float LAMP_W=72;
-    static final float BRAKE_FULL=100;   // ponytail: a hard stop's pressure, a guess; the owner's car reads 1-2 bar at rest
+    static final float BRAKE_FULL=100;   // the most the brake pressure reads (owner, 2026-11-18); 1-2 bar at rest
     /** A pill filled from the left to f (0..1); the text (or the name) dark over the fill, grey beside it. */
     private void fillLamp(Canvas c,float y,String name,float f,String text,int col){
         String t=text==null?name:text;float w=LAMP_W,h=28,l=RCX-w/2,size=16;f=clamp(f,0,1);while(size>10&&width(t,size,faceBold())>w-12)size--;
