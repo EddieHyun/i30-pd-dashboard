@@ -106,6 +106,16 @@ public final class TabsPreview {
                 new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
                 FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
+            {   // music: the 음악 띠 under four shapes and the 음악 shape (1 and 2 cells, two sizes, nothing playing)
+                MediaState mm=new MediaState();mm.mode(0x36);mm.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);mm.playback(1,1);
+                MediaState none=new MediaState();
+                Object[][] mc={{FloatPanel.CARD,4,1,true,"strip_card"},{FloatPanel.STRIP,4,1,true,"strip_strip"},{FloatPanel.SIDE,2,1,true,"strip_side"},{FloatPanel.ROUND,4,1,true,"strip_round"},
+                    {FloatPanel.MUSIC,2,1,true,"shape2"},{FloatPanel.MUSIC,1,1,true,"shape1"},{FloatPanel.MUSIC,2,2,true,"shape2_large"},{FloatPanel.MUSIC,2,1,false,"shape_none"},{FloatPanel.CARD,4,1,false,"strip_none"}};
+                for(Object[] m:mc){int sh=(Integer)m[0],n=(Integer)m[1],sz=(Integer)m[2];FloatPanel.musicStrip=sh!=FloatPanel.MUSIC;FloatPanel.music(((Boolean)m[3]?mm:none).snapshot(now),null);
+                    BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                    java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
+                    FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_music_"+m[4]+".png"));}
+                FloatPanel.musicStrip=false;FloatPanel.music(null,null);}
             {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
                 Telemetry hm=new Telemetry();long t0=now-30000;int from=Math.max(0,last-(int)(31000/step));
                 for(int q2=0;q2<=last;q2++){long tq=1_000_000+q2*step;feed(hm,raw.get(q2),tq);if(q2>=from&&(q2-from)%Math.max(1,(int)(500/step))==0)FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(400,300,BufferedImage.TYPE_INT_ARGB).createGraphics()),FloatPanel.CARD,4,2,hm.snapshot(tq),VehicleProfile.PETROL_DCT,tq);}

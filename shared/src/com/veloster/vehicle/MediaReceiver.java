@@ -17,6 +17,7 @@ final class MediaReceiver extends BroadcastReceiver {
         IntentFilter filter=new IntentFilter();for(String action:MediaState.ACTIONS)filter.addAction(action);
         filter.addAction(MODE_CHANGED);
         try{
+            context=context.getApplicationContext();   // the floating window keeps it after the activity is gone
             context.registerReceiver(this,filter);registered=context;
             try{
                 Class<?> type=Class.forName("com.hkmc.mode.ModeManager");

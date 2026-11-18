@@ -21,8 +21,9 @@ public final class VehicleDash extends View implements Runnable {
     private static WeakReference<VehicleDash> current=new WeakReference<VehicleDash>(null);
     private final Activity activity;
     private final PitRenderer renderer=new PitRenderer();
-    private final MediaState mediaState=new MediaState();
-    private final MediaReceiver mediaReceiver=new MediaReceiver(mediaState);
+    /** One track for the process: the floating window reads it while the dashboard is away (floatMusic). */
+    private static final MediaState mediaState=new MediaState();
+    private static final MediaReceiver mediaReceiver=new MediaReceiver(mediaState);
     private final ArtworkLoader artwork;
     private final GaugeLayout gaugeLayout=new GaugeLayout();
     private final GaugeEditor gaugeEditor;
@@ -321,7 +322,7 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
-        if(floatEdit==SettingsLayout.FORM_SHEET){int n=FloatPanel.FORMS.length,i=SettingsLayout.hit4(x,y,n);if(i!=SettingsLayout.hit4(downX,downY,n))return;
+        if(floatEdit==SettingsLayout.FORM_SHEET){int i=SettingsLayout.hitForm(x,y,SettingsLayout.FORM_SLOTS);if(i!=SettingsLayout.hitForm(downX,downY,SettingsLayout.FORM_SLOTS))return;
             if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;FloatPanel.count=FloatPanel.fitCount(f,FloatPanel.count);   // never a count the shape leaves a hole in
                 floatSel=Math.min(floatSel,FloatPanel.used(f,FloatPanel.count)-1);}floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
@@ -344,6 +345,7 @@ public final class VehicleDash extends View implements Runnable {
         if(t<0||t!=SettingsLayout.floatHit(downX,downY,fw,fh,cr))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
+        else if(t==SettingsLayout.F_MUSIC){if(shape==FloatPanel.MUSIC)return;FloatPanel.musicStrip=!FloatPanel.musicStrip;}
         else if(t==SettingsLayout.F_SKIN){if(FloatPanel.skin>=0&&!FloatPanel.round(shape))floatEdit=SettingsLayout.SKIN_SHEET;return;}   // dim while 계기판 따라 is on, and for round gauges
         else if(t==SettingsLayout.F_AUTO){if(FloatPanel.round(shape))return;FloatPanel.skin=FloatPanel.skin<0?FloatPanel.skinNow():FloatPanel.AUTO;}   // off keeps the look it was following
         else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
@@ -365,7 +367,7 @@ public final class VehicleDash extends View implements Runnable {
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
             FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.LAST_SHAPE?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
-            int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
+            int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);FloatPanel.musicStrip=p.getBoolean("float_music_strip",false);
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.LAST_SHAPE?last:FloatPanel.CARD;
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);
             if(skn==9){skn=0;   // the round gauge was a skin for a while: on a grid shape it is the 원형 게이지 shape now
@@ -379,7 +381,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
-        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).remove("float_style")
+        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).putBoolean("float_music_strip",FloatPanel.musicStrip).remove("float_style")
          .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin);
         for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
@@ -398,6 +400,18 @@ public final class VehicleDash extends View implements Runnable {
     }
     public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
     public static VehicleProfile profileNow(){return DATA.profile();}
+    private static ArtworkLoader floatArt;
+    /** The floating window shows the track (FloatPanel.musicShown): on keeps the media receiver up on the application context
+     *  while the dashboard is away (its pause stopped it), with an album art loader of its own; off lets both go unless the
+     *  dashboard is on screen (it uses the receiver then). The track itself (mediaState) lives on between the two. */
+    public static void floatMusic(android.content.Context c,boolean on){
+        if(on){mediaReceiver.start(c);if(floatArt==null)floatArt=new ArtworkLoader(c.getApplicationContext(),null);return;}
+        if(floatArt!=null){floatArt.close();floatArt=null;}
+        VehicleDash d=current.get();if(d==null||!d.resumed)mediaReceiver.stop();
+    }
+    /** The track now for the floating window; asks its loader for the album art. */
+    public static MediaState.Snapshot floatTrack(){MediaState.Snapshot t=mediaState.snapshot(SystemClock.elapsedRealtime());if(floatArt!=null)floatArt.request(t);return t;}
+    public static android.graphics.Bitmap floatArtwork(){return floatArt==null?null:floatArt.bitmap();}
     /** The rear camera is showing (PGS): the floating window steps aside. */
     public static boolean rearCamera(){return DATA.rearCamera();}
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
@@ -449,7 +463,7 @@ public final class VehicleDash extends View implements Runnable {
         long now=SystemClock.elapsedRealtime();
         if(FloatPanel.shape!=FloatPanel.OFF)FloatPanel.track(FloatPanel.count,floatSamples(FloatPanel.count),DATA.profile(),now);   // peaks and line graphs go on while the window is down
         header.step(SystemClock.uptimeMillis());   // MotionEvent times are uptime
-        MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);
+        MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);FloatPanel.music(track,artwork.bitmap());   // the settings' preview shows the track too
         renderer.setArtwork(artwork.bitmap());
         renderer.setGaugeLayout(gauges?gaugeLayout:null);
         renderer.setGraphLayout(graphs?graphLayout:null);

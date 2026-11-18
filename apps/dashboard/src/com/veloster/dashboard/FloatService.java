@@ -53,6 +53,8 @@ public final class FloatService extends Service implements Runnable {
     private WindowManager.LayoutParams layout;
     private int shown=-1;   // the key (shape, cells, size) of the window up, -1 none
     private long hideSentAt;private boolean hideSent;
+    /** The media receiver is held for the window (VehicleDash.floatMusic). */
+    private boolean musicOn;
 
     /** Starts the window if it is switched on (the dashboard just left the screen, or the head unit booted). */
     static void startIfOn(Context c){
@@ -83,8 +85,10 @@ public final class FloatService extends Service implements Runnable {
         if(mLastTick>0)mGapMax=Math.max(mGapMax,now0-mLastTick);mLastTick=now0;
         if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;java.io.File sd=android.os.Environment.getExternalStorageDirectory();boolean want=!new java.io.File(sd,SW_FLAG).exists();if(want!=hw){hw=want;remove();}
             FloatPanel.glideOn=!new java.io.File(sd,"i30pd_float_noglide").exists();FloatPanel.layerOn=!new java.io.File(sd,"i30pd_float_nolayer").exists();}   // a new window with the other renderer
-        int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0);   // the round gauge has square cells: its own window
+        int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0)+(FloatPanel.musicStrip?10000:0);   // the round gauge has square cells, the 음악 띠 a taller window: their own
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
+        boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
+        if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
         VehicleDash.chimeTick();
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
@@ -136,6 +140,7 @@ public final class FloatService extends Service implements Runnable {
         if(panel!=null){try{windows.removeView(panel);}catch(RuntimeException ignored){/* already gone */}panel=null;foreground(false);}
         shown=-1;
         if(hideSent)hide(false);
+        if(musicOn){musicOn=false;VehicleDash.floatMusic(this,false);}
     }
     private void open(String pkg,String cls){
         try{startActivity(new Intent(Intent.ACTION_MAIN).setComponent(new ComponentName(pkg,cls)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));}

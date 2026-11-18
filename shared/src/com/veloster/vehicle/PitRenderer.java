@@ -387,6 +387,8 @@ public final class PitRenderer {
         text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
         // right column
         chip(c,SettingsLayout.F_ON_BOX,UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬"),null,!off,false);
+        boolean ms=FloatPanel.musicStrip&&shape!=FloatPanel.MUSIC;   // the 음악 shape shows the track itself: the strip is dim there
+        chip(c,SettingsLayout.F_MUSIC_BOX,UiText.t("음악 띠")+"  "+UiText.t(ms?"켬":"끔"),null,ms&&!off,shape==FloatPanel.MUSIC);
         chip(c,SettingsLayout.F_HIDE_BOX,UiText.t("내 앱 버튼 숨김")+"  "+UiText.t(FloatPanel.hideButton?"켬":"끔"),null,FloatPanel.hideButton&&!off,off);
         float[] cb=SettingsLayout.F_CELL_BOX;panel(c,cb[0],cb[1],cb[2]-cb[0],cb[3]-cb[1],0xff101315,LINE);
         int sig=FloatPanel.signal(sel,profile);
@@ -414,11 +416,11 @@ public final class PitRenderer {
     /** 모양 고르기: every shape drawn small with the cells' readings and the skin now; a tap picks it. */
     private void drawFormSheet(Canvas c){
         box(c,0,0,800,480,0xc0000000);
-        panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
-        text(c,UiText.t("모양 고르기"),SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
-        text(c,UiText.t("누르면 바로 적용 · 칸 수는 모양에 맞춰집니다"),SettingsLayout.K_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
+        panel(c,SettingsLayout.F_SH_L,SettingsLayout.SH_T,SettingsLayout.F_SH_R-SettingsLayout.F_SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
+        text(c,UiText.t("모양 고르기"),SettingsLayout.F5_X,SettingsLayout.SH_T+30,18,WHITE,true);
+        text(c,UiText.t("누르면 바로 적용 · 칸 수는 모양에 맞춰집니다"),SettingsLayout.F5_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
         int cur=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count;
-        for(int i=0;i<FloatPanel.FORMS.length;i++){int f=FloatPanel.FORMS[i],fn=FloatPanel.fitCount(f,n);float[] b=SettingsLayout.tile4(i);boolean on=f==cur;
+        for(int i=0;i<FloatPanel.FORMS.length;i++){int f=FloatPanel.FORMS[i],fn=FloatPanel.fitCount(f,n);float[] b=SettingsLayout.tile5(SettingsLayout.FORM_SLOTS[i]);boolean on=f==cur;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,UiText.t(FloatPanel.SHAPE_NAMES[f]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){float fw=FloatPanel.width(f,fn,1),fh=FloatPanel.height(f,fn,1),s=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));

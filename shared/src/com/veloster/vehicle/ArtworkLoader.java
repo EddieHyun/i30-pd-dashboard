@@ -49,7 +49,7 @@ final class ArtworkLoader {
             }catch(Exception e){android.util.Log.i("VehicleDash","Album artwork unavailable");}
             catch(OutOfMemoryError e){android.util.Log.i("VehicleDash","Album artwork exceeds decoder memory");}
             synchronized(this){if(!closed && track.artworkRevision==revision)bitmap=decoded;}
-            view.post(new Runnable(){public void run(){view.invalidate();}});
+            if(view!=null)view.post(new Runnable(){public void run(){view.invalidate();}});   // the floating window's has none: its tick sees the new art
         }
     }
     private Bitmap decode(byte[] bytes){

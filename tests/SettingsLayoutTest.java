@@ -68,8 +68,8 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.sheetHit(30,30,10,15,4)==-1&&SettingsLayout.sheetHit(300,440,10,15,4)==SettingsLayout.S_IN,"outside / empty sheet");
         check(SettingsLayout.sheetHit(300,124,10,2,4)==SettingsLayout.S_VAL&&SettingsLayout.sheetHit(300,170,10,2,4)==SettingsLayout.S_IN,"only the readings there are hit (2 readings: row 2 is empty)");
         // the shape sheet: 9 tiles, each big enough and hit by its middle
-        for(int i=0;i<16;i++){float[] b=SettingsLayout.tile4(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=130&&b[3]-b[1]>=90,"shape tile "+i+" big and on the sheet");
-            check(SettingsLayout.hit4((b[0]+b[2])/2,(b[1]+b[3])/2,16)==i,"shape tile "+i+" hits");}
+        for(int i=0;i<SettingsLayout.FORM_SLOTS.length;i++){float[] b=SettingsLayout.tile5(SettingsLayout.FORM_SLOTS[i]);check(b[2]<=SettingsLayout.F_SH_R-10&&b[0]>=SettingsLayout.F_SH_L+10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=130&&b[3]-b[1]>=90,"shape tile "+i+" big and on the sheet");
+            check(SettingsLayout.hitForm((b[0]+b[2])/2,(b[1]+b[3])/2,SettingsLayout.FORM_SLOTS)==i,"shape tile "+i+" hits");}
         {float[][] cells={{38,0,119,40},{119,0,200,40}};float w=206*1.5f,h=40*1.5f,k=SettingsLayout.floatPreviewScale(w,h),x=SettingsLayout.floatPreviewX(w,h),y=SettingsLayout.floatPreviewY(w,h);
             for(float[] cc:cells){cc[0]*=1.5f;cc[1]*=1.5f;cc[2]*=1.5f;cc[3]*=1.5f;}
             check(SettingsLayout.floatHit(x+150*1.5f*k,y+20*1.5f*k,w,h,cells)==SettingsLayout.F_CELL+1&&SettingsLayout.floatHit(x+10*k,y+20*k,w,h,cells)==-1,"a layout's cells hit by their rectangles, the gear ring is no cell");}
