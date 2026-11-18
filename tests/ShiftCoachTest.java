@@ -26,6 +26,13 @@ public final class ShiftCoachTest {
         // clutch pressed again before it settled, or below 10 km/h: not a shift
         t=run(c,t,200,2000,8,2,true,0,0,0);t=run(c,t,700,2000,8,1,false,0,0,0);
         check(c.count==3,"no shift recorded below 10 km/h");
+        // 7DCT: 3>4 at 60 km/h (3rd 3000, 4th 2300 learned); the gear reads 4 at 2600 rpm, which reaches 2300 0.2 s later
+        ShiftCoach d=new ShiftCoach();com.veloster.vehicle.GearRatios r=new com.veloster.vehicle.GearRatios();t=0;
+        for(int i=0;i<100;i++,t+=20){r.update(t,4,2300,60,false);}for(int i=0;i<100;i++,t+=20){r.update(t,3,3000,60,false);d.updateAuto(t,3000,60,3,0.2f,r);}
+        for(int i=0;i<10;i++,t+=20)d.updateAuto(t,2600,60,4,0.1f,r);for(int i=0;i<30;i++,t+=20)d.updateAuto(t,2300,60,4,0.1f,r);
+        check(d.count==1&&d.last.from==3&&d.last.to==4&&Math.abs(d.last.revErr-300)<1&&Math.abs(d.last.timeS-0.2f)<0.03f,"DCT 3>4: +300 rpm, sync 0.2 s "+(d.last==null?"":d.last.revErr+" "+d.last.timeS));
+        for(int i=0;i<50;i++,t+=20)d.updateAuto(t,1500,8,3,0,r);
+        check(d.count==1,"DCT: no shift below 10 km/h");
         System.out.println("PASS "+checks+" shift measurement checks");
     }
 }

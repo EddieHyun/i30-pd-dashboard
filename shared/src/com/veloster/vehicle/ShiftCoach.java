@@ -24,6 +24,27 @@ public final class ShiftCoach {
     public int count;
     private boolean in,pending,heel;private long inAt,outAt;private int from;private float outRpm,outKmh,baseG,lastG,minG,maxG,timeS,inG=Float.NaN;
     private boolean clutchSeen;private boolean lastClutch;
+    private int autoGear,autoTo;private float prevG=Float.NaN;
+
+    /** 7DCT (no clutch pedal): a shift is the gear value changing while rolling (10 km/h up), recorded GRADE_MS later if
+     *  the new gear held. revErr = rpm at the change minus the new gear's learned rpm at that speed (NaN until learned);
+     *  timeS = how long the rpm took to come within RevMatch.MATCH_RPM of it (NaN if not within the window); jolt as
+     *  for the 6MT, from the G just before the change. Every frame, instead of update(). */
+    public void updateAuto(long now,float rpm,float kmh,float gear,float lonG,GearRatios r){
+        int g=Float.isNaN(gear)?0:(int)gear;
+        if(g>=1&&autoGear>=1&&g!=autoGear&&kmh>=MIN_KMH&&!Float.isNaN(rpm)){   // a change (again, mid-window: restarts from the gear left)
+            pending=true;outAt=now;from=autoGear;autoTo=g;outRpm=rpm;outKmh=kmh;timeS=Float.NaN;
+            baseG=Float.isNaN(prevG)?lonG:prevG;lastG=minG=maxG=baseG;}
+        if(g>=1)autoGear=g;prevG=lonG;
+        if(!pending)return;
+        if(!Float.isNaN(lonG)){if(Float.isNaN(baseG))baseG=minG=maxG=lonG;lastG=lonG;minG=Math.min(minG,lonG);maxG=Math.max(maxG,lonG);}
+        float target=r==null?Float.NaN:r.rpmIn(kmh,autoTo);
+        if(Float.isNaN(timeS)&&!Float.isNaN(rpm)&&!Float.isNaN(target)&&Math.abs(rpm-target)<=RevMatch.MATCH_RPM)timeS=(now-outAt)/1000f;
+        if(now-outAt>=GRADE_MS){pending=false;
+            float t0=r==null?Float.NaN:r.rpmIn(outKmh,autoTo);
+            float jolt=Float.isNaN(baseG)?Float.NaN:Math.max(0,maxG-minG-Math.abs(lastG-baseG));
+            last=new Shift(from,autoTo,false,outRpm-t0,timeS,jolt);count++;}
+    }
 
     /** Every frame. gear: the shown 6MT gear (held while the clutch is in); lonG in G; NaN where not received. */
     public void update(long now,float rpm,float kmh,float gear,boolean clutch,float brakeBar,float pedal,float lonG){

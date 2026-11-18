@@ -155,7 +155,7 @@ public final class PitRenderer {
         eco.prof=profile;eco.background(samples,now);   // the 에코 trip too
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
-        cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.update(samples,now);
+        cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.dct=profile.trans==VehicleProfile.Trans.DCT&&profile.fuel==VehicleProfile.Fuel.PETROL;stats.update(samples,now);
         downs=RevMatch.downs(samples,profile);
         clutchIn=profile.trans==VehicleProfile.Trans.MT&&samples[Telemetry.CLUTCH].valid&&samples[Telemetry.CLUTCH].value>0;
         c.save();c.scale(width/800f,height/480f);

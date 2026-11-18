@@ -321,6 +321,7 @@ public final class TabsPreview {
         {Telemetry.Sample[] q=model.snapshot(now);DriveStats dst=new DriveStats();   // 수동 on a 7DCT: learned ratios, M gate, clutch temperatures
          float[] perKmh={0,49.5f,29.4f,19.4f,14.6f,11.6f,9.5f,8.0f};
          for(int g=1;g<=7;g++){dst.ratios.update(0,g,perKmh[g]*150,150,false);dst.ratios.update(2000,g,perKmh[g]*150,150,false);}
+         {long t=10_000;for(int i=0;i<10;i++,t+=20)dst.coach.updateAuto(t,90*11.6f,90,5,0,dst.ratios);for(int i=0;i<12;i++,t+=20)dst.coach.updateAuto(t,1250+i*5,90,4,i<6?-0.25f:-0.1f,dst.ratios);for(int i=0;i<30;i++,t+=20)dst.coach.updateAuto(t,1314,90,4,-0.1f,dst.ratios);}   // the last shift: paddle 5>4
          q[8]=new Telemetry.Sample(4,true,false,true,false,0);q[7]=new Telemetry.Sample(90,true,false,true,false,0);q[0]=new Telemetry.Sample(90*14.6f,true,false,true,false,0);
          q[Telemetry.CLUTCH_ODD]=new Telemetry.Sample(112,true,false,true,false,0);q[Telemetry.CLUTCH_EVEN]=new Telemetry.Sample(156,true,false,true,false,0);q[10]=new Telemetry.Sample(18,true,false,true,false,0);
          BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());

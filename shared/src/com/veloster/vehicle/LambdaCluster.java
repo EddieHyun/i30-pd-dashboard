@@ -14,7 +14,7 @@ import java.util.Locale;
  * up ringed cyan at where it would land (RevMatch: the 6MT's ratio table, else ratios learned while driving). On a 6MT
  * the gear the blip is matched to turns green. Under the right apex: the speed ring and lamps
  * (6MT: clutch, brake, throttle, heel-and-toe; DCT: manual gate, brake, throttle, clutch heat). Centre: a curved-grid
- * G meter, four small arcs, and the last shift's numbers (6MT) or the clutch temperatures (DCT).
+ * G meter, four small arcs, and the last shift's numbers (DCT: with the clutch temperatures above them).
  */
 final class LambdaCluster extends ClusterKit {
     private static final int CYAN=0xff5fe3e0,WH=0xfff2f6f8,DIM=0xff17302f,OR=0xffff8a3a,LINE_=0xff36575a,GREY=0xff7f9a9c,
@@ -154,7 +154,7 @@ final class LambdaCluster extends ClusterKit {
         if(on)round(c,RCX-w/2,y-h/2,RCX+w/2,y+h/2,h/2,col);else outline(c,RCX-w/2,y-h/2,RCX+w/2,y+h/2,h/2,1.2f,LINE_);
         bold(c,name,RCX,y+size*0.36f,size,on?INK:GREY,Paint.Align.CENTER);
     }
-    /** Centre column: G grid, four small arcs, the last shift's numbers (6MT) or the clutch temperatures (DCT). */
+    /** Centre column: G grid, four small arcs, the last shift's numbers (DCT: SYNC for the clutch time, clutch temperatures above). */
     private void centre(Canvas c,boolean mt){
         float cx=400,top=64,bot=124,wt=130,wb=96;
         for(int i=0;i<=6;i++){float f=i/6f;line(c,cx-wt/2+wt*f,top,cx-wb/2+wb*f,bot,1,i==3?acc:LINE_);}
@@ -168,22 +168,18 @@ final class LambdaCluster extends ClusterKit {
         mono(c,mode<0?"MODE —":Telemetry.driveModeLabel(mode),cx-wt/2,bot+18,12,mode==1?RED:mode==3?GREEN:GREY,Paint.Align.LEFT);
         mini(c,364,196,"COOLANT",v(2),40,120,"%.0f");mini(c,436,196,"BOOST",v(Telemetry.BOOST),-1,1.5f,"%+.1f");
         mini(c,364,290,"INTAKE",v(Telemetry.INTAKE),0,80,"%.0f");mini(c,436,290,"BATT",v(Telemetry.BAT_VOLTAGE),10,15,"%.1f");
-        if(!mt){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
-            mono(c,"CLUTCH",cx,344,11,GREY,Paint.Align.CENTER);
-            clutchTemp(c,cx-36,"ODD",o);clutchTemp(c,cx+36,"EVEN",e);return;}
+        if(!mt){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);   // one row above the shift numbers, in the hotter one's colour
+            int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
+            mono(c,"CLUTCH °C",346,322,11,GREY,Paint.Align.LEFT);mono(c,fmt("%.0f",o)+" / "+fmt("%.0f",e),454,322,12,lv==2?RED:lv==1?AMBER:WH,Paint.Align.RIGHT);}
         ShiftCoach co=st==null?null:st.coach;ShiftCoach.Shift sh=co==null?null:co.last;
         mono(c,"LAST SHIFT",cx,344,11,GREY,Paint.Align.CENTER);
         if(sh!=null){bold(c,sh.from+" > "+sh.to,cx,376,26,WH,Paint.Align.CENTER);
             if(sh.heelToe)mono(c,"H/T",cx,394,12,OR,Paint.Align.CENTER);
-            stat(c,414,"REV",String.format(Locale.US,"%+,d rpm",Math.round(sh.revErr)));
-            stat(c,432,"CLUTCH",String.format(Locale.US,"%.2f s",sh.timeS));
+            stat(c,414,"REV",Float.isNaN(sh.revErr)?"—":String.format(Locale.US,"%+,d rpm",Math.round(sh.revErr)));
+            stat(c,432,mt?"CLUTCH":"SYNC",Float.isNaN(sh.timeS)?"—":String.format(Locale.US,"%.2f s",sh.timeS));
             stat(c,450,"JOLT",Float.isNaN(sh.jolt)?"—":String.format(Locale.US,"%.2f G",sh.jolt));}
     }
     private void stat(Canvas c,float y,String k,String val){mono(c,k,346,y,11,GREY,Paint.Align.LEFT);mono(c,val,454,y,12,WH,Paint.Align.RIGHT);}
-    private void clutchTemp(Canvas c,float x,String name,float t){
-        int lv=Telemetry.clutchLevel(t);
-        bold(c,fmt("%.0f",t),x,392,30,lv==2?RED:lv==1?AMBER:WH,Paint.Align.CENTER);mono(c,name+" °C",x,412,11,GREY,Paint.Align.CENTER);
-    }
     private void mini(Canvas c,float cx,float cy,String name,float val,float lo,float hi,String f){
         float r=24,a0=-55,a1=55,on=Float.isNaN(val)?-1:clamp((val-lo)/(hi-lo),0,1);
         for(int i=0;i<=14;i++){float a=a0+(a1-a0)*i/14f;line(c,px(cx,r,a),py(cy,r,a),px(cx,r+6,a),py(cy,r+6,a),2,i/14f<=on?acc:DIM);}
