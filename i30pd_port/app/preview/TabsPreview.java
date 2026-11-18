@@ -249,7 +249,7 @@ public final class TabsPreview {
             FloatPanel.cells[0]=Telemetry.DPF_SOOT;if(FloatPanel.signal(0,VehicleProfile.PETROL_DCT)!=Telemetry.BOOST)throw new AssertionError("float: a saved DPF cell falls back to 자동 on a petrol");FloatPanel.cells[0]=-1;
             FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.BAR;FloatPanel.count=2;
         }
-        rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
+        rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);SettingsLayout.floatBeep=true;save(out,"9_settings_rpm_beep",rec,model,now,false,false);SettingsLayout.floatBeep=false;rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
         rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
         {Telemetry.Sample[] q=model.snapshot(now);q[7]=new Telemetry.Sample(103,true,false,true,false,0);   // GPS speed calibration off / on: the speedometer's 103 shown as a true 100

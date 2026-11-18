@@ -157,7 +157,7 @@ public final class VehicleDash extends View implements Runnable {
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
         sound=new EngineSound(a.getApplicationContext(),DATA);beep=new ShiftBeep(a);
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=p.getBoolean("float_beep",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=beepOn&&p.getBoolean("float_beep",false);
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
             beepVol=Math.max(0,Math.min(100,p.getInt("shift_beep_vol",70)));
             downScope=Math.max(0,Math.min(SettingsLayout.DOWN_SCOPES.length-1,p.getInt("downshift_scope",0)));
@@ -553,7 +553,7 @@ public final class VehicleDash extends View implements Runnable {
             if(!blocked&&!picker&&renderer.ecoShown()&&EcoCluster.onFare(x,y)){EcoCluster.holding=true;postDelayed(ecoHold,1000);}
             return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&pickSlot<0&&(settingsCat==SettingsLayout.SCREENS||SettingsLayout.scrolls(settingsCat))&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&pickSlot<0&&(settingsCat==SettingsLayout.SCREENS||settingsCat==SettingsLayout.SOUND)&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
             settingsScroll=Math.max(0,Math.min(SettingsLayout.maxPaneScroll(settingsCat),settingsScroll-(y-lastMoveY)));lastMoveY=y;
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
@@ -586,7 +586,7 @@ public final class VehicleDash extends View implements Runnable {
                 return true;
             }
             if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){floatTap(x,y);invalidate();return true;}
-            int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat;float paneSc=SettingsLayout.scrolls(pane)?settingsScroll:0;
+            int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat;float paneSc=pane==SettingsLayout.SOUND?settingsScroll:0;
             int i=SettingsLayout.item(pane,x,y,paneSc);
             if(i<0||i!=SettingsLayout.item(pane,downX,downY,paneSc))return true;
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();
@@ -609,10 +609,10 @@ public final class VehicleDash extends View implements Runnable {
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;
                 case SettingsLayout.RPM:{   // − / + step 100 rpm; the rest of the row puts the default back
-                    if(i==SettingsLayout.RPM_BEEP){beepOn=!beepOn;e.putBoolean("shift_beep",beepOn);if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
+                    if(i==SettingsLayout.RPM_BEEP){boolean was=beepOn;SettingsLayout.floatBeep=beepOn&&!SettingsLayout.floatBeep;beepOn=!was||SettingsLayout.floatBeep;   // 끔 -> 켬 -> 플로팅에서도 -> 끔
+                        e.putBoolean("shift_beep",beepOn);e.putBoolean("float_beep",SettingsLayout.floatBeep);if(was)break;if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
                     if(i==SettingsLayout.RPM_BEEP_SOUND){if(!beepOn)break;beepSound=(beepSound+1)%SettingsLayout.BEEP_SOUNDS.length;e.putInt("shift_beep_sound",beepSound);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){downScope=(downScope+1)%SettingsLayout.DOWN_SCOPES.length;e.putInt("downshift_scope",downScope);break;}
-                    if(i==SettingsLayout.RPM_FLOAT){SettingsLayout.floatBeep=!SettingsLayout.floatBeep;e.putBoolean("float_beep",SettingsLayout.floatBeep);break;}
                     if(i>=SettingsLayout.RPM_DOWN1){int dk=i-SettingsLayout.RPM_DOWN1;   // 끔 -> each sound in turn -> 끔
                         downSounds[dk]=downSounds[dk]+1>=SettingsLayout.BEEP_SOUNDS.length?-1:downSounds[dk]+1;e.putInt("downshift_sound_"+(dk+1),downSounds[dk]);
                         if(downSounds[dk]>=0)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dk],beepVol/100f);break;}

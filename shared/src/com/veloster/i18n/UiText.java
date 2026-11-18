@@ -363,7 +363,6 @@ public final class UiText {
         EN.put("변속 목표에서 깜빡일 때 울림 · 앞 스피커","Sounds with the shift flash · front speakers");
         EN.put("변속 목표에서 울림 · 맞춤 소리 화면에선 클러치를 뗐을 때만","At the shift target · on match-sound screens only with the clutch out");
         EN.put("변속 알림음","Shift beep");
-        EN.put("플로팅 중 변속 알림","Shift beeps while floating");EN.put("계기판을 닫고 플로팅 창만 있을 때도 알림음 · 맞춤 소리를 울림","Also beep when only the floating window is up");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속·구동","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
@@ -870,6 +869,7 @@ public final class UiText {
         EN.put("플로팅","Floating");
         EN.put("플로팅 버튼 숨기기","Hide the floating button");
         EN.put("플로팅 창","Floating window");
+        EN.put("플로팅에서도","Also floating");
         EN.put("하강 2음","Falling 2 tones");
         EN.put("하강 3음","Falling 3 tones");
         EN.put("한 번 더 누르면 초기화","Tap again to reset");
