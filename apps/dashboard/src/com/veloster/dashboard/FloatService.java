@@ -133,7 +133,7 @@ public final class FloatService extends Service implements Runnable {
                 return false;
             }
         });
-        try{windows.addView(v,layout);panel=v;shown=shape*100+n*10+size+(rnd?1000:0);foreground(true);}
+        try{windows.addView(v,layout);panel=v;shown=shape*100+n*10+size+(rnd?1000:0)+(FloatPanel.musicStrip?10000:0);   // the same key as run()'s want: without the 음악 띠 term the window was taken down and put up again every tickforeground(true);}
         catch(RuntimeException e){android.util.Log.w("VehicleDash","Floating window refused",e);panel=null;shown=-1;stopSelf();}
     }
     private void remove(){

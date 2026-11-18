@@ -117,6 +117,10 @@ public final class TabsPreview {
                     BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                     java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
                     FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_music_"+m[4]+".png"));}
+                {FloatPanel.musicStrip=false;FloatPanel.music(mm.snapshot(now),null);FloatPanel.cells[0]=Telemetry.BOOST;FloatPanel.cells[1]=0;   // vacuum beside the rpm: the large value gives way
+                 Telemetry.Sample[] vq=model.snapshot(now);vq[Telemetry.BOOST]=new Telemetry.Sample(-0.65f,true,false,true,false,0);vq[0]=new Telemetry.Sample(1561,true,false,true,false,0);
+                 BufferedImage img=new BufferedImage(300,140,BufferedImage.TYPE_INT_RGB);FloatPanel.draw(new android.graphics.Canvas(img.createGraphics()),FloatPanel.MUSIC,2,1,vq,VehicleProfile.PETROL_DCT,now);
+                 ImageIO.write(img,"png",new File(out,"x_float_music_shape2_vacuum.png"));FloatPanel.cells[0]=-1;FloatPanel.cells[1]=-1;}
                 FloatPanel.musicStrip=false;FloatPanel.music(null,null);}
             {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
                 Telemetry hm=new Telemetry();long t0=now-30000;int from=Math.max(0,last-(int)(31000/step));
