@@ -193,7 +193,7 @@ public final class ShowRenderer {
         text(c,"1.2g",cx+rad-14,cy-6,9,MUTED,Paint.Align.RIGHT);
         // push current point into the trail
         if(!Float.isNaN(lat)&&!Float.isNaN(lon)){
-            float k=Telemetry.pinG(lat,lon,1.2f),px=cx+lat*k*scale,py=cy-lon*k*scale;   // +lon (accel) up, +lat (left) ... keep lat right-positive visual
+            float k=Telemetry.pinG(lat,lon,1.2f),px=cx+lat*k*scale,py=cy+lon*k*scale;   // +lon (accel) down, braking up, +lat (left) ... keep lat right-positive visual
             tx[tHead]=px;ty[tHead]=py;tAt[tHead]=now;tHead=(tHead+1)%TRAIL;if(tCount<TRAIL)tCount++;
             float g=(float)Math.hypot(lat,lon);if(g>peakG)peakG=g;
         }
@@ -205,7 +205,7 @@ public final class ShowRenderer {
         }
         // current point
         if(!Float.isNaN(lat)&&!Float.isNaN(lon)){
-            float k=Telemetry.pinG(lat,lon,1.2f),px=cx+lat*k*scale,py=cy-lon*k*scale;
+            float k=Telemetry.pinG(lat,lon,1.2f),px=cx+lat*k*scale,py=cy+lon*k*scale;
             p.setColor(T(withAlpha(accent,0x55)));c.drawCircle(px,py,10,p);
             p.setColor(T(accent));c.drawCircle(px,py,5,p);
             p.setColor(T(0xffffffff));c.drawCircle(px,py,2,p);

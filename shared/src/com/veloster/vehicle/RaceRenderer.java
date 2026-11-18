@@ -238,8 +238,8 @@ public final class RaceRenderer {
         if(!Float.isNaN(st.maxG)&&st.maxG>0.05f){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.5f);p.setColor(T(0x99ff4059));
             c.drawCircle(cx,cy,Math.min(1,st.maxG/1.2f)*rad,p);p.setStyle(Paint.Style.FILL);}
         for(int i=0,n=st.trailCount();i<n;i++){p.setColor(T(((40+180*i/Math.max(1,n))<<24)|(BLUE&0xffffff)));
-            c.drawCircle(cx+clampG(st.trailX(i))*rad,cy-clampG(st.trailY(i))*rad,2.5f,p);}
-        if(ok){p.setColor(T(RED));c.drawCircle(cx+clampG(gx)*rad,cy-clampG(gy)*rad,5,p);}
+            c.drawCircle(cx+clampG(st.trailX(i))*rad,cy+clampG(st.trailY(i))*rad,2.5f,p);}
+        if(ok){p.setColor(T(RED));c.drawCircle(cx+clampG(gx)*rad,cy+clampG(gy)*rad,5,p);}   // braking (-) up
         text(c,"G  MAX "+fmt("%.2f",st.maxG),CR-8,352,12,MUTED,Paint.Align.RIGHT);
         text(c,ok?String.format(Locale.US,"%.2f",(float)Math.sqrt(gx*gx+gy*gy)):"—",CR-8,392,30,WHITE,Paint.Align.RIGHT);
         text(c,"LAT "+fmt("%+.2f",gx),CR-8,416,12,MUTED,Paint.Align.RIGHT);
