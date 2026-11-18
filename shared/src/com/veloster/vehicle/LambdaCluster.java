@@ -144,11 +144,20 @@ final class LambdaCluster extends ClusterKit {
             lamp(c,y+1.05f*dy,"CLU",clutch,BLUE);lamp(c,y+3.9f*dy,"H/T",heel,OR);}
         else{int lv=Math.max(Telemetry.clutchLevel(v(Telemetry.CLUTCH_ODD)),Telemetry.clutchLevel(v(Telemetry.CLUTCH_EVEN)));
             lamp(c,y+1.05f*dy,"MAN",shown.startsWith("M"),acc);lamp(c,y+3.9f*dy,"CLT",lv>0,lv==2?RED:AMBER);}
-        lamp(c,y+2.0f*dy,"BRK",Telemetry.braking(v(Telemetry.BRAKE_SWITCH),brake),RED);lamp(c,y+2.95f*dy,"THR",pedal>5,GREEN);
+        boolean braking=Telemetry.braking(v(Telemetry.BRAKE_SWITCH),brake);   // the pills fill with the pressure (of BRAKE_FULL bar) / the pedal %
+        fillLamp(c,y+2.0f*dy,"BRK",!braking?0:Float.isNaN(brake)?1:Math.max(.1f,brake/BRAKE_FULL),!braking||Float.isNaN(brake)?null:fmt("%.0f",brake)+" bar",RED);
+        fillLamp(c,y+2.95f*dy,"THR",Float.isNaN(pedal)||pedal<1?0:pedal/100,Float.isNaN(pedal)||pedal<1?null:fmt("%.0f",pedal)+"%",GREEN);
     }
     /** A lamp as a pill with its name in English (the whole screen is English; three letters: CLU BRK THR H/T, DCT MAN BRK THR CLT), every pill the
      *  same width whatever its word: filled in its colour while on. */
     private static final float LAMP_W=72;
+    static final float BRAKE_FULL=100;   // ponytail: a hard stop's pressure, a guess; the owner's car reads 1-2 bar at rest
+    /** A pill filled from the left to f (0..1); the text (or the name) dark over the fill, grey beside it. */
+    private void fillLamp(Canvas c,float y,String name,float f,String text,int col){
+        String t=text==null?name:text;float w=LAMP_W,h=28,l=RCX-w/2,size=16;f=clamp(f,0,1);while(size>10&&width(t,size,faceBold())>w-12)size--;
+        outline(c,l,y-h/2,l+w,y+h/2,h/2,1.2f,LINE_);bold(c,t,RCX,y+size*0.36f,size,GREY,Paint.Align.CENTER);
+        if(f>0){c.save();c.clipRect(l,y-h/2,l+w*f,y+h/2);round(c,l,y-h/2,l+w,y+h/2,h/2,col);bold(c,t,RCX,y+size*0.36f,size,INK,Paint.Align.CENTER);c.restore();}
+    }
     private void lamp(Canvas c,float y,String name,boolean on,int col){
         float w=LAMP_W,h=28,size=16;while(size>10&&width(name,size,faceBold())>w-16)size--;
         if(on)round(c,RCX-w/2,y-h/2,RCX+w/2,y+h/2,h/2,col);else outline(c,RCX-w/2,y-h/2,RCX+w/2,y+h/2,h/2,1.2f,LINE_);

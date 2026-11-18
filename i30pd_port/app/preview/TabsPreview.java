@@ -378,7 +378,7 @@ public final class TabsPreview {
         float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};
         for(int k=0;k<ds.length;k++){Telemetry.Sample[] q=model.snapshot(now);float[] d=ds[k];
             q[8]=new Telemetry.Sample(d[0],true,false,true,false,0);q[7]=new Telemetry.Sample(d[1],true,false,true,false,0);q[0]=new Telemetry.Sample(d[2],true,false,true,false,0);
-            q[Telemetry.CLUTCH]=new Telemetry.Sample(d[3],true,false,true,false,0);q[10]=new Telemetry.Sample(d[4],true,false,true,false,0);q[Telemetry.SHIFT_HINT]=new Telemetry.Sample(0,true,false,true,false,0);
+            q[Telemetry.CLUTCH]=new Telemetry.Sample(d[3],true,false,true,false,0);q[10]=new Telemetry.Sample(d[4],true,false,true,false,0);q[Telemetry.SHIFT_HINT]=new Telemetry.Sample(0,true,false,true,false,0);q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(d[4]>5?1:0,true,false,true,false,0);
             ShiftGuide.Cue cue=ShiftGuide.evaluate(q,ShiftGuide.target(0,VehicleProfile.PETROL_MT),VehicleProfile.PETROL_MT);
             BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
             PitRenderer bgR=new PitRenderer();bgR.draw(c,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
