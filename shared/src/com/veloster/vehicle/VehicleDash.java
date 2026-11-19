@@ -397,7 +397,7 @@ public final class VehicleDash extends View implements Runnable {
      *  it back by itself 75 s after the last ask), and to bring it back when it leaves. 내 앱 decides (its option, default off). */
     private boolean dashHideSent;private long dashHideAt;
     private void dashHide(long now){
-        boolean want=resumed&&getVisibility()==VISIBLE&&!standalone;
+        boolean want=resumed&&getVisibility()==VISIBLE;
         if(want&&(!dashHideSent||now-dashHideAt>=20000)){dashHideSent=true;dashHideAt=now;dashHideSend(true);}
         else if(!want&&dashHideSent){dashHideSent=false;dashHideSend(false);}
     }
