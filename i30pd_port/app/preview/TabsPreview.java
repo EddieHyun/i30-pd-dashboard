@@ -121,7 +121,9 @@ public final class TabsPreview {
                  Telemetry.Sample[] vq=model.snapshot(now);vq[Telemetry.BOOST]=new Telemetry.Sample(-0.65f,true,false,true,false,0);vq[0]=new Telemetry.Sample(1561,true,false,true,false,0);
                  BufferedImage img=new BufferedImage(300,140,BufferedImage.TYPE_INT_RGB);FloatPanel.draw(new android.graphics.Canvas(img.createGraphics()),FloatPanel.MUSIC,2,1,vq,VehicleProfile.PETROL_DCT,now);
                  ImageIO.write(img,"png",new File(out,"x_float_music_shape2_vacuum.png"));FloatPanel.cells[0]=-1;FloatPanel.cells[1]=-1;}
-                {FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),null);int sk0=FloatPanel.skin;   // the 음악 띠 in every 색감, still and scrolled 2.5 s on
+                {android.graphics.Bitmap cover=android.graphics.Bitmap.createBitmap(64,64,android.graphics.Bitmap.Config.ARGB_8888);{android.graphics.Canvas cc=new android.graphics.Canvas(cover);android.graphics.Paint cp=new android.graphics.Paint(1);
+                    cp.setColor(0xff7a3cc8);cc.drawRect(0,0,64,64,cp);cp.setColor(0xffffc04a);cc.drawCircle(40,26,18,cp);cp.setColor(0xff1b1030);cc.drawRect(0,46,64,64,cp);}   // a stand-in album cover
+                 FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int sk0=FloatPanel.skin;   // the 음악 띠 in every 색감, still and scrolled 2.5 s on
                  for(int sk=0;sk<FloatSkin.NAMES.length;sk++)for(long dt:new long[]{0,2500}){FloatPanel.skin=sk;int w=FloatPanel.width(FloatPanel.CARD,4,1),h=FloatPanel.height(FloatPanel.CARD,4,1);
                      BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
                      long t0=(now/100000)*100000;FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,t0+dt);ImageIO.write(img,"png",new File(out,"x_float_music_strip_skin"+sk+"_"+dt+".png"));}

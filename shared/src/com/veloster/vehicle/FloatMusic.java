@@ -7,7 +7,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 
 /**
- * Music on the floating window (FloatPanel): the 음악 띠 under any shape (play state, title · artist, time, a thin progress
+ * Music on the floating window (FloatPanel): the 음악 띠 under any shape (album art or play state, 가수 - 제목, a thin progress
  * line) and the 음악 shape (album art, title, artist, progress, then cell 0 large with the gear and cell 1 small). The track is
  * the OEM widget broadcasts' (MediaState) that VehicleDash and FloatService hand over before each tick and draw, in the
  * window's plain colours; the strip takes the 색감 (FloatSkin) body and ink. The strip reads 가수 - 제목 and scrolls when it
@@ -41,50 +41,67 @@ final class FloatMusic {
     /** The cells of the music shape (size 보통): cell 0 the large value under the progress line, cell 1 the small one right of it. */
     static float[] rect(int n,int i){return n<2?new float[]{118,62,W,H}:i==0?new float[]{118,62,200,H}:new float[]{200,62,W,H};}
 
-    /** The strip in the 색감's colours: ink, muted, accent, progress track, typeface (FloatSkin's cells use the same). */
-    private static int sInk,sMut,sAcc,sTrack;private static Typeface sFace;private static boolean sShadow;
+    /** The music parts in the 색감's language (FloatSkin's cells): ink, muted, accent, progress track, typeface; sPad = the skin
+     *  frames its cells, so the content keeps clear of the frame; sBar = the progress bar's form (0 round, 1 flat, 2 a hairline). */
+    private static int sInk,sMut,sAcc,sTrack,sBar;private static Typeface sFace;private static boolean sShadow,sPad;
     private static void look(int skin){
-        int acc=Theme.current().map(0xff5bc8f5);sFace=Typeface.DEFAULT_BOLD;sShadow=false;
+        int acc=Theme.current().map(0xff5bc8f5);sFace=Typeface.DEFAULT_BOLD;sShadow=false;sPad=true;sBar=1;
         switch(skin){
-            case FloatSkin.RACE:sInk=0xfff2f6f8;sMut=0xff8fa0a8;sAcc=acc;break;
-            case FloatSkin.F1:sInk=0xffffffff;sMut=0xff8fa0a8;sAcc=0xff2fe06a;break;
-            case FloatSkin.RETRO:sInk=0xffffb347;sMut=0xffc46a1c;sAcc=0xffff9a2e;sFace=Typeface.MONOSPACE;break;
-            case FloatSkin.VFD:sInk=0xff5ef2d2;sMut=0xb35ef2d2;sAcc=0xff5ef2d2;break;
-            case FloatSkin.HUD:sInk=0xff62ff8a;sMut=0xff62ff8a;sAcc=0xff62ff8a;sFace=Typeface.MONOSPACE;sShadow=true;break;   // no body: a dark copy under the green
-            case FloatSkin.PIXEL:sInk=0xffffffff;sMut=0xffffd84a;sAcc=0xff3ddc5a;break;
-            case FloatSkin.VU:sInk=0xffece0bc;sMut=0xffb8ab88;sAcc=0xffc8302a;break;
-            case FloatSkin.NIGHT:sInk=0xffc5ccd0;sMut=0xff8a959a;sAcc=acc;sFace=Typeface.DEFAULT;break;
-            default:sInk=FloatPanel.TXT;sMut=FloatPanel.MUT;sAcc=FloatPanel.ACC;sTrack=FloatPanel.TRACK;return;
+            case FloatSkin.RACE:sInk=0xfff2f6f8;sMut=0xff8fa0a8;sAcc=acc;sTrack=0xff26323a;return;
+            case FloatSkin.F1:sInk=0xffffffff;sMut=0xff8fa0a8;sAcc=0xff2fe06a;sTrack=0xff1d2428;sPad=false;sBar=0;return;
+            case FloatSkin.RETRO:sInk=0xffffb347;sMut=0xffc46a1c;sAcc=0xffff9a2e;sTrack=0xff2a1606;sFace=Typeface.MONOSPACE;return;
+            case FloatSkin.VFD:sInk=0xff5ef2d2;sMut=0xb35ef2d2;sAcc=0xff5ef2d2;sTrack=0x1a5ef2d2;return;
+            case FloatSkin.HUD:sInk=0xff62ff8a;sMut=0xff62ff8a;sAcc=0xff62ff8a;sTrack=0x5562ff8a;sFace=Typeface.MONOSPACE;sShadow=true;sBar=2;return;   // no body: a dark copy under the green
+            case FloatSkin.PIXEL:sInk=0xffffffff;sMut=0xffffd84a;sAcc=0xff3ddc5a;sTrack=0xff2a2a2a;return;
+            case FloatSkin.VU:sInk=0xff3a3226;sMut=0xff6b5f4a;sAcc=0xffc8302a;sTrack=0x403a3226;sBar=0;return;   // dark ink on the ivory plate
+            case FloatSkin.NIGHT:sInk=0xffc5ccd0;sMut=0xff8a959a;sAcc=acc;sTrack=0xff2b3134;sFace=Typeface.DEFAULT;sPad=false;sBar=2;return;
+            default:sInk=FloatPanel.TXT;sMut=FloatPanel.MUT;sAcc=FloatPanel.ACC;sTrack=FloatPanel.TRACK;sPad=false;sBar=0;
         }
-        sTrack=sAcc&0xffffff|0x38000000;
     }
-    /** The window's background in the 색감: its body (FloatSkin), the plain outline, or for 8-bit one white frame (the double
-     *  border would leave the strip's line no room). */
+    private static void box(Canvas c,float l,float t,float rt,float b,float sw,int col){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setColor(col);c.drawRect(l,t,rt,b,p);p.setStyle(Paint.Style.FILL);}
+    private static void fill(Canvas c,float l,float t,float rt,float b,int col){p.setStyle(Paint.Style.FILL);p.setColor(col);c.drawRect(l,t,rt,b,p);}
+    /** The background in the 색감, framed as that skin frames a cell: the race screen's thin box, the retro orange rule, the VFD's
+     *  faint outline, the HUD's corner brackets, the 8-bit dialog's thick border, the cassette's ivory plate; plain, F1 and night
+     *  have none. */
     private static void back(Canvas c,int sk,float w,float h,float k){
-        if(sk==FloatSkin.PLAIN)FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);
-        else if(sk==FloatSkin.PIXEL)FloatPanel.outline(c,w,h,k,0xf0000000,0xffffffff);
-        else FloatSkin.body(c,sk,w,h,k,FloatPanel.alphaF());}
+        if(sk==FloatSkin.PLAIN){FloatPanel.outline(c,w,h,k,FloatPanel.BG,FloatPanel.EDGE);return;}
+        if(sk==FloatSkin.PIXEL){int o=Math.max(1,Math.round(k));fill(c,0,0,w,h,(int)(0xf0*Math.min(1,FloatPanel.alphaF()))<<24);
+            fill(c,2*o,2*o,w-2*o,4*o,0xffffffff);fill(c,2*o,h-4*o,w-2*o,h-2*o,0xffffffff);fill(c,2*o,2*o,4*o,h-2*o,0xffffffff);fill(c,w-4*o,2*o,w-2*o,h-2*o,0xffffffff);return;}
+        FloatSkin.body(c,sk,w,h,k,FloatPanel.alphaF());
+        float i=3.5f*k;
+        switch(sk){
+            case FloatSkin.RACE:box(c,i,i,w-i,h-i,1,0xff2a353c);break;
+            case FloatSkin.RETRO:box(c,i,i,w-i,h-i,1,0xffb4500f);break;
+            case FloatSkin.VFD:box(c,i,i,w-i,h-i,1,0x385ef2d2);break;
+            case FloatSkin.VU:p.setStyle(Paint.Style.FILL);p.setColor(0xffece0bc);r.set(4*k,4*k,w-4*k,h-4*k);c.drawRoundRect(r,3*k,3*k,p);break;
+            case FloatSkin.HUD:for(int pass=0;pass<2;pass++){int g=pass==0?0xb4000000:0xff62ff8a;float d=pass==0?k:0,L=8*k,x0=4*k+d,y0=4*k+d,x1=w-4*k+d,y1=h-4*k+d,sw=1.2f*k;
+                fill(c,x0,y0,x0+L,y0+sw,g);fill(c,x0,y0,x0+sw,y0+L,g);fill(c,x1-L,y0,x1,y0+sw,g);fill(c,x1-sw,y0,x1,y0+L,g);
+                fill(c,x0,y1-sw,x0+L,y1,g);fill(c,x0,y1-L,x0+sw,y1,g);fill(c,x1-L,y1-sw,x1,y1,g);fill(c,x1-sw,y1-L,x1,y1,g);}break;
+            default:break;
+        }
+    }
     private static void say(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){
         if(sShadow)text(c,s,x+1,y+1,size,0xb4000000,a,face);text(c,s,x,y,size,color,a,face);}
-    /** The strip at 0,y, w wide (the body's width), for size k, at now (the scroll). */
+    /** The strip at 0,y, w wide (the body's width), for size k, at now (the scroll): the album art (or the play state) on the left,
+     *  가수 - 제목, the progress bar under it. No times: the bar says it. */
     static void strip(Canvas c,float w,float y,float k,long now){
         MediaState.Snapshot t=track;boolean on=playing(t);float h=STRIP_H*k;int sk=FloatPanel.skinNow();look(sk);
         c.save();c.translate(0,y);
         back(c,sk,w,h,k);
-        float in=0;
-        if(on)glyph(c,10*k+in,h/2-k,5*k,t.playState==1,sAcc);else say(c,"♪",12*k+in,h/2+4*k,12*k,sMut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
-        String time=on&&t.hasProgress()&&w>=200*k?MediaState.time(position(t))+" / "+MediaState.time(t.durationMs):"";   // a narrow window keeps its width for the title
-        float tw=time.isEmpty()?0:width(time,10*k,sFace)+8*k;
-        if(!time.isEmpty())say(c,time,w-9*k-in,h/2+3*k,10*k,sMut,Paint.Align.RIGHT,sFace);
-        float lx=24*k+in,room=w-tw-lx-8*k-in,size=12*k;
-        if(!on){marquee=false;say(c,fit(com.veloster.i18n.UiText.t("재생 중인 곡 없음"),size,sFace,room),lx,h/2+3*k,size,sMut,Paint.Align.LEFT,sFace);}
+        float x0=(sPad?9:8)*k,base=h/2+(sPad?1.5f:3)*k,by=h-(sPad?9.5f:5.5f)*k,right=w-(sPad?10:9)*k,lx,size=12*k;Bitmap b=art;
+        if(on&&b!=null&&!b.isRecycled()){float a=h-(sPad?14:10)*k,ay=(h-a)/2;r.set(x0,ay,x0+a,ay+a);p.setColor(0xff000000);c.drawBitmap(b,null,r,p);   // Paint(3): filtered; opaque
+            if(t.playState!=1){fill(c,x0,ay,x0+a,ay+a,0x99000000);glyph(c,x0+a*.27f,ay+a/2,a*.3f,false,0xffffffff);}   // paused: the bars over the dimmed art
+            lx=x0+a+6*k;}
+        else{if(on)glyph(c,x0+2*k,base-4*k,5*k,t.playState==1,sAcc);else say(c,"♪",x0+4*k,base+k,12*k,sMut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+            lx=x0+16*k;}
+        float room=right-lx;
+        if(!on){marquee=false;say(c,fit(com.veloster.i18n.UiText.t("재생 중인 곡 없음"),size,sFace,room),lx,base,size,sMut,Paint.Align.LEFT,sFace);}
         else{String line=line(t);float lw=width(line,size,sFace);marquee=lw>room;
             c.save();c.clipRect(lx,0,lx+room,h);
             float span=lw+ROUND_GAP*k,off=marquee?offset(now,span,k):0;
-            say(c,line,lx-off,h/2+3*k,size,sInk,Paint.Align.LEFT,sFace);if(marquee)say(c,line,lx-off+span,h/2+3*k,size,sInk,Paint.Align.LEFT,sFace);   // the next round follows the gap
+            say(c,line,lx-off,base,size,sInk,Paint.Align.LEFT,sFace);if(marquee)say(c,line,lx-off+span,base,size,sInk,Paint.Align.LEFT,sFace);   // the next round follows the gap
             c.restore();}
-        p.setStyle(Paint.Style.FILL);p.setColor(sTrack);r.set(10*k+in,h-5*k-in,w-10*k-in,h-2.5f*k-in);c.drawRoundRect(r,1.25f*k,1.25f*k,p);
-        float f=progress(t);if(f>0){p.setColor(sAcc);r.set(10*k+in,h-5*k-in,10*k+in+(w-20*k-2*in)*f,h-2.5f*k-in);c.drawRoundRect(r,1.25f*k,1.25f*k,p);}
+        bar(c,lx,by,right,2.5f*k,progress(t));
         c.restore();
     }
     /** The music shape at 0,0 for size k: n cells (1 or 2) of signals sigs, slots from first; rec feeds the peaks and line graphs. */
@@ -93,7 +110,7 @@ final class FloatMusic {
         back(c,sk,w,h,k);
         float a=h-20*k,x=a+20*k,right=w-10*k;Bitmap b=art;
         r.set(10*k,10*k,10*k+a,10*k+a);
-        if(b!=null&&!b.isRecycled())c.drawBitmap(b,null,r,p);   // Paint(3): filtered
+        if(b!=null&&!b.isRecycled()){p.setColor(0xff000000);c.drawBitmap(b,null,r,p);}   // Paint(3): filtered; opaque
         else{p.setStyle(Paint.Style.FILL);p.setColor(sTrack);c.drawRoundRect(r,8*k,8*k,p);say(c,"♪",10*k+a/2,10*k+a*.68f,a*.5f,sAcc,Paint.Align.CENTER,sFace);}
         if(on){say(c,fit(t.title.isEmpty()?t.artist:t.title,15*k,sFace,right-x),x,27*k,15*k,sInk,Paint.Align.LEFT,sFace);
             if(!t.title.isEmpty())say(c,fit(t.artist,11*k,sFace,right-x),x,42*k,11*k,sMut,Paint.Align.LEFT,sFace);}
@@ -116,8 +133,11 @@ final class FloatMusic {
             else{String s=fit(val+(unit.isEmpty()?"":" "+unit),11*k,sFace,62*k);side=Math.max(side,width(s,11*k,sFace));
                 say(c,s,right,h-12*k,11*k,Float.isNaN(v)?sMut:col,Paint.Align.RIGHT,sFace);}}
     }
-    private static void bar(Canvas c,float l,float t,float rt,float h,float f){p.setStyle(Paint.Style.FILL);p.setColor(sTrack);r.set(l,t,rt,t+h);c.drawRoundRect(r,h/2,h/2,p);
-        if(f>0){p.setColor(sAcc);r.set(l,t,l+(rt-l)*f,t+h);c.drawRoundRect(r,h/2,h/2,p);}}
+    /** The progress bar in the skin's form: round ends, flat, or a hairline. */
+    private static void bar(Canvas c,float l,float t,float rt,float h,float f){p.setStyle(Paint.Style.FILL);
+        if(sBar==2){float y=t+h/2;fill(c,l,y,rt,y+1,sTrack);if(f>0)fill(c,l,y-1,l+(rt-l)*f,y+2,sAcc);return;}
+        float rad=sBar==0?h/2:0;p.setColor(sTrack);r.set(l,t,rt,t+h);c.drawRoundRect(r,rad,rad,p);
+        if(f>0){p.setColor(sAcc);r.set(l,t,l+(rt-l)*f,t+h);c.drawRoundRect(r,rad,rad,p);}}
     /** ▶ while it plays, ❚❚ otherwise. */
     private static void glyph(Canvas c,float x,float y,float s,boolean play,int col){p.setStyle(Paint.Style.FILL);p.setColor(col);
         if(play){android.graphics.Path a=new android.graphics.Path();a.moveTo(x,y-s);a.lineTo(x+s*1.6f,y);a.lineTo(x,y+s);a.close();c.drawPath(a,p);}
