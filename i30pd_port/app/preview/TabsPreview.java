@@ -307,7 +307,8 @@ public final class TabsPreview {
             q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(1,true,false,true,false,0);q[10]=new Telemetry.Sample(30,true,false,true,false,0);q[Telemetry.STEERING]=new Telemetry.Sample(0,true,false,true,false,0);
             String[] shots={"count","go","play","steer_past","crash","over"};long[] gAt={1520,3320,9000,9600,0,0};int si=0;
             for(long e=0;e<=9600;e+=40){t=now+e;if(e>=3400){q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(0,true,false,true,false,0);q[10]=new Telemetry.Sample(1,true,false,true,false,0);
-                    q[Telemetry.STEERING]=new Telemetry.Sample(e<9200?-(float)(45*Math.sin(e/900.0)):-140,true,false,true,false,0);}
+                    q[Telemetry.STEERING]=new Telemetry.Sample(e<9200?-(float)(45*Math.sin(e/900.0)):-140,true,false,true,false,0);
+                    q[9]=new Telemetry.Sample(e>=8800&&e<9200?40:0,true,false,true,false,0);}   // gas pressed at the play shot: the crossed-out pedal
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
                 boolean shot=si<4&&e==gAt[si];if(shot)new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
                 pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);

@@ -628,7 +628,8 @@ final class PixelCluster extends ClusterKit {
         String msg=message(rpm,v);
         if(chase){
             if(msg!=null){float w=fontWidth(msg,17)+28;fill(c,400-w/2,164,400+w/2,194,0xff000000);outline(c,400-w/2+2,166,400+w/2-2,192,0,2,Y);
-                sh(c,msg,400,186,17,blink(now,500)?Y:W,Paint.Align.CENTER);}
+                sh(c,msg,400,186,17,blink(now,500)?Y:W,Paint.Align.CENTER);
+                if(HINT.equals(msg))pedals(c,204,false);}
         }else{
             fill(c,20,410,780,468,0xff000000);outline(c,24,414,776,464,0,4,W);outline(c,31,421,769,457,0,2,W);
             sh(c,msg!=null?msg:mode==SPORT?"BATTLE MODE... PUSH IT!":mode==ECO?"ECO RUN... EASY ON THE GAS":"CRUISING...",46,446,17,W);if(blink(now,600))sh(c,"v",752,448,15,Y);
@@ -645,7 +646,8 @@ final class PixelCluster extends ClusterKit {
         for(int i=0;i<13;i++){fill(c,20+i*10,444,29+i*10,458,0xff000000);fill(c,21+i*10,445,28+i*10,457,i==at?(past?Y:0xff3ad8ff):i==6?0xff4a4a5a:0xff2a2a3a);}
         sh(c,String.format(Locale.US,"%03d",Math.round(game.kmh())),720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);
         String big=null,small=null;
-        if(game.state==ArcadeGame.COUNT){big=String.valueOf(game.count(now));small="HOLD BRAKE";}
+        if(game.state==ArcadeGame.COUNT){big=String.valueOf(game.count(now));small="HOLD BRAKE";pedals(c,258,true);}
+        else if(game.state==ArcadeGame.PLAY&&v(9)>5)noGas(c);
         else if(game.state==ArcadeGame.OVER){big="GAME OVER";small=String.format(Locale.US,"%.2fKM",game.dist);}
         else if(now-game.hitAt<900)big="CRASH!";
         else if(now-game.at<800)big="GO!";
@@ -654,6 +656,32 @@ final class PixelCluster extends ClusterKit {
         fill(c,400-w/2,160,400+w/2,bot,0xff000000);outline(c,400-w/2+2,162,400+w/2-2,bot-2,0,2,Y);
         sh(c,big,400,208,34,game.state==ArcadeGame.OVER||now-game.hitAt<900?0xffff3b3b:Y,Paint.Align.CENTER);
         if(small!=null)sh(c,small,400,238,17,W,Paint.Align.CENTER);
+    }
+    static final String HINT="PRESS BRAKE TO START";
+    /** 8-bit pedals, one char per 4 px: o outline, b pad, r ridge, a arm. */
+    private static final String[] BRAKE_ART={"....aa....","....aa....",".oooooooo.","obbbbbbbbo","orrrrrrrro","obbbbbbbbo","orrrrrrrro","obbbbbbbbo",".oooooooo."},
+        GAS_ART={".oooo.","obbbbo","orrrro","obbbbo","orrrro","obbbbo","orrrro","obbbbo",".oooo.","..aa.."};
+    private void sprite(Canvas c,String[] art,float x,float y,int body,int ridge){
+        for(int r=0;r<art.length;r++)for(int k=0;k<art[r].length();k++){char ch=art[r].charAt(k);
+            int col=ch=='o'?0xff000000:ch=='b'?body:ch=='r'?ridge:ch=='a'?0xff6a6a7a:0;if(col!=0)fill(c,x+k*4,y+r*4,x+k*4+4,y+r*4+4,col);}
+    }
+    /** The gas pedal crossed out in red: the game needs no gas. */
+    private void gasCrossed(Canvas c,float x,float y){
+        sprite(c,GAS_ART,x,y,0xffc8c8d4,0xff7a7a8a);
+        for(int i=0;i<8;i++){fill(c,x-2+i*4,y+6+i*4,x+2+i*4,y+10+i*4,0xffff3b3b);fill(c,x+22-i*4,y+6+i*4,x+26-i*4,y+10+i*4,0xffff3b3b);}
+    }
+    /** Parked (top 204, the brake blinks: press it) and the countdown (top 258, the brake lit and down): brake and gas. */
+    private void pedals(Canvas c,float t,boolean held){
+        fill(c,330,t,470,t+86,0xff000000);outline(c,332,t+2,468,t+84,0,2,0xff4a4a5a);
+        boolean lit=held||blink(now,500);
+        sprite(c,BRAKE_ART,346,t+12+(held?4:0),lit?(held?0xff3ad8ff:Y):0xff9a9aaa,lit?(held?0xff1f8fb8:0xffb8961f):0xff5a5a6a);
+        sh(c,"BRAKE",366,t+76,13,lit?Y:W,Paint.Align.CENTER);
+        gasCrossed(c,420,t+8);sh(c,"GAS",432,t+76,13,0xff9a9aaa,Paint.Align.CENTER);
+    }
+    /** Playing with the gas pressed: the crossed-out gas pedal under BEST, blinking. */
+    private void noGas(Canvas c){
+        if(!blink(now,400))return;
+        fill(c,728,114,780,170,0xff000000);gasCrossed(c,742,122);
     }
     /** Backfire on screen: a hard lift (450 ms, with the banner) or a big pop of the engine sound (160 ms). */
     private boolean flame(){return now-fireAt<450||now-popAt<160;}
@@ -670,7 +698,7 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(brake)&&brake>35)return String.format(Locale.US,"BRAKE!! %.2fG",Float.isNaN(lon)?0:lon);
         if(!Float.isNaN(lat)&&Math.abs(lat)>0.35f)return String.format(Locale.US,"DRIFT! LAT %.2fG",Math.abs(lat));
         if(!Float.isNaN(fuel)&&fuel==0&&v>0)return mode==ECO?"FUEL CUT  +2 COIN/s":"FUEL CUT  +1 COIN/s";
-        if(chase&&parkedNow)return "HOLD BRAKE TO PLAY";   // the game's way in
+        if(chase&&parkedNow)return HINT;   // the game's way in
         if(Float.isNaN(v)||v<1)return "READY? PRESS GAS!";
         return !Float.isNaN(pedal)&&pedal>80?"FULL THROTTLE!!":null;
     }
