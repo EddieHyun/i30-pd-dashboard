@@ -22,7 +22,8 @@ final class FloatSkin extends ClusterKit {
     protected void draw(Canvas c){}
 
     /** One cell's content, filled by FloatPanel before each cell (main thread only). */
-    static final class Cell{String name,en,val,unit,pk;float f,zero,pf;int lv;boolean first,bar;String[] quad;final String[] q4=new String[4];final int[] l4=new int[4];}
+    /** sn: the name a skin shows: the app's language (Korean in Korean); en: always English, for the 8-bit font (no Hangul). */
+    static final class Cell{String name,en,sn,val,unit,pk;float f,zero,pf;int lv;boolean first,bar;String[] quad;final String[] q4=new String[4];final int[] l4=new int[4];}
     static final Cell CELL=new Cell();
 
     private static Typeface face(){return LambdaCluster.FACE!=null?LambdaCluster.FACE:Typeface.DEFAULT;}
@@ -84,7 +85,7 @@ final class FloatSkin extends ClusterKit {
             boolean hot=d.first;
             if(st()){if(hot)fill(c,x+3*k,y+3*k,x+cw-3*k,y+ch-3*k,themeBox());else box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xff2a353c);}
             int ink=hot?0xff061015:warn(d.lv,0xfff2f6f8),mut=hot?0xb3061015:0xff8fa0a8;
-            if(st())fit(c,d.en,x+10*k,y+15*k,8.5f*k,cw*(pk?.5f:.8f),mut,Paint.Align.LEFT,faceBold());
+            if(st())fit(c,d.sn,x+10*k,y+15*k,8.5f*k,cw*(pk?.5f:.8f),mut,Paint.Align.LEFT,faceBold());
             if(dy()&&pk)text(c,"MAX "+d.pk,x+cw-10*k,y+15*k,8*k,mut,Paint.Align.RIGHT,face());
             float uw=width(d.unit,9*k,face());if(st())text(c,d.unit,x+cw-10*k,y+46*k,9*k,mut,Paint.Align.RIGHT,face());
             if(dy())fit(c,d.val,x+cw-13*k-uw,y+46*k,25*k,cw-26*k-uw,ink,Paint.Align.RIGHT,faceBold());
@@ -96,14 +97,14 @@ final class FloatSkin extends ClusterKit {
             if(st()&&x>.5f)fill(c,x,y+8*k,x+1,y+ch-6*k,0xff2a343b);
             if(dy()&&d.bar){int n=8;for(int i=0;i<n;i++){boolean on=lit(i,n,f,d.zero,has);int col=i<3?0xff2fe06a:i<6?0xffff3b3b:0xff4aa8ff;
                 float cx=x+12*k+i*(cw-24*k)/(n-1);if(on)dot(c,cx,y+10*k,5.5f*k,col&0x44ffffff);dot(c,cx,y+10*k,3.2f*k,on?col:0xff1d2428);}}
-            if(st())fit(c,d.en,x+10*k,y+27*k,8*k,cw*(pk?.5f:.8f),0xff8fa0a8,Paint.Align.LEFT,faceBold());
+            if(st())fit(c,d.sn,x+10*k,y+27*k,8*k,cw*(pk?.5f:.8f),0xff8fa0a8,Paint.Align.LEFT,faceBold());
             if(dy()&&pk)text(c,"▲"+d.pk,x+cw-10*k,y+27*k,8*k,0xffff6b5b,Paint.Align.RIGHT,face());
             float uw=width(d.unit,9*k,face());if(st())text(c,d.unit,x+cw-10*k,y+ch-9*k,9*k,0xff8fa0a8,Paint.Align.RIGHT,face());
             if(dy())fit(c,d.val,x+cw-13*k-uw,y+ch-9*k,24*k,cw-26*k-uw,warn(d.lv,0xffffffff),Paint.Align.RIGHT,faceBold());
             break;}
         case RETRO:{   // orange-ruled boxes with a header band, amber fixed-width digits, a vertical tick bar
             if(st()){box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0xffb4500f);fill(c,x+3*k,y+3*k,x+cw-3*k,y+14*k,0xffb4500f);
-                fit(c,d.en,x+8*k,y+12*k,8*k,cw*(pk?.5f:.8f),0xff140800,Paint.Align.LEFT,Typeface.MONOSPACE);}
+                fit(c,d.sn,x+8*k,y+12*k,8*k,cw*(pk?.5f:.8f),0xff140800,Paint.Align.LEFT,Typeface.MONOSPACE);}
             if(dy()&&pk)text(c,"MAX "+d.pk,x+cw-8*k,y+12*k,8*k,0xff140800,Paint.Align.RIGHT,Typeface.MONOSPACE);
             if(st())text(c,d.unit,x+cw-28*k,y+48*k,9*k,0xffc46a1c,Paint.Align.LEFT,Typeface.MONOSPACE);
             if(!dy())break;
@@ -113,7 +114,7 @@ final class FloatSkin extends ClusterKit {
         case VFD:{   // a fluorescent display: seven-segment digits over their unlit ghost, a stepped bar
             int on=warn(d.lv==1?0:d.lv,0xff5ef2d2),ghost=0x145ef2d2,dim=0xb35ef2d2;
             if(st()){box(c,x+3.5f*k,y+3.5f*k,x+cw-3.5f*k,y+ch-3.5f*k,1,0x385ef2d2);
-                fit(c,d.en,x+9*k,y+14*k,8*k,cw*.6f,dim,Paint.Align.LEFT,faceBold());text(c,d.unit,x+cw-9*k,y+14*k,8*k,dim,Paint.Align.RIGHT,faceBold());}
+                fit(c,d.sn,x+9*k,y+14*k,8*k,cw*.6f,dim,Paint.Align.LEFT,faceBold());text(c,d.unit,x+cw-9*k,y+14*k,8*k,dim,Paint.Align.RIGHT,faceBold());}
             if(!dy())break;
             String s=d.val.startsWith("+")?d.val.substring(1):d.val;if(s.equals("—"))s="--";
             seg7(c,s.replaceAll("[0-9]","8"),x+cw-9*k,y+19*k,24*k,ghost,0,false);float tw=seg7(c,s,x+cw-9*k,y+19*k,24*k,on,0,false);
@@ -126,7 +127,7 @@ final class FloatSkin extends ClusterKit {
             if(dy()){line(c,x0,y0,x0+L,y0,sw,g);   /* corners each frame: the caret's dark copy reaches the bottom-left one */line(c,x0,y0,x0,y0+L,sw,g);line(c,x1-L,y0,x1,y0,sw,g);line(c,x1,y0,x1,y0+L,sw,g);
             line(c,x0,y1,x0+L,y1,sw,g);line(c,x0,y1-L,x0,y1,sw,g);line(c,x1-L,y1,x1,y1,sw,g);line(c,x1,y1-L,x1,y1,sw,g);
             }
-            if(st())fit(c,d.en,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);
+            if(st())fit(c,d.sn,x+12*k,y+17*k,8*k,cw*.7f,g,Paint.Align.LEFT,Typeface.MONOSPACE);
             if(d.val.isEmpty()){c.restore();continue;}   // a 4-wheel cell: the wheels go where the box was
             float bx=x+40*k,by=y+22*k,bw=70*k,bh=24*k;if(dy()){path.reset();path.moveTo(bx,by);path.lineTo(bx+bw,by);path.lineTo(bx+bw,by+bh);path.lineTo(bx,by+bh);path.lineTo(bx-8*k,by+bh/2);path.close();
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setColor(g);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
