@@ -29,6 +29,9 @@ final class ArcadeGame {
     boolean brakeArmed;   // the brake counts as a brake (it was let go after GO)
     final float[] carM=new float[CARS],carV=new float[CARS];final int[] carLane=new int[CARS],carCol=new int[CARS];
     long hitAt=Long.MIN_VALUE/2;
+    /** The obstacle last hit, for the crash effect: its kind, lane, how far ahead it stood, and which way it was knocked
+     *  (-1 left, +1 right: away from the side of the car that hit it). */
+    int flyKind,flyLane,flyDir=1;float flyD;
     private final Random rnd;
     ArcadeGame(long seed){rnd=new Random(seed);}
 
@@ -59,7 +62,7 @@ final class ArcadeGame {
         pos+=speed*RATE*dt;dist+=speed*TOP_KMH/3600*dt;
         for(int i=0;i<CARS;i++){carM[i]+=carV[i]*RATE*dt;if(carM[i]<pos-3)place(i,pos+60+rnd.nextFloat()*90);
             float d=carM[i]-pos;
-            if(d>NEAR&&d<FAR&&Math.abs(x-(carLane[i]-1)*LANE)<HIT[carCol[i]]&&now-hitAt>1200){hitAt=now;hp--;speed*=0.4f;carM[i]=pos-4;   // knocked aside: gone from the road, the car slowed
+            if(d>NEAR&&d<FAR&&Math.abs(x-(carLane[i]-1)*LANE)<HIT[carCol[i]]&&now-hitAt>1200){hitAt=now;hp--;flyKind=carCol[i];flyLane=carLane[i];flyD=d;flyDir=x>(carLane[i]-1)*LANE?-1:1;speed*=0.4f;carM[i]=pos-4;   // knocked aside: gone from the road, the car slowed
                 if(hp<=0){state=OVER;at=now;brakeArmed=false;if(dist>best)best=dist;}}}
     }
     private void start(long now){
