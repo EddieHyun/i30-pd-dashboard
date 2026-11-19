@@ -411,7 +411,22 @@ public final class PitRenderer {
         chip(c,SettingsLayout.F_SKIN_BOX,rnd?UiText.t("원형 게이지는 테마 색"):UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNow()])+"  ›",null,false,rnd||auto);
         text(c,UiText.t("손을 떼면 적용 · 끌면 취소"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
         chip(c,SettingsLayout.F_FORM_BOX,UiText.t(FloatPanel.SHAPE_NAMES[shape])+"  ›",null,false,false);
-        if(floatEdit==SettingsLayout.SKIN_SHEET)drawSkinSheet(c);else if(floatEdit==SettingsLayout.FORM_SHEET)drawFormSheet(c);else if(floatEdit>=0)drawFloatSheet(c);
+        if(floatEdit==SettingsLayout.SKIN_SHEET||floatEdit==SettingsLayout.FORM_SHEET)cachedSheet(c,floatEdit);
+        else{sheetBmp=null;if(floatEdit>=0)drawFloatSheet(c);}
+    }
+    /** The 모양 / 색감 sheets draw 17-20 small windows: drawn once into a bitmap and shown from it until something they show changes
+     *  (a tap on the sheet redrew every window and lagged). */
+    private Bitmap sheetBmp;private int sheetKey;
+    private void cachedSheet(Canvas c,int which){
+        int key=which;key=key*31+FloatPanel.shape;key=key*31+FloatPanel.lastShape;key=key*31+FloatPanel.count;key=key*31+FloatPanel.size;
+        key=key*31+FloatPanel.skin;key=key*31+FloatPanel.skinNow();key=key*31+FloatPanel.corner;key=key*31+FloatPanel.color;key=key*31+FloatPanel.alpha;
+        key=key*31+(FloatPanel.musicStrip?1:0);key=key*31+java.util.Arrays.hashCode(FloatPanel.cells);key=key*31+java.util.Arrays.hashCode(FloatPanel.graphs);
+        key=key*31+Theme.current().id.hashCode();key=key*31+UiText.language().hashCode();key=key*31+(profile==null?0:profile.hashCode());key=key*31+(samples==null?0:1);
+        key=key*31+FloatMusic.sheetKey();   // not the position: the progress bars in the sheet stay where they were drawn
+        if(sheetBmp==null||sheetKey!=key){
+            if(sheetBmp==null)sheetBmp=Bitmap.createBitmap(800,480,Bitmap.Config.ARGB_8888);else sheetBmp.eraseColor(0);
+            Canvas sc=new Canvas(sheetBmp);if(which==SettingsLayout.SKIN_SHEET)drawSkinSheet(sc);else drawFormSheet(sc);sheetKey=key;}
+        c.drawBitmap(sheetBmp,0,0,null);
     }
     /** 모양 고르기: every shape drawn small with the cells' readings and the skin now; a tap picks it. */
     private void drawFormSheet(Canvas c){

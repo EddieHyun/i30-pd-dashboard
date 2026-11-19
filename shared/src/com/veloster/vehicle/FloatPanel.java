@@ -123,6 +123,8 @@ public final class FloatPanel {
     static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
     private static boolean still;
+    /** A still picture is being drawn (the settings' previews): the 음악 line does not scroll there. */
+    static boolean stillNow(){return still;}
     /** Partial redraw: ALL draws everything, STAT only what does not move (kept as the bitmap below), DYN the rest each frame.
      *  FloatSkin and the round gauge read PASS; FloatLayouts gets it as an argument. */
     static final int ALL=FloatLayouts.ALL,STAT=FloatLayouts.STAT,DYN=FloatLayouts.DYN;static int PASS=ALL;

@@ -26,6 +26,10 @@ final class FloatMusic {
     static long position(MediaState.Snapshot t){return Math.min(t.durationMs,t.positionMs+(t.playState==1?Math.max(0,t.timeAgeMs):0));}
     static float progress(MediaState.Snapshot t){return t!=null&&t.hasProgress()?Math.max(0,Math.min(1,position(t)/(float)t.durationMs)):0;}
     /** What the music part shows, for FloatPanel.tick's change hash: the texts, play state, the second and the art. */
+    /** The track as the settings' sheets show it (title, artist, play state, art), without the position: the sheets are kept as a
+     *  bitmap and should not be drawn again every second while a song plays. */
+    static int sheetKey(){MediaState.Snapshot t=track;if(t==null)return 0;Bitmap a=art;
+        return ((t.title.hashCode()*31+t.artist.hashCode())*31+t.playState)*31+(a==null?0:System.identityHashCode(a));}
     static int key(long now){MediaState.Snapshot t=track;if(t==null)return 0;
         int h=t.title.hashCode()*31+t.artist.hashCode();h=h*31+t.playState;h=h*31+(t.hasProgress()?(int)(position(t)/1000):-1);
         if(now>=0&&marquee)h=h*31+(int)(now/50);   // the strip's line is scrolling: a new frame each tick
@@ -97,7 +101,8 @@ final class FloatMusic {
             lx=x0+16*k;}
         float room=right-lx;
         if(!on){marquee=false;say(c,fit(com.veloster.i18n.UiText.t("재생 중인 곡 없음"),size,sFace,room),lx,base,size,sMut,Paint.Align.LEFT,sFace);}
-        else{String line=line(t);float lw=width(line,size,sFace);marquee=lw>room;
+        else{String line=line(t);float lw=width(line,size,sFace);boolean still=FloatPanel.stillNow();marquee=!still&&lw>room;
+            if(still&&lw>room){line=fit(line,size,sFace,room);lw=width(line,size,sFace);}   // the settings' previews: cut, not scrolled (a still picture is not redrawn to scroll)
             c.save();c.clipRect(lx,0,lx+room,h);
             float span=lw+ROUND_GAP*k,off=marquee?offset(now,span,k):0;
             say(c,line,lx-off,base,size,sInk,Paint.Align.LEFT,sFace);if(marquee)say(c,line,lx-off+span,base,size,sInk,Paint.Align.LEFT,sFace);   // the next round follows the gap
