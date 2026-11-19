@@ -43,6 +43,14 @@ public final class DtcTest {
         check(new Dtc("C1234",-1,-1).description().startsWith("섀시"),"C");
         check(new Dtc("B0001",-1,-1).description().contains("표준"),"B0 generic");
         check(new Dtc("U1100",-1,-1).description().contains("현대 전용"),"U1 manufacturer");
+        // Hyundai codes carry their own text (brake, steering, airbag, immobilizer)
+        check(new Dtc("C1611",-1,-1).description().equals("엔진 제어기(EMS) CAN 신호 끊김"),"C1611");
+        check(new Dtc("C1603",-1,-1).description().contains("과열 보호"),"C1603 steering thermal protection");
+        check(new Dtc("C1620",0x78,8).description().contains("전방 레이더")&&new Dtc("C1620",0x78,8).failureText().equals("정렬·조정 이상"),"C1620-78");
+        check(new Dtc("C1211",-1,-1).description().equals("오른쪽 뒤 바퀴속도 센서 신호 없음·무효"),"C1211 last wheel code");
+        check(new Dtc("B1346",-1,-1).description().equals("운전석 에어백(1단) 저항 높음")&&new Dtc("B1488",-1,-1).description().equals("동승석 에어백(2단) 회로 전원 단락"),"airbag runs");
+        check(new Dtc("B1748",-1,-1).description().endsWith("통신 오류")&&new Dtc("B1743",-1,-1).description().contains("상세 설명 없음"),"B1743 is not in the list");
+        check(new Dtc("P1690",-1,-1).description().startsWith("이모빌라이저"),"P1690");
         check(new Dtc("P0301",0x55,8).failureText().equals("구성(코딩) 안 됨"),"FTB table");
         check(new Dtc("P0301",0xee,8).failureText().equals("유형 EE"),"unknown FTB shows its byte");
         System.out.println("PASS "+checks+" trouble code checks");
