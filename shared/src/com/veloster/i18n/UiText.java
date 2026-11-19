@@ -450,6 +450,7 @@ public final class UiText {
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
         EN.put("세로 단수","Gear column");
         EN.put("세로 띠","Column");
+        EN.put("세로 띠 + RPM","Column + RPM");
         EN.put("세로 막대","Column bars");
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");

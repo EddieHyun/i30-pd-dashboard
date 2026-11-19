@@ -12,24 +12,31 @@ import android.graphics.Typeface;
  */
 final class FloatLayouts extends ClusterKit {
     static final int PILL=5,HERO=6,GEAR=7,DIAG=8,DIAL=9,SHIFT=10,TICK=11,FILLS=12,BARS=13,TWIN=14,WEDGE=15,TOWER=16,LAST=TOWER;
+    /** 세로 띠 + RPM: after 음악 (FloatPanel.MUSIC = LAST + 1), so a saved shape number keeps its meaning. */
+    static final int VRPM=LAST+2;
+    /** VRPM geometry, base px: a 124 wide column of 60 high rows, the rpm bar in an 18 wide lane on the right. */
+    private static final int VR_COL=124,VR_ROW=60,VR_LANE=18;
     private static final FloatLayouts K=new FloatLayouts();
     protected void draw(Canvas c){}
 
     /** Cells shown: the pill has room for two. */
     static int used(int shape,int n){return shape==PILL?Math.min(n,2):n;}
     /** The cell counts a layout fills without a hole (the settings offer these only). */
-    static int[] counts(int shape){return shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
+    static int[] counts(int shape){return shape==VRPM?new int[]{6}:shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
     private static int rows(int n){return Math.min(3,n-1);}
     static float w(int shape,int n){
+        if(shape==VRPM)return VR_COL+VR_LANE;
         switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;case TICK:return n*96;case FILLS:return 180;case BARS:return n*56+8;case TWIN:return Math.min(2,n)*116;case TOWER:return 92;default:return 248;}
     }
     static float h(int shape,int n){
+        if(shape==VRPM)return n*VR_ROW+8;
         switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 112;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 84+n*40;default:return 64;}
     }
     /** Cell i's rectangle in base px, or null when the layout does not show it. */
     static float[] rect(int shape,int n,int i){
         if(i>=used(shape,n))return null;float W=w(shape,n),H=h(shape,n);
         switch(shape){
+            case VRPM:return new float[]{0,4+i*VR_ROW,VR_COL,4+(i+1)*VR_ROW};
             case PILL:return new float[]{38+i*81,0,38+(i+1)*81,H};
             case HERO:return i==0?new float[]{0,0,140,H}:new float[]{140,6+(i-1)*32,W,6+i*32};
             case DIAL:return i==0?new float[]{0,0,132,H}:new float[]{132,8+(i-1)*30,W,8+i*30};
@@ -114,7 +121,7 @@ final class FloatLayouts extends ClusterKit {
      *  does (values, filled arcs, needle, peaks); ALL both. Shapes that do not split draw everything on ALL and STAT, nothing on DYN. */
     static final int ALL=0,STAT=1,DYN=2;
     /** Shapes whose drawing is split into STAT and DYN (the others are drawn whole every frame). */
-    static boolean splits(int shape){return true;}
+    static boolean splits(int shape){return shape==VRPM||true;}
     static void draw(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear,int pass){
         K.pass=splits(shape)?pass:pass==DYN?-1:ALL;if(K.pass<0)return;
         try{K.drawImpl(c,shape,n,k,skin,af,d,rpm,gear);}finally{K.pass=ALL;}}
@@ -210,6 +217,16 @@ final class FloatLayouts extends ClusterKit {
             for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float x=(i%2)*124*k,y=(34+(i/2)*44)*k;
                 if(st){if(i%2==1)fill(c,x,y+6*k,x+1,y+38*k,div);if(i>=2&&i%2==0)fill(c,8*k,y,W-8*k,y+1,div);fit(c,nm(a),x+12*k,y+13*k,8*k,100*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
                 if(dy)vu(c,a,x+12*k,y+35*k,19*k,100*k,k,Paint.Align.LEFT);}
+            break;}
+        case VRPM:{   // 세로 띠 + RPM: six readings stacked, the rpm as a lit column the window's height on the right
+            if(st)body(c,W,H,k,-1);
+            float bl=(VR_COL+3)*k,br=(VR_COL+VR_LANE-5)*k,bt=8*k,bb=H-8*k;int segs=Math.max(12,Math.round((bb-bt)/(9*k)));float sh=(bb-bt)/segs;
+            if(st)fill(c,bl-4*k,bt,bl-4*k+1,bb,div);
+            for(int i=0;i<segs;i++){boolean on=rOk&&(i+.5f)/segs<rf;if(on&&!dy||!on&&!st)continue;   // the track is kept, the lit part drawn each frame
+                float t=(i+.5f)/segs,y1=bb-(i+1)*sh+k,y2=bb-i*sh-k;fill(c,bl,y1,br,y2,on?(t<.7f?acc:t<.85f?0xffffaa3c:0xffff4b3c):track);}   // the skin's accent, amber near the top, red at the redline end
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(4+i*VR_ROW)*k;
+                if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),10*k,y+16*k,8.5f*k,(VR_COL-20)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
+                if(dy)vu(c,a,10*k,y+46*k,19*k,(VR_COL-20)*k,k,Paint.Align.LEFT);}
             break;}
         case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it
             if(st){body(c,W,H,k,-1);fill(c,10*k,10*k,82*k,66*k,box);fill(c,10*k,70*k,82*k,73*k,track);}
