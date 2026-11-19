@@ -164,6 +164,8 @@ public final class UiText {
         EN.put("계기판 따라 = 지금 계기판 화면의 스킨 (스킨이 없는 화면은 기본)","Follow the screen = the skin of the dashboard screen (Default where it has none)");
         EN.put("계기판 따라: 지금 계기판 화면과 같은 스킨","Follow the screen: the same skin as the dashboard screen");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
+        EN.put("계기판에서 숨김","Hide on the dashboard");
+        EN.put("계기판이 보이는 동안 바로가기 버튼을 숨깁니다.","Hides the shortcut button while the dashboard is on screen.");
         EN.put("계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");
         EN.put("계속","Continue");
@@ -352,6 +354,7 @@ public final class UiText {
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
         EN.put("버튼 + 알림","Button + notification");
+        EN.put("버튼 숨김: 내 앱 → 계기판에서 숨김","Hide the button: My Apps → Hide on the dashboard");
         EN.put("버튼 위치를 갱신하지 못해 알림만 유지합니다.","Could not update the button position. Only the notification remains.");
         EN.put("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로","A button changes when you lift your finger · drag away to cancel");
         EN.put("번 · "," - ");

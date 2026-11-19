@@ -59,13 +59,18 @@ public final class QuickEntryService extends Service {
      *  button comes back when it says so, or by itself when HIDE_FOR passes without a repeat (the dashboard was killed). */
     static final String HIDE_ACTION="com.veloster.carplayhub.QUICK_ENTRY_HIDE";
     private static final long HIDE_FOR=75000;
-    private long hiddenUntil;
+    private long hiddenUntil,dashUntil;
+    /** 계기판에서 숨김 (설정, default off): the dashboard on screen asks the button to step aside too (from="dashboard", every 20 s). */
+    static final String HIDE_ON_DASH="hide_on_dashboard";
+    static boolean hideOnDash(Context c){return prefs(c).getBoolean(HIDE_ON_DASH,false);}
+    static void hideOnDash(Context c,boolean on){prefs(c).edit().putBoolean(HIDE_ON_DASH,on).apply();}
     private final android.os.Handler later=new android.os.Handler();
-    private final Runnable unhide=new Runnable(){public void run(){if(SystemClockNow()>=hiddenUntil)refreshOverlay();}};
+    private final Runnable unhide=new Runnable(){public void run(){if(SystemClockNow()>=Math.max(hiddenUntil,dashUntil))refreshOverlay();}};
     private static long SystemClockNow(){return android.os.SystemClock.elapsedRealtime();}
     private final BroadcastReceiver floatWindow=new BroadcastReceiver(){public void onReceive(Context context,Intent intent){
-        if(intent.getBooleanExtra("hide",false)){hiddenUntil=SystemClockNow()+HIDE_FOR;removeOverlay();later.removeCallbacks(unhide);later.postDelayed(unhide,HIDE_FOR+500);}
-        else{hiddenUntil=0;later.removeCallbacks(unhide);refreshOverlay();}
+        boolean dash="dashboard".equals(intent.getStringExtra("from"));if(dash&&!hideOnDash(context)){dashUntil=0;refreshOverlay();return;}   // the dashboard's own request only with 계기판에서 숨김 on
+        if(intent.getBooleanExtra("hide",false)){long until=SystemClockNow()+HIDE_FOR;if(dash)dashUntil=until;else hiddenUntil=until;removeOverlay();later.removeCallbacks(unhide);later.postDelayed(unhide,HIDE_FOR+500);}
+        else{if(dash)dashUntil=0;else hiddenUntil=0;later.removeCallbacks(unhide);refreshOverlay();}
     }};
     private boolean floatRegistered;
     private static SharedPreferences prefs(Context context){return context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);}
@@ -166,7 +171,7 @@ public final class QuickEntryService extends Service {
         size=Math.max(1,Math.min(Math.min(width,height),Math.round(48*metrics.density)));
     }
     private void refreshOverlay(){
-        if(overlayFailed||!unlockedScreen()||SystemClockNow()<hiddenUntil){removeOverlay();return;}
+        if(overlayFailed||!unlockedScreen()||SystemClockNow()<Math.max(hiddenUntil,dashUntil)){removeOverlay();return;}
         if(button!=null)return;
         try{
             if(windows==null)throw new IllegalStateException("Window manager unavailable");
