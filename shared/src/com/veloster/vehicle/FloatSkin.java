@@ -23,7 +23,7 @@ final class FloatSkin extends ClusterKit {
 
     /** One cell's content, filled by FloatPanel before each cell (main thread only). */
     /** sn: the name a skin shows: the app's language (Korean in Korean); en: always English, for the 8-bit font (no Hangul). */
-    static final class Cell{String name,en,sn,val,unit,pk;float f,zero,pf;int lv;boolean first,bar;String[] quad;final String[] q4=new String[4];final int[] l4=new int[4];}
+    static final class Cell{String name,en,sn,val,unit,pk;float f,zero,pf;int lv;boolean first,bar;String[] quad;final String[] q4=new String[4];final int[] l4=new int[4];final String[] t4=new String[4];}
     static final Cell CELL=new Cell();
 
     private static Typeface face(){return LambdaCluster.FACE!=null?LambdaCluster.FACE:Typeface.DEFAULT;}
@@ -72,6 +72,8 @@ final class FloatSkin extends ClusterKit {
         int ink;Typeface tf=faceBold();
         switch(skin){case RACE:ink=d.first?0xff061015:0xfff2f6f8;break;case RETRO:ink=0xffffb347;tf=Typeface.MONOSPACE;break;case VFD:ink=0xff5ef2d2;break;
             case HUD:ink=0xff62ff8a;tf=Typeface.MONOSPACE;break;case PIXEL:ink=0xffffffff;break;case VU:ink=0xff3a3226;break;case NIGHT:ink=0xffc5ccd0;tf=Typeface.DEFAULT;break;default:ink=0xffffffff;}
+        if(skin!=PIXEL){float t=y+(skin==VU?10:22)*k,b=y+ch-(skin==VU?12:3)*k;   // a car seen from above, the skin's ink (the 8-bit keeps its pixel numbers)
+            FloatPanel.tyres(c,x+4*k,t,cw-8*k,b-t,k,d.quad,d.l4,d.t4,ink,(ink&0xffffff)|0x66000000,tf);return;}
         float cx=x+cw/2,t=y+(skin==VU?10:24)*k,b=y+ch-(skin==VU?14:6)*k,s=Math.min(15*k,(b-t)/2.1f);
         line(c,cx,t,cx,b,Math.max(1,k),(ink&0xffffff)|0x55000000);
         for(int w=0;w<4;w++){int col=d.l4[w]==2?0xffff4b3c:d.l4[w]==1?0xffffaa3c:ink;float yy=w<2?t+s*.95f:b-2*k;String q=d.quad[w];

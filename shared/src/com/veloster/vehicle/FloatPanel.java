@@ -187,7 +187,7 @@ public final class FloatPanel {
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
             float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+key(sig,pk);
-            if(quad(sig)){quadTexts(q,sig);for(int w=0;w<4;w++)h=h*31+QV[w].hashCode()+QL[w];}}
+            if(quad(sig)){quadTexts(q,sig);for(int w=0;w<4;w++)h=h*31+QV[w].hashCode()+QL[w]+QT[w].hashCode()*7;}}
         int s=shape==OFF?lastShape:shape;
         if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
@@ -236,8 +236,11 @@ public final class FloatPanel {
         float r=Float.NaN;for(int w=0;w<4;w++){Telemetry.Sample m=q[quadSig(sig,w)];if(m==null||!m.valid)continue;float v=m.value;r=Float.isNaN(r)?v:sig==QUAD_P?Math.min(r,v):Math.max(r,v);}
         return r;}
     static final String[] QV=new String[4];static final int[] QL=new int[4];
+    /** With the pressures (QUAD_P): each wheel's temperature ("21°"), or "" until the BCM has answered. */
+    static final String[] QT=new String[4];
     /** The four wheels' texts and levels into QV / QL. */
-    static void quadTexts(Telemetry.Sample[] q,int sig){for(int w=0;w<4;w++){int s=quadSig(sig,w);Telemetry.Sample m=q[s];float v=m!=null&&m.valid?m.value:Float.NaN;QV[w]=Tiles.text(s,v);QL[w]=Tiles.level(s,v);}}
+    static void quadTexts(Telemetry.Sample[] q,int sig){for(int w=0;w<4;w++){int s=quadSig(sig,w);Telemetry.Sample m=q[s];float v=m!=null&&m.valid?m.value:Float.NaN;QV[w]=Tiles.text(s,v);QL[w]=Tiles.level(s,v);
+        Telemetry.Sample t=sig==QUAD_P?q[Telemetry.TIRE_TEMP_FL+w]:null;QT[w]=t!=null&&t.valid&&!Float.isNaN(t.value)?Tiles.tyreTemp(t.value)+"°":"";}}
     /** The four wheels on one line (FL FR RL RR), for small places. */
     public static String inline(Telemetry.Sample[] q,int sig){quadTexts(q,sig);return QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];}
     public static int resolve(int c,int k,VehicleProfile p){boolean diesel=p!=null&&p.fuel==VehicleProfile.Fuel.DIESEL;
@@ -291,7 +294,7 @@ public final class FloatPanel {
         d.val=Tiles.text(fmt(sig),v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=glide(i,frac(sig,v));d.lv=Tiles.level(fmt(sig),v);
         d.zero=zero(sig);d.pk=Float.isNaN(pk)?null:Tiles.text(fmt(sig),pk);d.pf=Float.isNaN(pk)?Float.NaN:frac(sig,pk);
         d.first=first;d.bar=g!=NUM;d.quad=null;
-        if(quad(sig)){quadTexts(LAST_Q,sig);System.arraycopy(QV,0,d.q4,0,4);System.arraycopy(QL,0,d.l4,0,4);d.quad=d.q4;d.val=QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];d.f=Float.NaN;d.lv=0;}}
+        if(quad(sig)){quadTexts(LAST_Q,sig);System.arraycopy(QV,0,d.q4,0,4);System.arraycopy(QL,0,d.l4,0,4);System.arraycopy(QT,0,d.t4,0,4);d.quad=d.q4;d.val=QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];d.f=Float.NaN;d.lv=0;}}
     /** Draws the window (shape, n cells, size) at 0,0 from the samples (index = signal). */
     public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
@@ -453,13 +456,24 @@ public final class FloatPanel {
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.6f*s);p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
         p.setColor(0xffffffff);c.drawCircle(lastX,lastY,2.2f*s,p);
     }
-    /** The four wheels (QV / QL) in the cell under its name: FL FR on top, RL RR below, a small car outline between. */
+    /** The four wheels (QV / QL, QT) in the cell under its name, as a car seen from above (FloatPanel.tyres). */
     static void quad(Canvas c,float x,float y,float cw,float ch,float k,int ink,int line,Typeface face){
-        float cx=x+cw/2,t=y+24*k,b=y+ch-6*k;p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1,k));p.setColor(line);r.set(cx-6*k,t,cx+6*k,b);c.drawRoundRect(r,3*k,3*k,p);p.setStyle(Paint.Style.FILL);
-        float s=Math.min(16*k,(ch-28*k)/2.1f);
-        for(int w=0;w<4;w++){int col=QL[w]==2?HOT:QL[w]==1?WARM:ink;float yy=w<2?t+s*.95f:b-2*k;
-            if(w%2==0)text(c,QV[w],cx-10*k,yy,s,col,Paint.Align.RIGHT,face);else text(c,QV[w],cx+10*k,yy,s,col,Paint.Align.LEFT,face);}
+        tyres(c,x+4*k,y+20*k,cw-8*k,ch-22*k,k,QV,QL,QT,ink,line,face);
     }
+    /** A car seen from above, an H on its side: the front axle on top, the rear below, a spine between, a tyre at each end; each
+     *  wheel's pressure beside its tyre (amber / red when low) and, when known, its temperature under it, small. Fits the box x,y,w,h. */
+    static void tyres(Canvas c,float x,float y,float w,float h,float k,String[] v,int[] lv,String[] t,int ink,int line,Typeface face){
+        boolean temps=t!=null&&(t[0].length()+t[1].length()+t[2].length()+t[3].length())>0;
+        float s=Math.min(14*k,h/2.5f),ts=s*.66f,cx=x+w/2,aw=Math.min(w*.09f,8*k),tw=Math.max(3*k,s*.3f),th=s*1.05f;
+        float ty=y+h*.30f,by=y+h*.78f;   // the axles' heights; each wheel's numbers sit on its axle's line, the temperature on the outside
+        float lw=Math.max(1,1.4f*k);fill(c,cx-aw,ty-lw/2,cx+aw,ty+lw/2,line);fill(c,cx-aw,by-lw/2,cx+aw,by+lw/2,line);fill(c,cx-lw/2,ty,cx+lw/2,by,line);   // the H on its side
+        for(int i=0;i<4;i++){boolean right=i%2==1;float ay=i<2?ty:by,tx=right?cx+aw:cx-aw;int col=lv[i]==2?HOT:lv[i]==1?WARM:ink;
+            r.set(tx-tw/2,ay-th/2,tx+tw/2,ay+th/2);p.setStyle(Paint.Style.FILL);p.setColor(lv[i]>0?col:line);c.drawRoundRect(r,tw/2,tw/2,p);
+            float lx=right?tx+tw/2+3*k:tx-tw/2-3*k,base=ay+s*.36f,pw=width(v[i],s,face);Paint.Align al=right?Paint.Align.LEFT:Paint.Align.RIGHT;
+            text(c,v[i],lx,base,s,col,al,face);
+            if(temps&&!t[i].isEmpty())text(c,t[i],right?lx+pw+2*k:lx-pw-2*k,base,ts,MUT,al,Typeface.DEFAULT);}
+    }
+    private static void fill(Canvas c,float l,float tp,float rr,float bt,int color){p.setStyle(Paint.Style.FILL);p.setColor(color);c.drawRect(l,tp,rr,bt,p);}
     private static void text(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){
         p.setTypeface(face);p.setTextSize(size);p.setTextAlign(a);p.setColor(color);c.drawText(s,x,y,p);}
     private static float width(String s,float size,Typeface face){p.setTypeface(face);p.setTextSize(size);return p.measureText(s);}

@@ -15,7 +15,7 @@ final class FloatLayouts extends ClusterKit {
     /** 세로 띠 + RPM: after 음악 (FloatPanel.MUSIC = LAST + 1), so a saved shape number keeps its meaning. */
     static final int VRPM=LAST+2;
     /** VRPM geometry, base px: a 124 wide column of 60 high rows, the rpm bar in an 18 wide lane on the right. */
-    private static final int VR_COL=124,VR_ROW=60,VR_LANE=18;
+    private static final int VR_COL=100,VR_ROW=60,VR_LANE=16;
     private static final FloatLayouts K=new FloatLayouts();
     protected void draw(Canvas c){}
 
@@ -226,7 +226,8 @@ final class FloatLayouts extends ClusterKit {
                 float t=(i+.5f)/segs,y1=bb-(i+1)*sh+k,y2=bb-i*sh-k;fill(c,bl,y1,br,y2,on?(t<.7f?acc:t<.85f?0xffffaa3c:0xffff4b3c):track);}   // the skin's accent, amber near the top, red at the redline end
             for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(4+i*VR_ROW)*k;
                 if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),10*k,y+16*k,8.5f*k,(VR_COL-20)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
-                if(dy)vu(c,a,10*k,y+46*k,19*k,(VR_COL-20)*k,k,Paint.Align.LEFT);}
+                if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,4*k,y+19*k,(VR_COL-8)*k,(VR_ROW-21)*k,k,a.quad,a.l4,a.t4,txt,div,bold);   // the wheels as a car seen from above
+                    else vu(c,a,10*k,y+46*k,19*k,(VR_COL-20)*k,k,Paint.Align.LEFT);}}
             break;}
         case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it
             if(st){body(c,W,H,k,-1);fill(c,10*k,10*k,82*k,66*k,box);fill(c,10*k,70*k,82*k,73*k,track);}
