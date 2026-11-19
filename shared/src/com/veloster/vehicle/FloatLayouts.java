@@ -16,27 +16,35 @@ final class FloatLayouts extends ClusterKit {
     static final int VRPM=LAST+2;
     /** VRPM geometry, base px: a 124 wide column of 60 high rows, the rpm bar in an 18 wide lane on the right. */
     private static final int VR_COL=100,VR_ROW=60,VR_LANE=16;
+    /** VRPM fills the screen's height (472 of its 480 px, at any size): six rows up to VR_ROW high, then a box at least VR_BOX high
+     *  for the rest: the track while one plays (with 음악 띠 on; FloatMusic.box, drawn by FloatPanel each frame), else the seventh reading. */
+    private static final int VR_SCREEN=472,VR_BOX=90;
+    /** The box shows the track (FloatPanel sets it before each draw). */
+    static volatile boolean vrMusic;
+    static float vrH(){return VR_SCREEN/FloatPanel.sizeK();}
+    static float vrRow(){return Math.min(VR_ROW,(vrH()-8-VR_BOX)/6);}
+    static float vrBox(){return 4+6*vrRow();}
     private static final FloatLayouts K=new FloatLayouts();
     protected void draw(Canvas c){}
 
     /** Cells shown: the pill has room for two. */
     static int used(int shape,int n){return shape==PILL?Math.min(n,2):n;}
     /** The cell counts a layout fills without a hole (the settings offer these only). */
-    static int[] counts(int shape){return shape==VRPM?new int[]{6}:shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
+    static int[] counts(int shape){return shape==VRPM?new int[]{7}:shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
     private static int rows(int n){return Math.min(3,n-1);}
     static float w(int shape,int n){
         if(shape==VRPM)return VR_COL+VR_LANE;
         switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;case TICK:return n*96;case FILLS:return 180;case BARS:return n*56+8;case TWIN:return Math.min(2,n)*116;case TOWER:return 92;default:return 248;}
     }
     static float h(int shape,int n){
-        if(shape==VRPM)return n*VR_ROW+8;
+        if(shape==VRPM)return vrH();
         switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 112;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 84+n*40;default:return 64;}
     }
     /** Cell i's rectangle in base px, or null when the layout does not show it. */
     static float[] rect(int shape,int n,int i){
         if(i>=used(shape,n))return null;float W=w(shape,n),H=h(shape,n);
         switch(shape){
-            case VRPM:return new float[]{0,4+i*VR_ROW,VR_COL,4+(i+1)*VR_ROW};
+            case VRPM:{float R=vrRow();return i<6?new float[]{0,4+i*R,VR_COL,4+(i+1)*R}:new float[]{0,vrBox(),VR_COL,H-4};}
             case PILL:return new float[]{38+i*81,0,38+(i+1)*81,H};
             case HERO:return i==0?new float[]{0,0,140,H}:new float[]{140,6+(i-1)*32,W,6+i*32};
             case DIAL:return i==0?new float[]{0,0,132,H}:new float[]{132,8+(i-1)*30,W,8+i*30};
@@ -224,10 +232,16 @@ final class FloatLayouts extends ClusterKit {
             if(st)fill(c,bl-4*k,bt,bl-4*k+1,bb,div);
             for(int i=0;i<segs;i++){boolean on=rOk&&(i+.5f)/segs<rf;if(on&&!dy||!on&&!st)continue;   // the track is kept, the lit part drawn each frame
                 float t=(i+.5f)/segs,y1=bb-(i+1)*sh+k,y2=bb-i*sh-k;fill(c,bl,y1,br,y2,on?(t<.7f?acc:t<.85f?0xffffaa3c:0xffff4b3c):track);}   // the skin's accent, amber near the top, red at the redline end
-            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(4+i*VR_ROW)*k;
-                if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),8*k,y+12*k,8*k,(VR_COL-16)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
-                if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,2*k,y+14*k,(VR_COL-4)*k,(VR_ROW-15)*k,k,a.quad,a.l4,a.t4,txt,div,bold);   // the wheels as a car seen from above
-                    else vu(c,a,8*k,y+50*k,28*k,(VR_COL-14)*k,k,Paint.Align.LEFT);}}   // the value as large as the row allows (the name sits small above it)
+            float R=vrRow(),rk=k*R/VR_ROW;   // rows shorter than VR_ROW (the larger sizes) scale their insides
+            for(int i=0;i<Math.min(n,6);i++){FloatSkin.Cell a=d[i];float y=(4+i*R)*k;
+                if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),8*k,y+12*rk,8*rk,(VR_COL-16)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
+                if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,2*k,y+14*rk,(VR_COL-4)*k,(VR_ROW-15)*rk,rk,a.quad,a.l4,a.t4,txt,div,bold);   // the wheels as a car seen from above
+                    else vu(c,a,8*k,y+50*rk,28*rk,(VR_COL-14)*k,rk,Paint.Align.LEFT);}}   // the value as large as the row allows (the name sits small above it)
+            {float by=vrBox()*k,bh=H-4*k-by;if(st)fill(c,8*k,by,(VR_COL-6)*k,by+1,div);
+                if(n>6&&!vrMusic){FloatSkin.Cell a=d[6];   // no track: the seventh reading, larger than a row's
+                    if(st)fit(c,nm(a),8*k,by+16*k,9*k,(VR_COL-16)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);
+                    if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,2*k,by+20*k,(VR_COL-4)*k,bh-24*k,k,a.quad,a.l4,a.t4,txt,div,bold);
+                        else vu(c,a,8*k,by+Math.min(bh-12*k,20*k+(bh-20*k)/2+13*k),Math.min(34*k,bh*.4f),(VR_COL-14)*k,k,Paint.Align.LEFT);}}}
             break;}
         case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it
             if(st){body(c,W,H,k,-1);fill(c,10*k,10*k,82*k,66*k,box);fill(c,10*k,70*k,82*k,73*k,track);}

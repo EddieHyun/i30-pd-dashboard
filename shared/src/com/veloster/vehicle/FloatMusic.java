@@ -139,6 +139,26 @@ final class FloatMusic {
             else{String s=fit(val+(unit.isEmpty()?"":" "+unit),11*k,sFace,62*k);side=Math.max(side,width(s,11*k,sFace));
                 say(c,s,right,h-12*k,11*k,Float.isNaN(v)?sMut:col,Paint.Align.RIGHT,sFace);}}
     }
+    /** 세로 띠 + RPM's box under its rows while a track plays (l,t,rt,b in the window; FloatPanel draws it each frame over the body):
+     *  the art as large as the box leaves room for, the play state and time beside it when there is room, then the title (scrolling
+     *  when it does not fit), the artist and the progress line. */
+    static void box(Canvas c,float l,float t,float rt,float b,float k,long now){
+        MediaState.Snapshot tr=track;if(!playing(tr))return;look(FloatPanel.skinNow());
+        float x=l+8*k,right=rt-8*k,w=right-x,ts=12*k,as=10*k,barY=b-8*k,y=t+8*k;
+        float a=Math.min(w,barY-y-(ts+as+18*k));Bitmap bm=art;
+        if(a>=24*k){r.set(x,y,x+a,y+a);
+            if(bm!=null&&!bm.isRecycled()){p.setColor(0xff000000);c.drawBitmap(bm,null,r,p);}   // Paint(3): filtered; opaque
+            else{p.setStyle(Paint.Style.FILL);p.setColor(sTrack);c.drawRoundRect(r,6*k,6*k,p);say(c,"♪",x+a/2,y+a*.68f,a*.5f,sAcc,Paint.Align.CENTER,sFace);}
+            if(w-a>=26*k){float gx=x+a+7*k;glyph(c,gx+k,y+7*k,5*k,tr.playState==1,sAcc);   // ▶ or ❚❚, the time under it
+                if(tr.hasProgress()){long sec=position(tr)/1000;say(c,(sec/60)+":"+(sec%60<10?"0":"")+(sec%60),gx,y+26*k,9*k,sMut,Paint.Align.LEFT,sFace);}}
+            y+=a+4*k;}
+        String title=tr.title.isEmpty()?tr.artist:tr.title;float base=y+ts,lw=width(title,ts,sFace);boolean mq=!FloatPanel.stillNow()&&lw>w;marquee=mq;
+        if(!mq)say(c,fit(title,ts,sFace,w),x,base,ts,sInk,Paint.Align.LEFT,sFace);
+        else{c.save();c.clipRect(x,t,right,b);float span=lw+ROUND_GAP*k,off=offset(now,span,k);
+            say(c,title,x-off,base,ts,sInk,Paint.Align.LEFT,sFace);say(c,title,x-off+span,base,ts,sInk,Paint.Align.LEFT,sFace);c.restore();}
+        if(!tr.title.isEmpty()&&!tr.artist.isEmpty())say(c,fit(tr.artist,as,sFace,w),x,base+as+4*k,as,sMut,Paint.Align.LEFT,sFace);
+        bar(c,x,barY,right,2.5f*k,progress(tr));
+    }
     /** The progress bar in the skin's form: round ends, flat, or a hairline. */
     private static void bar(Canvas c,float l,float t,float rt,float h,float f){p.setStyle(Paint.Style.FILL);
         if(sBar==2){float y=t+h/2;fill(c,l,y,rt,y+1,sTrack);if(f>0)fill(c,l,y-1,l+(rt-l)*f,y+2,sAcc);return;}
