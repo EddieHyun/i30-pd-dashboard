@@ -153,23 +153,28 @@ public final class RaceRenderer {
         int n=30,lit=Float.isNaN(fraction)?0:Math.round(Math.max(0,Math.min(1,fraction))*n);float w=(rr-l-16-2*(n-1))/n;
         for(int k=0;k<n;k++){p.setColor(T((fromRight?n-1-k:k)<lit?color:TRACK));c.drawRect(l+8+k*(w+2),210,l+8+k*(w+2)+w,222,p);}
     }
-    /** Body/lamp strip: grey caption when idle, coloured block when the state is active. */
+    /** Body/lamp strip between the turn arrows: grey caption when idle, a coloured block when the state is active. What changes
+     *  while driving first (drive mode, the stability switches, brake, park brake, wiper), then what only changes parked (doors,
+     *  trunk, hood). TCS / ESC light when switched OFF (amber / danger); an ABS warning lamp takes the ESC block. */
     private void status(Canvas c){
-        float wiper=v(Telemetry.WIPER),mode=v(Telemetry.DRIVE_MODE);
+        float wiper=v(Telemetry.WIPER),mode=v(Telemetry.DRIVE_MODE),dl=v(Telemetry.DOOR_DRIVER),dr=v(Telemetry.DOOR_PASSENGER),abs=v(Telemetry.ABS);
         if(v(Telemetry.TURN_LEFT)>0)turnLeftAt=now;
         if(v(Telemetry.TURN_RIGHT)>0)turnRightAt=now;
-        String[] name={"DOOR L","DOOR R","TRUNK","HOOD",
-            "WIPER"+(Float.isNaN(wiper)?"":" "+Telemetry.label(Telemetry.WIPER,wiper)),"PARK","BRAKE",
-            Float.isNaN(mode)?"MODE":Telemetry.driveModeLabel((int)mode)};
-        int[] sig={Telemetry.DOOR_DRIVER,Telemetry.DOOR_PASSENGER,Telemetry.TRUNK,Telemetry.HOOD,Telemetry.WIPER,Telemetry.PARK_BRAKE,Telemetry.BRAKE_SWITCH,Telemetry.DRIVE_MODE};
-        int[] on={D(),D(),D(),D(),BLUE,D(),AMBER,0};   // open doors / lids and the park brake are warnings
-        float aw=32,sl=L+aw+4,sr=R-aw-4,w=(sr-sl-4*7)/8;
-        for(int i=0;i<8;i++){
-            float l=sl+i*(w+4),val=v(sig[i]);
-            if(i==6){float bar=v(10);if(!Float.isNaN(val)||!Float.isNaN(bar))val=Telemetry.braking(val,bar)?1:0;}
-            int fill=i==7?(val==1?RED:val==3?GREEN:0):!Float.isNaN(val)&&val>0?on[i]:0;
+        boolean openL=dl>0,openR=dr>0,absWarn=abs>0;
+        float brake=v(Telemetry.BRAKE_SWITCH),bar=v(10),door=openL||openR?1:Float.isNaN(dl)&&Float.isNaN(dr)?Float.NaN:0;
+        if(!Float.isNaN(brake)||!Float.isNaN(bar))brake=Telemetry.braking(brake,bar)?1:0;
+        float tcs=v(Telemetry.TCS),esc=absWarn?1:v(Telemetry.ESC);
+        String[] name={Float.isNaN(mode)?"MODE":Telemetry.driveModeLabel((int)mode),tcs>0?"TCS OFF":"TCS",absWarn?"ABS":esc>0?"ESC OFF":"ESC","BRAKE","PARK",
+            "WIPER"+(Float.isNaN(wiper)?"":" "+Telemetry.label(Telemetry.WIPER,wiper)),openL&&openR?"DOORS":openR?"DOOR R":openL?"DOOR L":"DOOR","TRUNK","HOOD"};
+        float[] val={mode,tcs,esc,brake,v(Telemetry.PARK_BRAKE),wiper,door,v(Telemetry.TRUNK),v(Telemetry.HOOD)};
+        int[] on={0,AMBER,D(),AMBER,D(),BLUE,D(),D(),D()};   // the park brake and anything open are warnings
+        int n=name.length;float aw=32,sl=L+aw+4,sr=R-aw-4,w=(sr-sl-4*(n-1))/n;
+        for(int i=0;i<n;i++){
+            float l=sl+i*(w+4),x=val[i];
+            int fill=i==0?(x==1?RED:x==3?GREEN:0):!Float.isNaN(x)&&x>0?on[i]:0;
             box(c,l,56,l+w,80,fill!=0?fill:PANEL);if(fill==D())ThemeShapes.ring(c,p,l,56,l+w,80);
-            text(c,name[i],l+w/2,73,12,fill!=0?BG:Float.isNaN(val)?0xff4a5860:MUTED,Paint.Align.CENTER);
+            float size=12;p.setTypeface(Typeface.DEFAULT);p.setTextSize(size);while(size>9&&p.measureText(name[i])>w-6){size-=.5f;p.setTextSize(size);}   // WIPER HIGH in a ninth of the strip
+            text(c,name[i],l+w/2,73,size,fill!=0?BG:Float.isNaN(x)?0xff4a5860:MUTED,Paint.Align.CENTER);
         }
         turnArrow(c,L,L+aw,true,now-turnLeftAt<900);
         turnArrow(c,R-aw,R,false,now-turnRightAt<900);

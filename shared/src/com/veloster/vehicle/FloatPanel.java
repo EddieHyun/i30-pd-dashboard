@@ -17,15 +17,25 @@ public final class FloatPanel {
     public static final int OFF=0,CARD=1,STRIP=2,SIDE=3,ROUND=4;
     /** The rectangular layouts with their own inside (FloatLayouts). */
     public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT,TICK=FloatLayouts.TICK,FILLS=FloatLayouts.FILLS,BARS=FloatLayouts.BARS,TWIN=FloatLayouts.TWIN,WEDGE=FloatLayouts.WEDGE,TOWER=FloatLayouts.TOWER;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수"};
-    /** The 모양 sheet's order. */
-    public static final int[] FORMS={CARD,STRIP,SIDE,TICK, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL, GEARBOX,TOWER,SHIFT,WEDGE};   // rows: grids, gauges, lists, rpm and gear
-    public static final int LAST_SHAPE=FloatLayouts.LAST;
+    /** 음악: album art, the track and its progress, with one or two readings and the gear (FloatMusic). */
+    public static final int MUSIC=FloatLayouts.LAST+1;
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악"};
+    /** The 모양 sheet's order; SettingsLayout.FORM_SLOTS puts each on its 5 x 4 grid. */
+    public static final int[] FORMS={CARD,STRIP,SIDE,TICK, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL,MUSIC, GEARBOX,TOWER,SHIFT,WEDGE};
+    public static final int LAST_SHAPE=MUSIC;
+    /** 음악 띠: the playing track in a strip under the window, any shape but 음악. */
+    public static volatile boolean musicStrip;
+    /** The window shows the track (FloatService then keeps the media receiver up while the dashboard is away). */
+    public static boolean musicShown(){int s=shape;return s==MUSIC||musicStrip&&s!=OFF;}
+    /** The track and its album art (null for none) for the next tick and draw. */
+    public static void music(MediaState.Snapshot track,android.graphics.Bitmap art){FloatMusic.track=track;FloatMusic.art=art;}
+    private static boolean strip(int s){return musicStrip&&s>OFF&&s!=MUSIC;}
     public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST;}
     /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
-    public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND;}
+    public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND&&s!=MUSIC;}
     /** The cell counts shape s fills without a hole; the settings offer these only. */
-    public static int[] counts(int s){return layout(s)?FloatLayouts.counts(s):COUNTS;}
+    public static int[] counts(int s){return layout(s)?FloatLayouts.counts(s):s==MUSIC?MUSIC_COUNTS:COUNTS;}
+    private static final int[] MUSIC_COUNTS={1,2};
     public static boolean fits(int s,int n){for(int v:counts(s))if(v==n)return true;return false;}
     /** n, or the next count up that shape s takes (its largest when there is none). */
     public static int fitCount(int s,int n){int[] cs=counts(s);for(int v:cs)if(v>=n)return v;return cs[cs.length-1];}
@@ -62,6 +72,8 @@ public final class FloatPanel {
     /** 투명도: how solid the window's body is over the screen behind (text, bars and lines stay solid). */
     public static final String[] ALPHA_NAMES={"진하게","보통","연하게"};
     static final int[] ALPHAS={0xf4,0xd8,0x80};
+    /** The 투명도 setting as a factor on the skins' own body alpha (0xd8 = as drawn). */
+    static float alphaF(){return ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;}
     public static volatile int alpha=1;
     /** 스킨: the cells drawn like a dashboard layout (FloatSkin.NAMES); 0 = the plain window with its corners and colours;
      *  AUTO (계기판 따라, the default) = the skin of the dashboard screen last shown (screen, a ClusterPicker index). */
@@ -111,6 +123,8 @@ public final class FloatPanel {
     static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
     private static boolean still;
+    /** A still picture is being drawn (the settings' previews): the 음악 line does not scroll there. */
+    static boolean stillNow(){return still;}
     /** Partial redraw: ALL draws everything, STAT only what does not move (kept as the bitmap below), DYN the rest each frame.
      *  FloatSkin and the round gauge read PASS; FloatLayouts gets it as an argument. */
     static final int ALL=FloatLayouts.ALL,STAT=FloatLayouts.STAT,DYN=FloatLayouts.DYN;static int PASS=ALL;
@@ -173,6 +187,7 @@ public final class FloatPanel {
         int s=shape==OFF?lastShape:shape;
         if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
+        if(s==MUSIC||strip(s))h=h*31+FloatMusic.key(strip(s)?now:-1);   // a scrolling 음악 띠 line moves every tick
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
@@ -182,11 +197,13 @@ public final class FloatPanel {
     public static int rows(int shape,int n){return (n+cols(shape,n)-1)/cols(shape,n);}
     public static int cellW(int shape,int size){return Math.round((round(shape)?GAUGE:CELL_W)*SIZES[clampSize(size)]);}
     public static int cellH(int shape,int size){return Math.round((round(shape)?GAUGE:CELL_H)*SIZES[clampSize(size)]);}
-    public static int width(int shape,int n,int size){return shape<=OFF?0:layout(shape)?Math.round(FloatLayouts.w(shape,n)*SIZES[clampSize(size)]):cols(shape,n)*cellW(shape,size);}
-    public static int height(int shape,int n,int size){return shape<=OFF?0:layout(shape)?Math.round(FloatLayouts.h(shape,n)*SIZES[clampSize(size)]):rows(shape,n)*cellH(shape,size);}
+    public static int width(int shape,int n,int size){return shape<=OFF?0:shape==MUSIC?Math.round(FloatMusic.W*SIZES[clampSize(size)]):layout(shape)?Math.round(FloatLayouts.w(shape,n)*SIZES[clampSize(size)]):cols(shape,n)*cellW(shape,size);}
+    /** The window's height: the body, and the 음악 띠 under it when that is on. */
+    public static int height(int shape,int n,int size){return bodyH(shape,n,size)+(strip(shape)?Math.round((FloatMusic.STRIP_H+FloatMusic.GAP)*SIZES[clampSize(size)]):0);}
+    private static int bodyH(int shape,int n,int size){return shape<=OFF?0:shape==MUSIC?Math.round(FloatMusic.H*SIZES[clampSize(size)]):layout(shape)?Math.round(FloatLayouts.h(shape,n)*SIZES[clampSize(size)]):rows(shape,n)*cellH(shape,size);}
     /** Each shown cell's rectangle in the window (l, t, r, b at the size): taps and the settings' outline. */
     public static float[][] cellRects(int shape,int n,int size){int u=used(shape,n);float[][] o=new float[u][];float k=SIZES[clampSize(size)];
-        for(int i=0;i<u;i++){if(layout(shape)){float[] b=FloatLayouts.rect(shape,n,i);o[i]=new float[]{b[0]*k,b[1]*k,b[2]*k,b[3]*k};}
+        for(int i=0;i<u;i++){if(layout(shape)||shape==MUSIC){float[] b=shape==MUSIC?FloatMusic.rect(n,i):FloatLayouts.rect(shape,n,i);o[i]=new float[]{b[0]*k,b[1]*k,b[2]*k,b[3]*k};}
             else{int cols=cols(shape,n),cw=cellW(shape,size),ch=cellH(shape,size);o[i]=new float[]{(i%cols)*cw,(i/cols)*ch,(i%cols+1)*cw,(i/cols+1)*ch};}}
         return o;}
     private static int clampSize(int s){return Math.max(0,Math.min(SIZES.length-1,s));}
@@ -230,7 +247,7 @@ public final class FloatPanel {
     /** The next choice for a cell: automatic, then CHOICES in order, then automatic again. */
     public static int next(int current){if(current<0)return CHOICES[0];for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==current)return i+1<CHOICES.length?CHOICES[i+1]:-1;return -1;}
     /** The name as the window shows it (translated). */
-    private static String label(int sig){return com.veloster.i18n.UiText.t(name(sig));}
+    static String label(int sig){return com.veloster.i18n.UiText.t(name(sig));}
     public static String name(int sig){if(sig==QUAD_P)return "타이어 공기압";if(sig==QUAD_T)return "타이어 온도";if(sig<0||sig>=Telemetry.LABELS.length)return "—";for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
 
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
@@ -295,11 +312,17 @@ public final class FloatPanel {
     }
     /** One cell showing sig with graph g at 0,0 (the settings' value chooser); its line graph is cell k's memory. */
     public static void drawCell(Canvas c,int shape,int size,Telemetry.Sample[] q,int sig,int g,int k,long now){
-        still=true;try{draw(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);}finally{still=false;}
+        still=true;try{body(c,CARD,1,size,q,new int[]{sig},new int[]{g},k,false,now);}finally{still=false;}
     }
     /** first: the cell index of the first cell drawn (its line-graph memory); rec: the real window, which feeds the line graphs. */
     private static Telemetry.Sample[] LAST_Q;
     private static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
+        if(shape==MUSIC){colours();LAST_Q=q;drawNow=now;PASS=ALL;FloatMusic.shape(c,SIZES[clampSize(size)],n,q,sigs,first,rec,now);return;}   // drawn whole: its text changes every second
+        body(c,shape,n,size,q,sigs,gs,first,rec,now);
+        if(strip(shape))FloatMusic.strip(c,width(shape,n,size),bodyH(shape,n,size)+FloatMusic.GAP*SIZES[clampSize(size)],SIZES[clampSize(size)],now);
+    }
+    /** The window without the 음악 띠. */
+    private static void body(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
         colours();LAST_Q=q;drawNow=now;PASS=ALL;
         if(still||!layerOn){parts(c,shape,n,size,q,sigs,gs,first,rec,now);return;}
         // partial redraw: what does not move is drawn once into a bitmap, again when anything it shows changes: the shape, count, size,
@@ -307,7 +330,7 @@ public final class FloatPanel {
         int key=17;key=key*31+shape;key=key*31+n;key=key*31+size;key=key*31+skinNow();key=key*31+alpha;key=key*31+first;key=key*31+Theme.current().id.hashCode();
         for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);key=key*31+sig;key=key*31+gs[j];key=key*31+label(sig).hashCode();
             key=key*31+(Float.isNaN(frac(sig,v))?1:0)+(Float.isNaN(peak(i,sig))?2:0)+(gs[j]==LINE&&drawn(i,sig)?4:0)+8*Tiles.level(fmt(sig),v);}
-        int bw=Math.max(1,width(shape,n,size)),bh=Math.max(1,height(shape,n,size));
+        int bw=Math.max(1,width(shape,n,size)),bh=Math.max(1,bodyH(shape,n,size));
         if(layer==null||layerKey!=key||layer.getWidth()!=bw||layer.getHeight()!=bh){
             if(layer==null||layer.getWidth()!=bw||layer.getHeight()!=bh)layer=android.graphics.Bitmap.createBitmap(bw,bh,android.graphics.Bitmap.Config.ARGB_8888);
             else layer.eraseColor(0);

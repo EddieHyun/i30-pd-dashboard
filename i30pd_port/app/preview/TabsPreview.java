@@ -48,6 +48,8 @@ public final class TabsPreview {
         PitRenderer show=new PitRenderer();show.setSymmetric(true);show.setPage(PitRenderer.PAGE_SHOW);
         save(out,"4e_show",show,model,now,false,false);
         rec.setPage(PitRenderer.PAGE_RACE);save(out,"4c_race",rec,model,now,false,false);
+        model.hscanPd(0xc7,0x1c,new byte[]{2,1,0,0},now);save(out,"4c_race_tcs_off",rec,model,now,false,false);   // stability switches: TCS off, then TCS and ESC off
+        model.hscanPd(0xc7,0x1c,new byte[]{2,2,0,0},now);save(out,"4c_race_esc_off",rec,model,now,false,false);model.hscanPd(0xc7,0x1c,new byte[]{0,0,0,0},now);
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
         race(out,"4c_race_mt",rec,model,now,VehicleProfile.PETROL_MT,1);       // 6MT: clutch cell left of the brake, pressed
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
@@ -106,6 +108,33 @@ public final class TabsPreview {
                 new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
                 FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
+            {   // music: the 음악 띠 under four shapes and the 음악 shape (1 and 2 cells, two sizes, nothing playing)
+                MediaState mm=new MediaState();mm.mode(0x36);mm.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);mm.playback(1,1);
+                MediaState none=new MediaState();
+                Object[][] mc={{FloatPanel.CARD,4,1,true,"strip_card"},{FloatPanel.STRIP,4,1,true,"strip_strip"},{FloatPanel.SIDE,2,1,true,"strip_side"},{FloatPanel.ROUND,4,1,true,"strip_round"},
+                    {FloatPanel.MUSIC,2,1,true,"shape2"},{FloatPanel.MUSIC,1,1,true,"shape1"},{FloatPanel.MUSIC,2,2,true,"shape2_large"},{FloatPanel.MUSIC,2,1,false,"shape_none"},{FloatPanel.CARD,4,1,false,"strip_none"}};
+                for(Object[] m:mc){int sh=(Integer)m[0],n=(Integer)m[1],sz=(Integer)m[2];FloatPanel.musicStrip=sh!=FloatPanel.MUSIC;FloatPanel.music(((Boolean)m[3]?mm:none).snapshot(now),null);
+                    BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                    java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
+                    FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_music_"+m[4]+".png"));}
+                {FloatPanel.musicStrip=false;FloatPanel.music(mm.snapshot(now),null);FloatPanel.cells[0]=Telemetry.BOOST;FloatPanel.cells[1]=0;   // vacuum beside the rpm: the large value gives way
+                 Telemetry.Sample[] vq=model.snapshot(now);vq[Telemetry.BOOST]=new Telemetry.Sample(-0.65f,true,false,true,false,0);vq[0]=new Telemetry.Sample(1561,true,false,true,false,0);
+                 BufferedImage img=new BufferedImage(300,140,BufferedImage.TYPE_INT_RGB);FloatPanel.draw(new android.graphics.Canvas(img.createGraphics()),FloatPanel.MUSIC,2,1,vq,VehicleProfile.PETROL_DCT,now);
+                 ImageIO.write(img,"png",new File(out,"x_float_music_shape2_vacuum.png"));FloatPanel.cells[0]=-1;FloatPanel.cells[1]=-1;}
+                {android.graphics.Bitmap cover=android.graphics.Bitmap.createBitmap(64,64,android.graphics.Bitmap.Config.ARGB_8888);{android.graphics.Canvas cc=new android.graphics.Canvas(cover);android.graphics.Paint cp=new android.graphics.Paint(1);
+                    cp.setColor(0xff7a3cc8);cc.drawRect(0,0,64,64,cp);cp.setColor(0xffffc04a);cc.drawCircle(40,26,18,cp);cp.setColor(0xff1b1030);cc.drawRect(0,46,64,64,cp);}   // a stand-in album cover
+                 FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int sk0=FloatPanel.skin;   // the 음악 띠 in every 색감, still and scrolled 2.5 s on
+                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++)for(long dt:new long[]{0,2500}){FloatPanel.skin=sk;int w=FloatPanel.width(FloatPanel.CARD,4,1),h=FloatPanel.height(FloatPanel.CARD,4,1);
+                     BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
+                     long t0=(now/100000)*100000;FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,t0+dt);ImageIO.write(img,"png",new File(out,"x_float_music_strip_skin"+sk+"_"+dt+".png"));}
+                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++){FloatPanel.skin=sk;FloatPanel.musicStrip=false;int w=FloatPanel.width(FloatPanel.MUSIC,2,1),h=FloatPanel.height(FloatPanel.MUSIC,2,1);   // the 음악 shape in every 색감
+                     BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
+                     FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.MUSIC,2,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_music_shape_skin"+sk+".png"));}
+                 for(int sh:new int[]{FloatPanel.SIDE,FloatPanel.TOWER}){FloatPanel.skin=0;FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int[] cs=FloatPanel.counts(sh);int n=cs[cs.length-1];   // narrow shapes: the strip is words only
+                     int w=FloatPanel.width(sh,n,1),h=FloatPanel.height(sh,n,1);BufferedImage img=new BufferedImage(w+16,h+16,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+16,h+16);g2.translate(8,8);
+                     FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,(now/100000)*100000);ImageIO.write(img,"png",new File(out,"x_float_music_narrow_"+sh+".png"));}
+                 FloatPanel.skin=sk0;}
+                FloatPanel.musicStrip=false;FloatPanel.music(null,null);}
             {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
                 Telemetry hm=new Telemetry();long t0=now-30000;int from=Math.max(0,last-(int)(31000/step));
                 for(int q2=0;q2<=last;q2++){long tq=1_000_000+q2*step;feed(hm,raw.get(q2),tq);if(q2>=from&&(q2-from)%Math.max(1,(int)(500/step))==0)FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(400,300,BufferedImage.TYPE_INT_ARGB).createGraphics()),FloatPanel.CARD,4,2,hm.snapshot(tq),VehicleProfile.PETROL_DCT,tq);}
@@ -237,7 +266,7 @@ public final class TabsPreview {
             FloatPanel.cells[0]=Telemetry.DPF_SOOT;if(FloatPanel.signal(0,VehicleProfile.PETROL_DCT)!=Telemetry.BOOST)throw new AssertionError("float: a saved DPF cell falls back to 자동 on a petrol");FloatPanel.cells[0]=-1;
             FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.BAR;FloatPanel.count=2;
         }
-        rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
+        rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);SettingsLayout.floatBeep=true;save(out,"9_settings_rpm_beep",rec,model,now,false,false);SettingsLayout.floatBeep=false;rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
         rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
         {Telemetry.Sample[] q=model.snapshot(now);q[7]=new Telemetry.Sample(103,true,false,true,false,0);   // GPS speed calibration off / on: the speedometer's 103 shown as a true 100
@@ -271,6 +300,33 @@ public final class TabsPreview {
                 if(pass==2)pk.frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now+4500,m8.snapshot(now));
                 ImageIO.write(img,"png",new File(out,pass==0?"9g_cluster_8bit_music.png":pass==1?"9g_cluster_8bit_music_en.png":pass==2?"9g_cluster_8bit_music_scroll.png":pass==3?"9g_cluster_8bit_chase_music.png":"9g_cluster_8bit_chase_music_nocover.png"));}
             ClusterKit.artwork=null;
+        }
+        {   // 앞차 피하기 on the Arcade view: parked in P, brake held -> countdown, then playing (wheel right), a crash, game over
+            PixelCluster pk=new PixelCluster(true);long t=now;Telemetry.Sample[] q=model.snapshot(now);ClusterKit.artwork=null;
+            q[7]=new Telemetry.Sample(0,true,false,true,false,0);q[8]=new Telemetry.Sample(0,false,false,true,false,0);q[Telemetry.GEAR_SELECTOR]=new Telemetry.Sample(0,true,false,true,false,0);
+            q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(1,true,false,true,false,0);q[10]=new Telemetry.Sample(30,true,false,true,false,0);q[Telemetry.STEERING]=new Telemetry.Sample(0,true,false,true,false,0);
+            String[] shots={"count","go","play","steer_past","crash","over"};long[] gAt={1520,3320,9000,9600,0,0};int si=0;
+            for(long e=0;e<=9600;e+=40){t=now+e;if(e>=3400){q[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(0,true,false,true,false,0);q[10]=new Telemetry.Sample(1,true,false,true,false,0);
+                    q[Telemetry.STEERING]=new Telemetry.Sample(e<9200?-(float)(45*Math.sin(e/900.0)):-140,true,false,true,false,0);
+                    q[9]=new Telemetry.Sample(e>=8800&&e<9200?40:0,true,false,true,false,0);}   // gas pressed at the play shot: the crossed-out pedal
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+                boolean shot=si<4&&e==gAt[si];if(shot)new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
+                if(shot)ImageIO.write(img,"png",new File(out,"x_arcade_game_"+shots[si++]+".png"));}
+            if(pk.game.state==ArcadeGame.PLAY){   // the three obstacles side by side: a cone, a drum, a barricade
+                for(int i=0;i<ArcadeGame.CARS;i++)pk.game.carM[i]=pk.game.pos+60+i*3;float[] obAt={3.4f,4.6f,6.2f};
+                for(int i=0;i<3;i++){pk.game.carM[i]=pk.game.pos+obAt[i];pk.game.carLane[i]=i;pk.game.carCol[i]=i;}pk.game.x=0;pk.game.hitAt=Long.MIN_VALUE/2;
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t+20,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_obstacles.png"));}
+            for(int k=0;k<3&&pk.game.state==ArcadeGame.PLAY;k++){for(int i=0;i<ArcadeGame.CARS;i++)pk.game.carM[i]=pk.game.pos+30+i*3;pk.game.carM[0]=pk.game.pos+1.6f;pk.game.carLane[0]=1;pk.game.carV[0]=0;pk.game.x=0;pk.game.hitAt=Long.MIN_VALUE/2;
+                t+=40;pk.frame(new android.graphics.Canvas(new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB).createGraphics()),q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
+                if(k==0){t+=40;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                    pk.game.carM[0]=pk.game.pos+0.95f;pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_crash.png"));}}
+            {t+=40;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_over.png"));}
+            {Telemetry.Sample[] q2=q.clone();q2[Telemetry.BRAKE_SWITCH]=new Telemetry.Sample(0,true,false,true,false,0);q2[10]=new Telemetry.Sample(1,true,false,true,false,0);   // parked, brake off: the hint
+                PixelCluster p2=new PixelCluster(true);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                p2.frame(c,q2,model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_hint.png"));}
         }
         taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
         taxiArea(out,"9d_cluster_taxi_busan_out",model,now,ms.snapshot(now));

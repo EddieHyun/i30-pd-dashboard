@@ -21,8 +21,9 @@ public final class VehicleDash extends View implements Runnable {
     private static WeakReference<VehicleDash> current=new WeakReference<VehicleDash>(null);
     private final Activity activity;
     private final PitRenderer renderer=new PitRenderer();
-    private final MediaState mediaState=new MediaState();
-    private final MediaReceiver mediaReceiver=new MediaReceiver(mediaState);
+    /** One track for the process: the floating window reads it while the dashboard is away (floatMusic). */
+    private static final MediaState mediaState=new MediaState();
+    private static final MediaReceiver mediaReceiver=new MediaReceiver(mediaState);
     private final ArtworkLoader artwork;
     private final GaugeLayout gaugeLayout=new GaugeLayout();
     private final GaugeEditor gaugeEditor;
@@ -156,7 +157,7 @@ public final class VehicleDash extends View implements Runnable {
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
         sound=new EngineSound(a.getApplicationContext(),DATA);beep=new ShiftBeep(a);
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=beepOn&&p.getBoolean("float_beep",false);SettingsLayout.floatSound=p.getBoolean("engine_sound",false)&&p.getBoolean("float_sound",false);
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
             beepVol=Math.max(0,Math.min(100,p.getInt("shift_beep_vol",70)));
             downScope=Math.max(0,Math.min(SettingsLayout.DOWN_SCOPES.length-1,p.getInt("downshift_scope",0)));
@@ -321,7 +322,7 @@ public final class VehicleDash extends View implements Runnable {
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
     private void floatTap(float x,float y){
         VehicleProfile prof=DATA.profile();
-        if(floatEdit==SettingsLayout.FORM_SHEET){int n=FloatPanel.FORMS.length,i=SettingsLayout.hit4(x,y,n);if(i!=SettingsLayout.hit4(downX,downY,n))return;
+        if(floatEdit==SettingsLayout.FORM_SHEET){int i=SettingsLayout.hitForm(x,y,SettingsLayout.FORM_SLOTS);if(i!=SettingsLayout.hitForm(downX,downY,SettingsLayout.FORM_SLOTS))return;
             if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;FloatPanel.count=FloatPanel.fitCount(f,FloatPanel.count);   // never a count the shape leaves a hole in
                 floatSel=Math.min(floatSel,FloatPanel.used(f,FloatPanel.count)-1);}floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
@@ -344,6 +345,7 @@ public final class VehicleDash extends View implements Runnable {
         if(t<0||t!=SettingsLayout.floatHit(downX,downY,fw,fh,cr))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
+        else if(t==SettingsLayout.F_MUSIC){if(shape==FloatPanel.MUSIC)return;FloatPanel.musicStrip=!FloatPanel.musicStrip;}
         else if(t==SettingsLayout.F_SKIN){if(FloatPanel.skin>=0&&!FloatPanel.round(shape))floatEdit=SettingsLayout.SKIN_SHEET;return;}   // dim while 계기판 따라 is on, and for round gauges
         else if(t==SettingsLayout.F_AUTO){if(FloatPanel.round(shape))return;FloatPanel.skin=FloatPanel.skin<0?FloatPanel.skinNow():FloatPanel.AUTO;}   // off keeps the look it was following
         else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
@@ -365,7 +367,7 @@ public final class VehicleDash extends View implements Runnable {
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
             FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.LAST_SHAPE?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
-            int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
+            int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);FloatPanel.musicStrip=p.getBoolean("float_music_strip",false);
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.LAST_SHAPE?last:FloatPanel.CARD;
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);
             if(skn==9){skn=0;   // the round gauge was a skin for a while: on a grid shape it is the 원형 게이지 shape now
@@ -379,7 +381,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
-        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).remove("float_style")
+        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).putBoolean("float_music_strip",FloatPanel.musicStrip).remove("float_style")
          .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin);
         for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
@@ -391,13 +393,43 @@ public final class VehicleDash extends View implements Runnable {
         FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */
+    /** The floating window is up (FloatService): with 엔진 사운드 = 항상 the engine sound goes on while the dashboard is away. */
+    public static volatile boolean floatUp;
+    private boolean soundWanted(){return soundOn&&(resumed&&getVisibility()==VISIBLE||floatUp&&SettingsLayout.floatSound&&!resumed);}
+    /** The floating window's tick: starts or stops the engine sound as soundWanted says (the dashboard's own loop may not run while
+     *  it is stopped). Needs the dashboard to have been opened once since boot: the sound belongs to its view. */
+    public static void soundTick(){VehicleDash d=current.get();if(d==null||d.sound==null)return;d.sound.play(d.soundWanted()?d.soundRoute:-1);}
     public static void chimeTick(){
         VehicleDash d=current.get();if(d==null||d.beep==null||SpeedChime.kmh<=0)return;
         long now=SystemClock.elapsedRealtime();Telemetry.Sample sp=DATA.sample(7,now);
         if(d.chime.due(sp.valid?sp.value:Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,d.beepVol/100f))d.chime.rang(now);
     }
+    /** The floating window's tick (FloatService): while the dashboard is away its onDraw does not run, so the shift beep and
+     *  the downshift sounds are worked out here from the samples, with the same edges and settings (the 맞춤 소리 화면 scope
+     *  against the screen last shown). Only with 플로팅 중 변속 알림 on. */
+    public static void shiftTick(){
+        VehicleDash d=current.get();if(d==null||d.beep==null||!SettingsLayout.floatBeep||d.resumed)return;
+        long now=SystemClock.elapsedRealtime();Telemetry.Sample[] s=DATA.snapshot(now);VehicleProfile p=DATA.profile();
+        boolean scoped=SettingsLayout.downScreen(d.downScope,d.screen),clutch=p.trans==VehicleProfile.Trans.MT&&s[Telemetry.CLUTCH].valid&&s[Telemetry.CLUTCH].value>0;
+        EngineSound mix=d.soundOn&&d.soundRoute==0?d.sound:null;
+        if(d.beepEdge.fire(ShiftGuide.evaluate(s,d.shiftTarget,p).shift&&!(scoped&&clutch),now)&&d.beepOn)d.beep.play(mix,d.beepSound,d.beepVol/100f);
+        int dn=d.downCue.fire(scoped?RevMatch.downs(s,p):0,now);
+        if(dn>0&&d.downSounds[dn-1]>=0)d.beep.play(mix,d.downSounds[dn-1],d.beepVol/100f);
+    }
     public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
     public static VehicleProfile profileNow(){return DATA.profile();}
+    private static ArtworkLoader floatArt;
+    /** The floating window shows the track (FloatPanel.musicShown): on keeps the media receiver up on the application context
+     *  while the dashboard is away (its pause stopped it), with an album art loader of its own; off lets both go unless the
+     *  dashboard is on screen (it uses the receiver then). The track itself (mediaState) lives on between the two. */
+    public static void floatMusic(android.content.Context c,boolean on){
+        if(on){mediaReceiver.start(c);if(floatArt==null)floatArt=new ArtworkLoader(c.getApplicationContext(),null);return;}
+        if(floatArt!=null){floatArt.close();floatArt=null;}
+        VehicleDash d=current.get();if(d==null||!d.resumed)mediaReceiver.stop();
+    }
+    /** The track now for the floating window; asks its loader for the album art. */
+    public static MediaState.Snapshot floatTrack(){MediaState.Snapshot t=mediaState.snapshot(SystemClock.elapsedRealtime());if(floatArt!=null)floatArt.request(t);return t;}
+    public static android.graphics.Bitmap floatArtwork(){return floatArt==null?null:floatArt.bitmap();}
     /** The rear camera is showing (PGS): the floating window steps aside. */
     public static boolean rearCamera(){return DATA.rearCamera();}
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
@@ -420,7 +452,7 @@ public final class VehicleDash extends View implements Runnable {
         long tick=SystemClock.elapsedRealtime();
         if(resumed&&!standalone&&tick-lastPolicyCheck>=1000){lastPolicyCheck=tick;int status=RegulationState.read(activity);if(status>=0)policy(status==1,"service");}
         tryRequestedEntry();
-        sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);
+        sound.play(soundWanted()?soundRoute:-1);
         {int ck=EcoCluster.clink;if(ck!=0){EcoCluster.clink=0;   // a coin reaches the road on the 에코 screen (negative: its bounce)
             if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*EcoCluster.clinkGain);}}
         {int ck=CassetteCluster.cue;if(ck!=0){CassetteCluster.cue=0;   // a key of the 카세트 screen: latched, released or tapped
@@ -449,7 +481,7 @@ public final class VehicleDash extends View implements Runnable {
         long now=SystemClock.elapsedRealtime();
         if(FloatPanel.shape!=FloatPanel.OFF)FloatPanel.track(FloatPanel.count,floatSamples(FloatPanel.count),DATA.profile(),now);   // peaks and line graphs go on while the window is down
         header.step(SystemClock.uptimeMillis());   // MotionEvent times are uptime
-        MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);
+        MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);FloatPanel.music(track,artwork.bitmap());   // the settings' preview shows the track too
         renderer.setArtwork(artwork.bitmap());
         renderer.setGaugeLayout(gauges?gaugeLayout:null);
         renderer.setGraphLayout(graphs?graphLayout:null);
@@ -583,7 +615,8 @@ public final class VehicleDash extends View implements Runnable {
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;
                 case SettingsLayout.RPM:{   // − / + step 100 rpm; the rest of the row puts the default back
-                    if(i==SettingsLayout.RPM_BEEP){beepOn=!beepOn;e.putBoolean("shift_beep",beepOn);if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
+                    if(i==SettingsLayout.RPM_BEEP){boolean was=beepOn;SettingsLayout.floatBeep=beepOn&&!SettingsLayout.floatBeep;beepOn=!was||SettingsLayout.floatBeep;   // 끔 -> 계기판 -> 항상 -> 끔
+                        e.putBoolean("shift_beep",beepOn);e.putBoolean("float_beep",SettingsLayout.floatBeep);if(was)break;if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
                     if(i==SettingsLayout.RPM_BEEP_SOUND){if(!beepOn)break;beepSound=(beepSound+1)%SettingsLayout.BEEP_SOUNDS.length;e.putInt("shift_beep_sound",beepSound);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){downScope=(downScope+1)%SettingsLayout.DOWN_SCOPES.length;e.putInt("downshift_scope",downScope);break;}
                     if(i>=SettingsLayout.RPM_DOWN1){int dk=i-SettingsLayout.RPM_DOWN1;   // 끔 -> each sound in turn -> 끔
@@ -607,7 +640,8 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==SettingsLayout.SOUND_CLICK){CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);
                         if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;}   // a sample click
                     if(i==SettingsLayout.SOUND_FAST){EngineSound.fast=!EngineSound.fast;e.putBoolean("engine_sound_fast",EngineSound.fast);sound.play(-1);}   // the block size is read when the thread starts: stop it here, the play() below starts it again
-                    else if(i==SettingsLayout.SOUND_ON)soundOn=!soundOn;
+                    else if(i==SettingsLayout.SOUND_ON){boolean was=soundOn;SettingsLayout.floatSound=soundOn&&!SettingsLayout.floatSound;soundOn=!was||SettingsLayout.floatSound;   // 끔 -> 계기판 -> 항상 -> 끔, like 변속 알림음
+                        e.putBoolean("float_sound",SettingsLayout.floatSound);}
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
                     else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();
                     else if(i==SettingsLayout.SOUND_EXHAUST)soundExhaust=(soundExhaust+1)%EngineSynth.exhausts();
@@ -615,7 +649,7 @@ public final class VehicleDash extends View implements Runnable {
                         int sv=i-SettingsLayout.SOUND_VOLUME;soundVals[sv]=SettingsLayout.soundStep(i,soundVals[sv],z);e.putInt(SOUND_KEYS[sv],soundVals[sv]);}
                     applySound();
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
-                    sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
+                    sound.play(soundWanted()?soundRoute:-1);break;
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}

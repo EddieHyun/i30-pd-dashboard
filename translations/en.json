@@ -555,6 +555,7 @@
   "그린": "Green",
   "사운드": "Sound",
   "엔진 사운드": "Engine sound",
+  "항상 = 플로팅 창에서도": "Always = in the floating window too",
   "출력 경로": "Output route",
   "음량": "Volume",
   "배기": "Exhaust",
@@ -747,6 +748,7 @@
   "스킨": "Skin",
   "타이어 온도": "Tire temp",
   "내 앱 버튼 숨김": "Hide My apps button",
+  "음악 띠": "Music strip",
   "%d번 칸": "Cell %d",
   "칸 값 바꾸기": "Change value",
   "칸을 누르면 값 바꾸기": "Tap a cell to change its value",
@@ -888,5 +890,7 @@
   "계속 누르세요": "Keep holding",
   "삭제하는 중": "Removing",
   "잠시 기다리세요. 끝나면 이 화면이 닫힙니다.": "Please wait. This screen closes when done.",
-  "이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.": "This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer."
+  "이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.": "This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.",
+  "항상": "Always",
+  "변속 목표에서 울림 · 항상 = 플로팅 창에서도 · 맞춤 소리 화면에선 클러치 뗐을 때만": "At the shift target · Always = with the floating window too · match-sound screens: clutch out"
 }

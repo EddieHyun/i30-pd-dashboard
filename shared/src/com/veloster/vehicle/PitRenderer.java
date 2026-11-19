@@ -296,7 +296,7 @@ public final class PitRenderer {
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
                     if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
                 case SettingsLayout.RPM:
-                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 울림 · 맞춤 소리 화면에선 클러치를 뗐을 때만";value=beepOn?"켬":"끔";break;}
+                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 울림 · 항상 = 플로팅 창에서도 · 맞춤 소리 화면에선 클러치 뗐을 때만";value=!beepOn?"끔":SettingsLayout.floatBeep?"항상":"계기판";break;}
                     if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
                     if(i==SettingsLayout.RPM_BEEP_VOL){name="알림음 음량";dim=!beepOn&&downSounds[0]<0&&downSounds[1]<0&&downSounds[2]<0;sub="− / + 로 조절 · 한 번 들려줌";break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){name="맞춤 소리 화면";sub="다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜";value=SettingsLayout.DOWN_SCOPES[downScope];break;}
@@ -307,7 +307,7 @@ public final class PitRenderer {
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
-                    else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";value=soundOn?"켬":"끔";}
+                    else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";sub="항상 = 플로팅 창에서도";value=!soundOn?"끔":SettingsLayout.floatSound?"항상":"계기판";}
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
@@ -387,6 +387,8 @@ public final class PitRenderer {
         text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
         // right column
         chip(c,SettingsLayout.F_ON_BOX,UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬"),null,!off,false);
+        boolean ms=FloatPanel.musicStrip&&shape!=FloatPanel.MUSIC;   // the 음악 shape shows the track itself: the strip is dim there
+        chip(c,SettingsLayout.F_MUSIC_BOX,UiText.t("음악 띠")+"  "+UiText.t(ms?"켬":"끔"),null,ms&&!off,shape==FloatPanel.MUSIC);
         chip(c,SettingsLayout.F_HIDE_BOX,UiText.t("내 앱 버튼 숨김")+"  "+UiText.t(FloatPanel.hideButton?"켬":"끔"),null,FloatPanel.hideButton&&!off,off);
         float[] cb=SettingsLayout.F_CELL_BOX;panel(c,cb[0],cb[1],cb[2]-cb[0],cb[3]-cb[1],0xff101315,LINE);
         int sig=FloatPanel.signal(sel,profile);
@@ -409,16 +411,31 @@ public final class PitRenderer {
         chip(c,SettingsLayout.F_SKIN_BOX,rnd?UiText.t("원형 게이지는 테마 색"):UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNow()])+"  ›",null,false,rnd||auto);
         text(c,UiText.t("손을 떼면 적용 · 끌면 취소"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
         chip(c,SettingsLayout.F_FORM_BOX,UiText.t(FloatPanel.SHAPE_NAMES[shape])+"  ›",null,false,false);
-        if(floatEdit==SettingsLayout.SKIN_SHEET)drawSkinSheet(c);else if(floatEdit==SettingsLayout.FORM_SHEET)drawFormSheet(c);else if(floatEdit>=0)drawFloatSheet(c);
+        if(floatEdit==SettingsLayout.SKIN_SHEET||floatEdit==SettingsLayout.FORM_SHEET)cachedSheet(c,floatEdit);
+        else{sheetBmp=null;if(floatEdit>=0)drawFloatSheet(c);}
+    }
+    /** The 모양 / 색감 sheets draw 17-20 small windows: drawn once into a bitmap and shown from it until something they show changes
+     *  (a tap on the sheet redrew every window and lagged). */
+    private Bitmap sheetBmp;private int sheetKey;
+    private void cachedSheet(Canvas c,int which){
+        int key=which;key=key*31+FloatPanel.shape;key=key*31+FloatPanel.lastShape;key=key*31+FloatPanel.count;key=key*31+FloatPanel.size;
+        key=key*31+FloatPanel.skin;key=key*31+FloatPanel.skinNow();key=key*31+FloatPanel.corner;key=key*31+FloatPanel.color;key=key*31+FloatPanel.alpha;
+        key=key*31+(FloatPanel.musicStrip?1:0);key=key*31+java.util.Arrays.hashCode(FloatPanel.cells);key=key*31+java.util.Arrays.hashCode(FloatPanel.graphs);
+        key=key*31+Theme.current().id.hashCode();key=key*31+UiText.language().hashCode();key=key*31+(profile==null?0:profile.hashCode());key=key*31+(samples==null?0:1);
+        key=key*31+FloatMusic.sheetKey();   // not the position: the progress bars in the sheet stay where they were drawn
+        if(sheetBmp==null||sheetKey!=key){
+            if(sheetBmp==null)sheetBmp=Bitmap.createBitmap(800,480,Bitmap.Config.ARGB_8888);else sheetBmp.eraseColor(0);
+            Canvas sc=new Canvas(sheetBmp);if(which==SettingsLayout.SKIN_SHEET)drawSkinSheet(sc);else drawFormSheet(sc);sheetKey=key;}
+        c.drawBitmap(sheetBmp,0,0,null);
     }
     /** 모양 고르기: every shape drawn small with the cells' readings and the skin now; a tap picks it. */
     private void drawFormSheet(Canvas c){
         box(c,0,0,800,480,0xc0000000);
-        panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
-        text(c,UiText.t("모양 고르기"),SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
-        text(c,UiText.t("누르면 바로 적용 · 칸 수는 모양에 맞춰집니다"),SettingsLayout.K_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
+        panel(c,SettingsLayout.F_SH_L,SettingsLayout.SH_T,SettingsLayout.F_SH_R-SettingsLayout.F_SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
+        text(c,UiText.t("모양 고르기"),SettingsLayout.F5_X,SettingsLayout.SH_T+30,18,WHITE,true);
+        text(c,UiText.t("누르면 바로 적용 · 칸 수는 모양에 맞춰집니다"),SettingsLayout.F5_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
         int cur=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count;
-        for(int i=0;i<FloatPanel.FORMS.length;i++){int f=FloatPanel.FORMS[i],fn=FloatPanel.fitCount(f,n);float[] b=SettingsLayout.tile4(i);boolean on=f==cur;
+        for(int i=0;i<FloatPanel.FORMS.length;i++){int f=FloatPanel.FORMS[i],fn=FloatPanel.fitCount(f,n);float[] b=SettingsLayout.tile5(SettingsLayout.FORM_SLOTS[i]);boolean on=f==cur;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,UiText.t(FloatPanel.SHAPE_NAMES[f]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){float fw=FloatPanel.width(f,fn,1),fh=FloatPanel.height(f,fn,1),s=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));

@@ -362,6 +362,7 @@ public final class UiText {
         EN.put("변속 목표","Shift target");
         EN.put("변속 목표에서 깜빡일 때 울림 · 앞 스피커","Sounds with the shift flash · front speakers");
         EN.put("변속 목표에서 울림 · 맞춤 소리 화면에선 클러치를 뗐을 때만","At the shift target · on match-sound screens only with the clutch out");
+        EN.put("변속 목표에서 울림 · 항상 = 플로팅 창에서도 · 맞춤 소리 화면에선 클러치 뗐을 때만","At the shift target · Always = with the floating window too · match-sound screens: clutch out");
         EN.put("변속 알림음","Shift beep");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속·구동","Transmission");
@@ -603,6 +604,7 @@ public final class UiText {
         EN.put("유온(대체)","Oil (ECT)");
         EN.put("음량","Volume");
         EN.put("음악","Music");
+        EN.put("음악 띠","Music strip");
         EN.put("음악 제어 요청을 보낼 수 없습니다","Could not send the playback command");
         EN.put("응답 없음 (미장착일 수 있음)","no reply (may not be fitted)");
         EN.put("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요.","No control unit answered. Turn the ignition on and read again.");
@@ -878,6 +880,8 @@ public final class UiText {
         EN.put("합성 G","Combined G");
         EN.put("핫스팟 끄기 확인 실패. 백업을 보존했습니다. 다시 복구하세요.","Could not confirm hotspot shutdown. Backup retained; retry restoration.");
         EN.put("핫스팟 요청 실패/시간 초과. 성공으로 판정하지 않습니다. 원상복구하세요.","Hotspot request failed or timed out. Success is not confirmed; restore the original settings.");
+        EN.put("항상","Always");
+        EN.put("항상 = 플로팅 창에서도","Always = in the floating window too");
         EN.put("현재 ","Now ");
         EN.put("현재 기어","Current gear");
         EN.put("현재 재생 소스에서 음악을 제어할 수 없습니다","Playback control is unavailable for this source");
