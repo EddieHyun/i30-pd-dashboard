@@ -283,7 +283,7 @@ public final class FloatPanel {
     private static final FloatSkin.Cell[] LCELLS={new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell()};
     /** A cell's texts and scale positions for a skin or a layout. */
     private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
-        d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);
+        d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);d.sn="ko".equals(com.veloster.i18n.UiText.language())?d.name:d.en;   // skins in Korean too; only the 8-bit font keeps English
         d.val=Tiles.text(fmt(sig),v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=glide(i,frac(sig,v));d.lv=Tiles.level(fmt(sig),v);
         d.zero=zero(sig);d.pk=Float.isNaN(pk)?null:Tiles.text(fmt(sig),pk);d.pf=Float.isNaN(pk)?Float.NaN:frac(sig,pk);
         d.first=first;d.bar=g!=NUM;d.quad=null;
