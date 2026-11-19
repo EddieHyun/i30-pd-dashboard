@@ -15,7 +15,7 @@ import android.graphics.Typeface;
  */
 final class FloatMusic {
     /** The strip's height under the body and the gap above it, the music shape's size, at size 보통. */
-    static final int STRIP_H=30,GAP=4,W=262,H=118;
+    static final int STRIP_H=30,GAP=4,W=262,H=118,NARROW=150;   // NARROW: under this width the strip is words only
     static volatile MediaState.Snapshot track;
     static volatile Bitmap art;
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
@@ -89,7 +89,8 @@ final class FloatMusic {
         c.save();c.translate(0,y);
         back(c,sk,w,h,k);
         float x0=(sPad?9:8)*k,base=h/2+(sPad?1.5f:3)*k,by=h-(sPad?9.5f:5.5f)*k,right=w-(sPad?10:9)*k,lx,size=12*k;Bitmap b=art;
-        if(on&&b!=null&&!b.isRecycled()){float a=h-(sPad?14:10)*k,ay=(h-a)/2;r.set(x0,ay,x0+a,ay+a);p.setColor(0xff000000);c.drawBitmap(b,null,r,p);   // Paint(3): filtered; opaque
+        if(w<NARROW*k)lx=x0;   // a narrow window (세로 띠, 세로 단수): the words alone, the art and the play glyph would leave them no room
+        else if(on&&b!=null&&!b.isRecycled()){float a=h-(sPad?14:10)*k,ay=(h-a)/2;r.set(x0,ay,x0+a,ay+a);p.setColor(0xff000000);c.drawBitmap(b,null,r,p);   // Paint(3): filtered; opaque
             if(t.playState!=1){fill(c,x0,ay,x0+a,ay+a,0x99000000);glyph(c,x0+a*.27f,ay+a/2,a*.3f,false,0xffffffff);}   // paused: the bars over the dimmed art
             lx=x0+a+6*k;}
         else{if(on)glyph(c,x0+2*k,base-4*k,5*k,t.playState==1,sAcc);else say(c,"♪",x0+4*k,base+k,12*k,sMut,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
