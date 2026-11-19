@@ -248,8 +248,13 @@ public final class FloatPanel {
         Telemetry.Sample t=sig==QUAD_P?q[Telemetry.TIRE_TEMP_FL+w]:null;QT[w]=t!=null&&t.valid&&!Float.isNaN(t.value)?Tiles.tyreTemp(t.value)+"°":"";}}
     /** The four wheels on one line (FL FR RL RR), for small places. */
     public static String inline(Telemetry.Sample[] q,int sig){quadTexts(q,sig);return QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];}
+    /** 세로 띠 + RPM's own 자동 (it has the rpm as its bar, so no rpm row): boost, coolant, the four tyres, intake (diesel: soot),
+     *  battery, outside air, and in the box under them (shown while no track plays) the range left, short enough for the large box. */
+    public static final int[] AUTO_VR_PETROL={Telemetry.BOOST,2,QUAD_P,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.RANGE},
+        AUTO_VR_DIESEL={Telemetry.BOOST,2,QUAD_P,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.RANGE};
     public static int resolve(int c,int k,VehicleProfile p){boolean diesel=p!=null&&p.fuel==VehicleProfile.Fuel.DIESEL;
-        return c>=0&&(p==null||available(c,p))?c:(diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
+        if(c>=0&&(p==null||available(c,p)))return c;
+        int s=shape==OFF?lastShape:shape;return (s==VRPM?(diesel?AUTO_VR_DIESEL:AUTO_VR_PETROL):diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
     /** The reading groups a cell can choose from on this car (Tiles.GROUPS indices, single readings only). */
     public static int[] groups(VehicleProfile p){return Tiles.groups(p,false);}
     public static int[] group(int g,VehicleProfile p){int[] base=Tiles.group(g,p,false);
