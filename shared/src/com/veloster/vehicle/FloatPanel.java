@@ -21,8 +21,8 @@ public final class FloatPanel {
     public static final int MUSIC=FloatLayouts.LAST+1;
     /** 세로 띠 + RPM: six readings stacked, a full-height rpm bar on the right (FloatLayouts.VRPM; numbered after 음악 so saved choices keep their meaning). */
     public static final int VRPM=FloatLayouts.VRPM;
-    /** Readings a window can hold (세로 띠 + RPM shows six). */
-    public static final int MAX_CELLS=6;
+    /** Readings a window can hold (세로 띠 + RPM shows six, and a seventh while no track plays). */
+    public static final int MAX_CELLS=7;
     public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악","세로 띠 + RPM"};
     /** The 모양 sheet's order; SettingsLayout.FORM_SLOTS puts each on its 5 x 4 grid. */
     public static final int[] FORMS={CARD,STRIP,SIDE,TICK,VRPM, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL,MUSIC, GEARBOX,TOWER,SHIFT,WEDGE};
@@ -33,7 +33,11 @@ public final class FloatPanel {
     public static boolean musicShown(){int s=shape;return s==MUSIC||musicStrip&&s!=OFF;}
     /** The track and its album art (null for none) for the next tick and draw. */
     public static void music(MediaState.Snapshot track,android.graphics.Bitmap art){FloatMusic.track=track;FloatMusic.art=art;}
-    private static boolean strip(int s){return musicStrip&&s>OFF&&s!=MUSIC;}
+    private static boolean strip(int s){return musicStrip&&s>OFF&&s!=MUSIC&&s!=VRPM;}   // 세로 띠 + RPM keeps the track in its own box
+    /** 세로 띠 + RPM's box shows the track: 음악 띠 on and a track playing (else its seventh reading). */
+    static boolean vrMusic(int s){return s==VRPM&&musicStrip&&FloatMusic.playing(FloatMusic.track);}
+    /** The size's scale (작게 .85 ... 아주 크게 2). */
+    static float sizeK(){return SIZES[clampSize(size)];}
     public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST||s==VRPM;}
     /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
     public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND&&s!=MUSIC;}
@@ -57,12 +61,12 @@ public final class FloatPanel {
         Telemetry.ENGINE_LOAD,10,Telemetry.CLUTCH_ODD,Telemetry.CLUTCH_EVEN,Telemetry.DPF_SOOT,Telemetry.DPF_TEMP};
     public static final String[] CHOICE_NAMES={"부스트","냉각수","흡기","배터리","페달","속도","RPM","외기온","연료","엔진 부하","브레이크","클러치 홀수","클러치 짝수","DPF 포집","DPF 온도"};
     /** -1 = automatic: boost, coolant, intake, battery; a diesel shows its DPF soot in the third. */
-    public static final int[] AUTO_PETROL={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD},AUTO_DIESEL={Telemetry.BOOST,2,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD};
+    public static final int[] AUTO_PETROL={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL},AUTO_DIESEL={Telemetry.BOOST,2,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL};
     public static volatile int shape=OFF,count=4,size=1;
     /** The shape the 켬 switch brings back (the window was switched off from it). */
     public static volatile int lastShape=CARD;
     public static volatile boolean hideButton=true;
-    public static final int[] cells={-1,-1,-1,-1,-1,-1};
+    public static final int[] cells={-1,-1,-1,-1,-1,-1,-1};
     /** Each cell's graph: a bar under the value, the last 30 s as a line, a row of lit segments (LED), or the number alone. */
     public static final int BAR=0,LINE=1,LED=2,NUM=3;
     public static final String[] GRAPH_NAMES={"막대","선 그래프","칸 막대","숫자만"};
@@ -91,16 +95,16 @@ public final class FloatPanel {
     /** The round gauge shape is on: square cells, a disc each, no window body. */
     public static boolean round(){return round(shape==OFF?lastShape:shape);}
     public static boolean round(int s){return s==ROUND;}
-    public static final int[] graphs={BAR,BAR,BAR,BAR,BAR,BAR};
+    public static final int[] graphs={BAR,BAR,BAR,BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
-    private static final float[][] hist=new float[MAX_CELLS][HIST];private static final int[] histHead=new int[MAX_CELLS],histN=new int[MAX_CELLS],histSig={-1,-1,-1,-1,-1,-1};
+    private static final float[][] hist=new float[MAX_CELLS][HIST];private static final int[] histHead=new int[MAX_CELLS],histN=new int[MAX_CELLS],histSig={-1,-1,-1,-1,-1,-1,-1};
     private static final long[] histAt=new long[MAX_CELLS];
     /** The highest reading per cell (최고값), for the readings where a peak means something (boost, rpm, speed, pedal,
      *  temperatures, G); G and yaw keep the largest size either way. It starts over when the cell's reading changes, or
      *  when the reading has been missing for PEAK_IDLE_MS (the car was off). */
     static final long PEAK_IDLE_MS=600000;
-    private static final float[] peak={Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN};private static final int[] peakSig={-1,-1,-1,-1,-1,-1};private static final long[] peakAt=new long[MAX_CELLS];
+    private static final float[] peak={Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN};private static final int[] peakSig={-1,-1,-1,-1,-1,-1,-1};private static final long[] peakAt=new long[MAX_CELLS];
     public static boolean peaks(int s){
         switch(s){case 0:case 1:case 2:case 7:case 9:case 10:case 11:case 12:case Telemetry.BOOST:case Telemetry.INTAKE:case Telemetry.ENGINE_LOAD:
             case Telemetry.THROTTLE_POS:case Telemetry.FUEL_RATE:case Telemetry.YAW:case Telemetry.STEERING_SPEED:case Telemetry.CLUTCH_ODD:case Telemetry.CLUTCH_EVEN:
@@ -192,6 +196,7 @@ public final class FloatPanel {
         if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
         if(s==MUSIC||strip(s))h=h*31+FloatMusic.key(strip(s)?now:-1);   // a scrolling 음악 띠 line moves every tick
+        if(s==VRPM&&musicStrip)h=h*31+(vrMusic(s)?FloatMusic.key(now):7);
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
@@ -214,7 +219,7 @@ public final class FloatPanel {
     /** Where the window starts (screen 800 × 480, below the 52 px status bar): the card and the side column top right, the strip bottom middle. */
     private static boolean bottom(int s){return s==STRIP||s==PILL||s==SHIFT||s==TICK;}
     public static int defaultX(int shape,int n,int size){return bottom(shape)?(800-width(shape,n,size))/2:800-width(shape,n,size)-8;}
-    public static int defaultY(int shape,int n,int size){return bottom(shape)?480-height(shape,n,size)-10:62;}
+    public static int defaultY(int shape,int n,int size){return shape==VRPM?(480-height(shape,n,size))/2:bottom(shape)?480-height(shape,n,size)-10:62;}
     /** The next cell count after the current one (1, 2, 4, 1 ...). */
     public static int nextCount(int n){return n>=4?1:n>=2?4:2;}
     /** The signal cell k shows: its choice, or the automatic one when it has none or this car lacks it (a DPF value on a
@@ -287,7 +292,7 @@ public final class FloatPanel {
         p.setStyle(Paint.Style.FILL);
     }
     private static final int[] SIG=new int[MAX_CELLS],G=new int[MAX_CELLS];
-    private static final FloatSkin.Cell[] LCELLS={new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell()};
+    private static final FloatSkin.Cell[] LCELLS={new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell()};
     /** A cell's texts and scale positions for a skin or a layout. */
     private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
         d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);d.sn="ko".equals(com.veloster.i18n.UiText.language())?d.name:d.en;   // skins in Korean too; only the 8-bit font keeps English
@@ -327,14 +332,16 @@ public final class FloatPanel {
         if(shape==MUSIC){colours();LAST_Q=q;drawNow=now;PASS=ALL;FloatMusic.shape(c,SIZES[clampSize(size)],n,q,sigs,first,rec,now);return;}   // drawn whole: its text changes every second
         body(c,shape,n,size,q,sigs,gs,first,rec,now);
         if(strip(shape))FloatMusic.strip(c,width(shape,n,size),bodyH(shape,n,size)+FloatMusic.GAP*SIZES[clampSize(size)],SIZES[clampSize(size)],now);
+        if(vrMusic(shape)){float[] b=FloatLayouts.rect(shape,n,6);float k=SIZES[clampSize(size)];if(b!=null)FloatMusic.box(c,b[0]*k,b[1]*k,b[2]*k,b[3]*k,k,now);}   // drawn each frame over the body
     }
     /** The window without the 음악 띠. */
     private static void body(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
-        colours();LAST_Q=q;drawNow=now;PASS=ALL;
+        colours();LAST_Q=q;drawNow=now;PASS=ALL;FloatLayouts.vrMusic=vrMusic(shape);
         if(still||!layerOn){parts(c,shape,n,size,q,sigs,gs,first,rec,now);return;}
         // partial redraw: what does not move is drawn once into a bitmap, again when anything it shows changes: the shape, count, size,
         // look, alpha, theme, language, or a cell's reading, graph, mode (a value or none yet, a peak or none, a line with history) or warning
-        int key=17;key=key*31+shape;key=key*31+n;key=key*31+size;key=key*31+skinNow();key=key*31+alpha;key=key*31+first;key=key*31+Theme.current().id.hashCode();
+        FloatLayouts.vrMusic=vrMusic(shape);
+        int key=17;key=key*31+shape;key=key*31+(FloatLayouts.vrMusic?1:0);key=key*31+n;key=key*31+size;key=key*31+skinNow();key=key*31+alpha;key=key*31+first;key=key*31+Theme.current().id.hashCode();
         for(int j=0;j<n;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);key=key*31+sig;key=key*31+gs[j];key=key*31+label(sig).hashCode();
             key=key*31+(Float.isNaN(frac(sig,v))?1:0)+(Float.isNaN(peak(i,sig))?2:0)+(gs[j]==LINE&&drawn(i,sig)?4:0)+8*Tiles.level(fmt(sig),v);}
         int bw=Math.max(1,width(shape,n,size)),bh=Math.max(1,bodyH(shape,n,size));

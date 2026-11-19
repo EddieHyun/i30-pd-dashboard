@@ -109,7 +109,7 @@ public final class FloatService extends Service implements Runnable {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
             |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|(hw?WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED:0),PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
         layout.gravity=Gravity.TOP|Gravity.LEFT;
-        layout.x=prefs().getInt("float_x_"+at,FloatPanel.defaultX(shape,n,size));layout.y=prefs().getInt("float_y_"+at,FloatPanel.defaultY(shape,n,size));
+        layout.x=prefs().getInt("float_x_"+at,FloatPanel.defaultX(shape,n,size));layout.y=prefs().getInt("float_y_"+at,FloatPanel.defaultY(shape,n,size));layout.x=Math.max(0,Math.min(800-w,layout.x));layout.y=Math.max(0,Math.min(480-h,layout.y));   // a saved place from a smaller window stays on screen
         final View v=new View(this){protected void onDraw(Canvas c){long t=System.nanoTime();
             FloatPanel.draw(c,shape,n,size,VehicleDash.floatSamples(n),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
             long d=System.nanoTime()-t;mDraws++;mDrawNs+=d;mDrawMax=Math.max(mDrawMax,d);mHwCanvas=c.isHardwareAccelerated();}};
