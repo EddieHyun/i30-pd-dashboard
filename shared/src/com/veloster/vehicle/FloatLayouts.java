@@ -225,9 +225,9 @@ final class FloatLayouts extends ClusterKit {
             for(int i=0;i<segs;i++){boolean on=rOk&&(i+.5f)/segs<rf;if(on&&!dy||!on&&!st)continue;   // the track is kept, the lit part drawn each frame
                 float t=(i+.5f)/segs,y1=bb-(i+1)*sh+k,y2=bb-i*sh-k;fill(c,bl,y1,br,y2,on?(t<.7f?acc:t<.85f?0xffffaa3c:0xffff4b3c):track);}   // the skin's accent, amber near the top, red at the redline end
             for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(4+i*VR_ROW)*k;
-                if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),10*k,y+16*k,8.5f*k,(VR_COL-20)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
-                if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,4*k,y+19*k,(VR_COL-8)*k,(VR_ROW-21)*k,k,a.quad,a.l4,a.t4,txt,div,bold);   // the wheels as a car seen from above
-                    else vu(c,a,10*k,y+46*k,19*k,(VR_COL-20)*k,k,Paint.Align.LEFT);}}
+                if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),8*k,y+12*k,8*k,(VR_COL-16)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
+                if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,2*k,y+14*k,(VR_COL-4)*k,(VR_ROW-15)*k,k,a.quad,a.l4,a.t4,txt,div,bold);   // the wheels as a car seen from above
+                    else vu(c,a,8*k,y+50*k,28*k,(VR_COL-14)*k,k,Paint.Align.LEFT);}}   // the value as large as the row allows (the name sits small above it)
             break;}
         case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it
             if(st){body(c,W,H,k,-1);fill(c,10*k,10*k,82*k,66*k,box);fill(c,10*k,70*k,82*k,73*k,track);}

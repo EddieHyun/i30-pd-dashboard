@@ -464,7 +464,13 @@ public final class FloatPanel {
      *  wheel's pressure beside its tyre (amber / red when low) and, when known, its temperature under it, small. Fits the box x,y,w,h. */
     static void tyres(Canvas c,float x,float y,float w,float h,float k,String[] v,int[] lv,String[] t,int ink,int line,Typeface face){
         boolean temps=t!=null&&(t[0].length()+t[1].length()+t[2].length()+t[3].length())>0;
-        float s=Math.min(14*k,h/2.5f),ts=s*.66f,cx=x+w/2,aw=Math.min(w*.09f,8*k),tw=Math.max(3*k,s*.3f),th=s*1.05f;
+        float s=Math.min(18*k,h/2.35f),aw=Math.min(w*.09f,8*k);
+        // fit the width: the temperatures go first (a narrow column), then the numbers shrink
+        float need=2*aw+2*(Math.max(width(v[0],s,face),width(v[1],s,face))+Math.max(3*k,s*.3f)+4*k);
+        float tws=0;if(temps)for(int i=0;i<4;i++)tws=Math.max(tws,width(t[i],s*.62f,Typeface.DEFAULT));
+        if(temps&&need+2*(tws+2*k)>w)temps=false;else if(temps)need+=2*(tws+2*k);
+        if(need>w)s*=w/need;
+        float ts=s*.62f,cx=x+w/2,tw=Math.max(3*k,s*.3f),th=s*1.05f;
         float ty=y+h*.30f,by=y+h*.78f;   // the axles' heights; each wheel's numbers sit on its axle's line, the temperature on the outside
         float lw=Math.max(1,1.4f*k);fill(c,cx-aw,ty-lw/2,cx+aw,ty+lw/2,line);fill(c,cx-aw,by-lw/2,cx+aw,by+lw/2,line);fill(c,cx-lw/2,ty,cx+lw/2,by,line);   // the H on its side
         for(int i=0;i<4;i++){boolean right=i%2==1;float ay=i<2?ty:by,tx=right?cx+aw:cx-aw;int col=lv[i]==2?HOT:lv[i]==1?WARM:ink;
