@@ -3,8 +3,9 @@ package com.veloster.vehicle;
 import java.util.Random;
 
 /**
- * 앞차 피하기 on the Arcade screen while the car is parked: speed 0 in P (a 6MT: the park brake), the brake held for the
- * countdown (3 2 1, released = called off), then the road runs on its own and the steering wheel dodges the cars ahead.
+ * 장애물 피하기 (was 앞차 피하기) on the Arcade screen while the car is parked: speed 0 in P (a 6MT: the park brake), the brake held for the
+ * countdown (3 2 1, released = called off), then the road runs on its own and the steering wheel dodges what stands on it:
+ * traffic cones, drums and barricades (they stand still, so they come up at the car's own speed).
  * The wheel counts to ±90° (past that it is the same); the brake pedal slows down once it has been let go after GO. Three
  * hits end it; holding the brake again starts over. Any roll or leaving P drops straight back to the plain Arcade view.
  * Positions are in the Arcade scene's scroll units (the road bands; about 1.5 of them from the camera to the player's car),
@@ -18,6 +19,10 @@ final class ArcadeGame {
     /** Where the player's car sits ahead of the camera, in scroll units: a car there in the same lane is a hit. */
     static final float NEAR=0.9f,FAR=2.3f,HIT_X=0.42f;
     static final int CARS=10;
+    /** Obstacle kinds (carCol): a traffic cone, a drum, a barricade. HIT by kind: the player's half width plus the obstacle's, scaled
+     *  like the old car-to-car HIT_X (a car is 81 art px; cone 20, drum 26, barricade 68). */
+    static final int CONE=0,DRUM=1,BARRIER=2,KINDS=3;
+    static final float[] HIT={0.26f,0.28f,0.39f};
     int state=IDLE,hp;
     long at;   // when the state began
     float pos,x,speed,dist,curve,target,segLeft,best;
@@ -52,14 +57,14 @@ final class ArcadeGame {
         curve+=(target-curve)*Math.min(1,dt*0.8f);
         x+=steer*dt*2.2f*Math.max(0.25f,speed);x-=curve*0.8f*speed*speed*dt;x=Math.max(-2.2f,Math.min(2.2f,x));
         pos+=speed*RATE*dt;dist+=speed*TOP_KMH/3600*dt;
-        for(int i=0;i<CARS;i++){carM[i]+=carV[i]*RATE*dt;if(carM[i]<pos-3)place(i,pos+40+rnd.nextFloat()*60);
+        for(int i=0;i<CARS;i++){carM[i]+=carV[i]*RATE*dt;if(carM[i]<pos-3)place(i,pos+60+rnd.nextFloat()*90);
             float d=carM[i]-pos;
-            if(d>NEAR&&d<FAR&&Math.abs(x-(carLane[i]-1)*LANE)<HIT_X&&now-hitAt>1200){hitAt=now;hp--;speed=carV[i]*0.6f;carM[i]=pos+FAR+4;   // knocked ahead, not left sitting on the player's car
+            if(d>NEAR&&d<FAR&&Math.abs(x-(carLane[i]-1)*LANE)<HIT[carCol[i]]&&now-hitAt>1200){hitAt=now;hp--;speed*=0.4f;carM[i]=pos-4;   // knocked aside: gone from the road, the car slowed
                 if(hp<=0){state=OVER;at=now;brakeArmed=false;if(dist>best)best=dist;}}}
     }
     private void start(long now){
         state=PLAY;at=now;hp=3;pos=0;x=0;speed=0;dist=0;curve=0;target=0;segLeft=20;brakeArmed=false;hitAt=Long.MIN_VALUE/2;
-        for(int i=0;i<CARS;i++)place(i,12+i*9+rnd.nextFloat()*4);
+        for(int i=0;i<CARS;i++)place(i,14+i*13+rnd.nextFloat()*5);   // standing obstacles close in at full speed: further apart than the old moving cars
     }
-    private void place(int i,float m){carM[i]=m;carLane[i]=rnd.nextInt(3);carV[i]=0.35f+rnd.nextFloat()*0.25f;carCol[i]=rnd.nextInt(4);}
+    private void place(int i,float m){carM[i]=m;carLane[i]=rnd.nextInt(3);carV[i]=0;carCol[i]=rnd.nextInt(KINDS);}
 }

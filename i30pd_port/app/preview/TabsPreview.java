@@ -313,6 +313,11 @@ public final class TabsPreview {
                 boolean shot=si<4&&e==gAt[si];if(shot)new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
                 pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
                 if(shot)ImageIO.write(img,"png",new File(out,"x_arcade_game_"+shots[si++]+".png"));}
+            if(pk.game.state==ArcadeGame.PLAY){   // the three obstacles side by side: a cone, a drum, a barricade
+                for(int i=0;i<ArcadeGame.CARS;i++)pk.game.carM[i]=pk.game.pos+60+i*3;float[] obAt={3.4f,4.6f,6.2f};
+                for(int i=0;i<3;i++){pk.game.carM[i]=pk.game.pos+obAt[i];pk.game.carLane[i]=i;pk.game.carCol[i]=i;}pk.game.x=0;pk.game.hitAt=Long.MIN_VALUE/2;
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                pk.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t+20,null);ImageIO.write(img,"png",new File(out,"x_arcade_game_obstacles.png"));}
             for(int k=0;k<3&&pk.game.state==ArcadeGame.PLAY;k++){for(int i=0;i<ArcadeGame.CARS;i++)pk.game.carM[i]=pk.game.pos+30+i*3;pk.game.carM[0]=pk.game.pos+1.6f;pk.game.carLane[0]=1;pk.game.carV[0]=0;pk.game.x=0;pk.game.hitAt=Long.MIN_VALUE/2;
                 t+=40;pk.frame(new android.graphics.Canvas(new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB).createGraphics()),q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
                 if(k==0){t+=40;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());new PitRenderer().draw(c,800,480,false,model,now,0,false,null);

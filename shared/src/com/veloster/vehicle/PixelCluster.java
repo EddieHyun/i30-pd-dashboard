@@ -22,8 +22,8 @@ import java.util.Locale;
  * plays (EngineSynth.flames), by the lift itself when it is off.
  * Static art (both cars per lamp state, skyline and hill strips per sky, hearts, the headlamp beam) is painted once into
  * small bitmaps and stamped; the chase road stays one rectangle per row (about 200), the rest is a few dozen calls.
- * Parked in P (a 6MT: the park brake) with the brake held, the Arcade view counts down into 앞차 피하기 (ArcadeGame): the
- * road runs on its own, cars come up in three lanes and the steering wheel dodges them; any roll ends it.
+ * Parked in P (a 6MT: the park brake) with the brake held, the Arcade view counts down into 장애물 피하기 (ArcadeGame): the
+ * road runs on its own, cones, drums and barricades stand in three lanes and the steering wheel dodges them; any roll ends it.
  */
 final class PixelCluster extends ClusterKit {
     private static final int K=0xff17191d,K2=0xff2a2d33,SV=0xffc9ced4,
@@ -175,9 +175,14 @@ final class PixelCluster extends ClusterKit {
     /** 앞차 피하기 (Arcade view only); parkedNow: speed 0 in P / park brake this frame (the HUD's hint). */
     final ArcadeGame game=new ArcadeGame(7);
     private boolean parkedNow;
-    /** The game's other cars: red, white, orange, black (CarPaint indices), baked once facing ahead. */
-    private static final int[] TRAFFIC={2,1,8,3};
-    private final Bitmap[] trafficCar=new Bitmap[TRAFFIC.length];
+    /** The game's obstacles (ArcadeGame kinds): a cone, a drum, a barricade, in pixel art at half the car art's resolution
+     *  (one art pixel = two of the car's), baked once. */
+    private static final String[] CONE_ART={"....oo....","....oo....","...oOOO...","...wWWW...","...wWWW...","..oOOOOO..","..oOOOOO..","..wWWWWW..","..wWWWWW..",
+        ".oOOOOOOO.",".oOOOOOOO.","KKKKKKKKKK","KKKKKKKKKK"};
+    private static final String[] DRUM_ART={".KKKKKKKKKKK.","oOOOOOOOOOOOO","oOOOhOOOOOOOO","oOOOhOOOOOOOO","wWWWWWWWWWWWW","wWWWWWWWWWWWW","oOOOhOOOOOOOO","oOOOhOOOOOOOO",
+        "oOOOhOOOOOOOO","wWWWWWWWWWWWW","wWWWWWWWWWWWW","oOOOhOOOOOOOO","oOOOhOOOOOOOO","oOOOOOOOOOOOO",".KKKKKKKKKKK.",".KKKKKKKKKKK."};
+    private static final int BAR_W=34,BAR_H=20;
+    private final Bitmap[] trafficCar=new Bitmap[ArcadeGame.KINDS];
     /** Chase car's sideways offset in lo-res pixels (+ right), eased toward the steering. */
     private float sway;
 
@@ -527,20 +532,30 @@ final class PixelCluster extends ClusterKit {
         if(mode==ECO)for(int i=0;i<3;i++){float ag=((now/90+i*11)%32)/32f;int side=i%2==0?-1:1;   // ECO: leaves kicked off the rear wheels: a hop, then out and toward the camera (growing)
             leaf(c,ox+24+side*(20+ag*60),oy+34-(float)Math.sin(ag*Math.PI)*12+ag*6,i,ag<0.5f?1:2);}
     }
-    /** The game's cars on the road, far to near, at the roadside lamps' depth scale, each in its lane and sized to the road. */
+    /** The game's obstacles on the road, far to near, at the roadside lamps' depth scale, each in its lane and sized to the road
+     *  (two car-art pixels per obstacle-art pixel, so a cone is a quarter of a car wide). */
     private void traffic(Canvas c,int hz,int bottom,float[] rowX,float[] rowW){
         Integer[] order=new Integer[ArcadeGame.CARS];for(int i=0;i<order.length;i++)order[i]=i;
         java.util.Arrays.sort(order,new java.util.Comparator<Integer>(){public int compare(Integer a,Integer b){return Float.compare(game.carM[b],game.carM[a]);}});
         for(int i:order){float z=(game.carM[i]-scroll)/3*2;if(z<0.75f||z>14)continue;
             float y=hz+(bottom-hz)/z;if(y>bottom)continue;int yi=Math.round(y);
-            float k=rowW[yi]/190f,w=ArcadeCarFrames.W*k,h=ArcadeCarFrames.H*k,cx=rowX[yi]+(game.carLane[i]-1)*ArcadeGame.LANE*rowW[yi]/2;
-            Bitmap b=trafficCar(game.carCol[i]);blit(c,b,0,0,b.getWidth(),b.getHeight(),(cx-w/2)*4,52+(y-h)*4,(cx+w/2)*4,52+y*4);}
+            Bitmap b=obstacle(game.carCol[i]);
+            float k=rowW[yi]/190f*2,w=b.getWidth()*k,h=b.getHeight()*k,cx=rowX[yi]+(game.carLane[i]-1)*ArcadeGame.LANE*rowW[yi]/2;
+            blit(c,b,0,0,b.getWidth(),b.getHeight(),(cx-w/2)*4,52+(y-h)*4,(cx+w/2)*4,52+y*4);}
     }
-    private Bitmap trafficCar(int k){
-        if(trafficCar[k]==null){int b0=B,b1=BH,b2=BD,b3=BS;int[] b=CarPaint.body(TRAFFIC[k]);B=b[0];BH=b[1];BD=b[2];BS=b[3];
-            trafficCar[k]=bake(ArcadeCarFrames.W,ArcadeCarFrames.H,new Art(){public void paint(Canvas d){arcadeArt(d,6,false,false,false,true);}});
-            B=b0;BH=b1;BD=b2;BS=b3;}
-        return trafficCar[k];
+    private Bitmap obstacle(final int kind){
+        if(trafficCar[kind]==null){
+            final int O=0xffff7a1a,o=0xffd85a0a,h=0xffffa860,W2=0xfff4f4f4,w=0xffc8c8c8,K=0xff2a2a30,R=0xffe03030,G=0xff8a8a90,Y=0xffffc030;
+            if(kind==ArcadeGame.BARRIER)trafficCar[kind]=bake(BAR_W,BAR_H,new Art(){public void paint(Canvas d){
+                px(d,BAR_W/2-1,0,2,2,Y);   // the warning lamp on top
+                for(int y=2;y<10;y++)for(int x=0;x<BAR_W;x++)px(d,x,y,1,1,x==0||x==BAR_W-1||y==2||y==9?K:((x+y)/4)%2==0?R:W2);
+                for(int y=10;y<18;y++){px(d,4,y,2,1,G);px(d,BAR_W-6,y,2,1,G);}
+                px(d,2,18,6,2,K);px(d,BAR_W-8,18,6,2,K);}});
+            else{final String[] art=kind==ArcadeGame.CONE?CONE_ART:DRUM_ART;
+                trafficCar[kind]=bake(art[0].length(),art.length,new Art(){public void paint(Canvas d){
+                    for(int y=0;y<art.length;y++)for(int x=0;x<art[y].length();x++){char ch=art[y].charAt(x);
+                        int col=ch=='O'?O:ch=='o'?o:ch=='h'?h:ch=='W'?W2:ch=='w'?w:ch=='K'?K:0;if(col!=0)px(d,x,y,1,1,col);}}});}}
+        return trafficCar[kind];
     }
     /** Plate box per frame {x0,x1,y0,y1} from the frames' plate codes (20 rim, 21 face). */
     private static int[][] plateBox;
