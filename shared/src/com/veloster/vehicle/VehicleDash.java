@@ -377,13 +377,13 @@ public final class VehicleDash extends View implements Runnable {
             int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
             FloatPanel.corner=FloatPanel.CORNER_THEME;FloatPanel.color=FloatPanel.COLOR_THEME;   // the 모서리 / 색 rows are gone: the theme's (an earlier pick is ignored)
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too
-            for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=FloatPanel.quad(v)||v>=0&&v<Telemetry.LABELS.length?v:-1;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
+            for(int k=0;k<FloatPanel.MAX_CELLS;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=FloatPanel.quad(v)||v>=0&&v<Telemetry.LABELS.length?v:-1;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
         e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).putBoolean("float_music_strip",FloatPanel.musicStrip).remove("float_style")
          .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin);
-        for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
+        for(int k=0;k<FloatPanel.MAX_CELLS;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
     public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}
     private static final Telemetry.Sample[] FLOAT_Q=new Telemetry.Sample[Telemetry.LABELS.length];

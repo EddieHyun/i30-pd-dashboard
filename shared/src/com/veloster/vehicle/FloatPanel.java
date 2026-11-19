@@ -19,10 +19,14 @@ public final class FloatPanel {
     public static final int PILL=FloatLayouts.PILL,HERO=FloatLayouts.HERO,GEARBOX=FloatLayouts.GEAR,DIAG=FloatLayouts.DIAG,DIAL=FloatLayouts.DIAL,SHIFT=FloatLayouts.SHIFT,TICK=FloatLayouts.TICK,FILLS=FloatLayouts.FILLS,BARS=FloatLayouts.BARS,TWIN=FloatLayouts.TWIN,WEDGE=FloatLayouts.WEDGE,TOWER=FloatLayouts.TOWER;
     /** 음악: album art, the track and its progress, with one or two readings and the gear (FloatMusic). */
     public static final int MUSIC=FloatLayouts.LAST+1;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악"};
+    /** 세로 띠 + RPM: six readings stacked, a full-height rpm bar on the right (FloatLayouts.VRPM; numbered after 음악 so saved choices keep their meaning). */
+    public static final int VRPM=FloatLayouts.VRPM;
+    /** Readings a window can hold (세로 띠 + RPM shows six). */
+    public static final int MAX_CELLS=6;
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악","세로 띠 + RPM"};
     /** The 모양 sheet's order; SettingsLayout.FORM_SLOTS puts each on its 5 x 4 grid. */
-    public static final int[] FORMS={CARD,STRIP,SIDE,TICK, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL,MUSIC, GEARBOX,TOWER,SHIFT,WEDGE};
-    public static final int LAST_SHAPE=MUSIC;
+    public static final int[] FORMS={CARD,STRIP,SIDE,TICK,VRPM, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL,MUSIC, GEARBOX,TOWER,SHIFT,WEDGE};
+    public static final int LAST_SHAPE=VRPM;
     /** 음악 띠: the playing track in a strip under the window, any shape but 음악. */
     public static volatile boolean musicStrip;
     /** The window shows the track (FloatService then keeps the media receiver up while the dashboard is away). */
@@ -30,7 +34,7 @@ public final class FloatPanel {
     /** The track and its album art (null for none) for the next tick and draw. */
     public static void music(MediaState.Snapshot track,android.graphics.Bitmap art){FloatMusic.track=track;FloatMusic.art=art;}
     private static boolean strip(int s){return musicStrip&&s>OFF&&s!=MUSIC;}
-    public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST;}
+    public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST||s==VRPM;}
     /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
     public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND&&s!=MUSIC;}
     /** The cell counts shape s fills without a hole; the settings offer these only. */
@@ -53,12 +57,12 @@ public final class FloatPanel {
         Telemetry.ENGINE_LOAD,10,Telemetry.CLUTCH_ODD,Telemetry.CLUTCH_EVEN,Telemetry.DPF_SOOT,Telemetry.DPF_TEMP};
     public static final String[] CHOICE_NAMES={"부스트","냉각수","흡기","배터리","페달","속도","RPM","외기온","연료","엔진 부하","브레이크","클러치 홀수","클러치 짝수","DPF 포집","DPF 온도"};
     /** -1 = automatic: boost, coolant, intake, battery; a diesel shows its DPF soot in the third. */
-    public static final int[] AUTO_PETROL={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE},AUTO_DIESEL={Telemetry.BOOST,2,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE};
+    public static final int[] AUTO_PETROL={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD},AUTO_DIESEL={Telemetry.BOOST,2,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD};
     public static volatile int shape=OFF,count=4,size=1;
     /** The shape the 켬 switch brings back (the window was switched off from it). */
     public static volatile int lastShape=CARD;
     public static volatile boolean hideButton=true;
-    public static final int[] cells={-1,-1,-1,-1};
+    public static final int[] cells={-1,-1,-1,-1,-1,-1};
     /** Each cell's graph: a bar under the value, the last 30 s as a line, a row of lit segments (LED), or the number alone. */
     public static final int BAR=0,LINE=1,LED=2,NUM=3;
     public static final String[] GRAPH_NAMES={"막대","선 그래프","칸 막대","숫자만"};
@@ -87,16 +91,16 @@ public final class FloatPanel {
     /** The round gauge shape is on: square cells, a disc each, no window body. */
     public static boolean round(){return round(shape==OFF?lastShape:shape);}
     public static boolean round(int s){return s==ROUND;}
-    public static final int[] graphs={BAR,BAR,BAR,BAR};
+    public static final int[] graphs={BAR,BAR,BAR,BAR,BAR,BAR};
     /** The line graph's memory: per cell the last HIST samples, one every HIST_MS (30 s); cleared when the cell's signal changes. */
     static final int HIST=60;static final long HIST_MS=500,HIST_GAP_MS=5000;
-    private static final float[][] hist=new float[4][HIST];private static final int[] histHead=new int[4],histN=new int[4],histSig={-1,-1,-1,-1};
-    private static final long[] histAt=new long[4];
+    private static final float[][] hist=new float[MAX_CELLS][HIST];private static final int[] histHead=new int[MAX_CELLS],histN=new int[MAX_CELLS],histSig={-1,-1,-1,-1,-1,-1};
+    private static final long[] histAt=new long[MAX_CELLS];
     /** The highest reading per cell (최고값), for the readings where a peak means something (boost, rpm, speed, pedal,
      *  temperatures, G); G and yaw keep the largest size either way. It starts over when the cell's reading changes, or
      *  when the reading has been missing for PEAK_IDLE_MS (the car was off). */
     static final long PEAK_IDLE_MS=600000;
-    private static final float[] peak={Float.NaN,Float.NaN,Float.NaN,Float.NaN};private static final int[] peakSig={-1,-1,-1,-1};private static final long[] peakAt=new long[4];
+    private static final float[] peak={Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN};private static final int[] peakSig={-1,-1,-1,-1,-1,-1};private static final long[] peakAt=new long[MAX_CELLS];
     public static boolean peaks(int s){
         switch(s){case 0:case 1:case 2:case 7:case 9:case 10:case 11:case 12:case Telemetry.BOOST:case Telemetry.INTAKE:case Telemetry.ENGINE_LOAD:
             case Telemetry.THROTTLE_POS:case Telemetry.FUEL_RATE:case Telemetry.YAW:case Telemetry.STEERING_SPEED:case Telemetry.CLUTCH_ODD:case Telemetry.CLUTCH_EVEN:
@@ -120,7 +124,7 @@ public final class FloatPanel {
     /** Where a reading's bar starts: the middle for a centred one, the left end otherwise. */
     static float zero(int sig){return centred(sig)?.5f:fmt(sig)==Telemetry.BOOST?VAC:0;}
     /** Cell k's highest reading so far, or NaN. */
-    static float peak(int k,int sig){return !still&&k>=0&&k<4&&peakSig[k]==sig?peak[k]:Float.NaN;}
+    static float peak(int k,int sig){return !still&&k>=0&&k<MAX_CELLS&&peakSig[k]==sig?peak[k]:Float.NaN;}
     /** Drawing the settings' example window: no peaks (they belong to the real readings). */
     private static boolean still;
     /** A still picture is being drawn (the settings' previews): the 음악 line does not scroll there. */
@@ -279,8 +283,8 @@ public final class FloatPanel {
             edge.close();if(pass==1){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(line);}c.drawPath(edge,p);}
         p.setStyle(Paint.Style.FILL);
     }
-    private static final int[] SIG=new int[4],G=new int[4];
-    private static final FloatSkin.Cell[] LCELLS={new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell()};
+    private static final int[] SIG=new int[MAX_CELLS],G=new int[MAX_CELLS];
+    private static final FloatSkin.Cell[] LCELLS={new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell(),new FloatSkin.Cell()};
     /** A cell's texts and scale positions for a skin or a layout. */
     private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
         d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);d.sn="ko".equals(com.veloster.i18n.UiText.language())?d.name:d.en;   // skins in Korean too; only the 8-bit font keeps English
