@@ -307,7 +307,7 @@ public final class PitRenderer {
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
-                    else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";value=soundOn?"켬":"끔";}
+                    else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";sub="항상 = 플로팅 창에서도";value=!soundOn?"끔":SettingsLayout.floatSound?"항상":"계기판";}
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}

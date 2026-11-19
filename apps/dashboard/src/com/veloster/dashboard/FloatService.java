@@ -90,7 +90,7 @@ public final class FloatService extends Service implements Runnable {
         boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
         if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
-        VehicleDash.chimeTick();VehicleDash.shiftTick();
+        VehicleDash.floatUp=panel!=null;VehicleDash.chimeTick();VehicleDash.shiftTick();VehicleDash.soundTick();
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}
@@ -164,7 +164,7 @@ public final class FloatService extends Service implements Runnable {
         try{sendBroadcast(new Intent(HIDE_ACTION).setPackage(HUB).putExtra("hide",on));}catch(RuntimeException ignored){/* 내 앱 not installed */}
     }
     public void onDestroy(){
-        alive=false;Choreographer.getInstance().removeFrameCallback(frame);handler.removeCallbacks(this);remove();
+        alive=false;Choreographer.getInstance().removeFrameCallback(frame);handler.removeCallbacks(this);remove();VehicleDash.floatUp=false;VehicleDash.soundTick();   // the engine sound stops with the window (unless the dashboard is back)
         wanted=false;if(client!=null){if(!DashboardActivity.resumed)client.stop();client=null;}
         super.onDestroy();
     }

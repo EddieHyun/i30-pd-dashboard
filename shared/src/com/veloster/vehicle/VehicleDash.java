@@ -157,7 +157,7 @@ public final class VehicleDash extends View implements Runnable {
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
         sound=new EngineSound(a.getApplicationContext(),DATA);beep=new ShiftBeep(a);
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=beepOn&&p.getBoolean("float_beep",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=beepOn&&p.getBoolean("float_beep",false);SettingsLayout.floatSound=p.getBoolean("engine_sound",false)&&p.getBoolean("float_sound",false);
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
             beepVol=Math.max(0,Math.min(100,p.getInt("shift_beep_vol",70)));
             downScope=Math.max(0,Math.min(SettingsLayout.DOWN_SCOPES.length-1,p.getInt("downshift_scope",0)));
@@ -393,6 +393,12 @@ public final class VehicleDash extends View implements Runnable {
         FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */
+    /** The floating window is up (FloatService): with 엔진 사운드 = 항상 the engine sound goes on while the dashboard is away. */
+    public static volatile boolean floatUp;
+    private boolean soundWanted(){return soundOn&&(resumed&&getVisibility()==VISIBLE||floatUp&&SettingsLayout.floatSound&&!resumed);}
+    /** The floating window's tick: starts or stops the engine sound as soundWanted says (the dashboard's own loop may not run while
+     *  it is stopped). Needs the dashboard to have been opened once since boot: the sound belongs to its view. */
+    public static void soundTick(){VehicleDash d=current.get();if(d==null||d.sound==null)return;d.sound.play(d.soundWanted()?d.soundRoute:-1);}
     public static void chimeTick(){
         VehicleDash d=current.get();if(d==null||d.beep==null||SpeedChime.kmh<=0)return;
         long now=SystemClock.elapsedRealtime();Telemetry.Sample sp=DATA.sample(7,now);
@@ -446,7 +452,7 @@ public final class VehicleDash extends View implements Runnable {
         long tick=SystemClock.elapsedRealtime();
         if(resumed&&!standalone&&tick-lastPolicyCheck>=1000){lastPolicyCheck=tick;int status=RegulationState.read(activity);if(status>=0)policy(status==1,"service");}
         tryRequestedEntry();
-        sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);
+        sound.play(soundWanted()?soundRoute:-1);
         {int ck=EcoCluster.clink;if(ck!=0){EcoCluster.clink=0;   // a coin reaches the road on the 에코 screen (negative: its bounce)
             if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*EcoCluster.clinkGain);}}
         {int ck=CassetteCluster.cue;if(ck!=0){CassetteCluster.cue=0;   // a key of the 카세트 screen: latched, released or tapped
@@ -634,7 +640,8 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==SettingsLayout.SOUND_CLICK){CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);
                         if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;}   // a sample click
                     if(i==SettingsLayout.SOUND_FAST){EngineSound.fast=!EngineSound.fast;e.putBoolean("engine_sound_fast",EngineSound.fast);sound.play(-1);}   // the block size is read when the thread starts: stop it here, the play() below starts it again
-                    else if(i==SettingsLayout.SOUND_ON)soundOn=!soundOn;
+                    else if(i==SettingsLayout.SOUND_ON){boolean was=soundOn;SettingsLayout.floatSound=soundOn&&!SettingsLayout.floatSound;soundOn=!was||SettingsLayout.floatSound;   // 끔 -> 계기판 -> 항상 -> 끔, like 변속 알림음
+                        e.putBoolean("float_sound",SettingsLayout.floatSound);}
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
                     else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();
                     else if(i==SettingsLayout.SOUND_EXHAUST)soundExhaust=(soundExhaust+1)%EngineSynth.exhausts();
@@ -642,7 +649,7 @@ public final class VehicleDash extends View implements Runnable {
                         int sv=i-SettingsLayout.SOUND_VOLUME;soundVals[sv]=SettingsLayout.soundStep(i,soundVals[sv],z);e.putInt(SOUND_KEYS[sv],soundVals[sv]);}
                     applySound();
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
-                    sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
+                    sound.play(soundWanted()?soundRoute:-1);break;
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}

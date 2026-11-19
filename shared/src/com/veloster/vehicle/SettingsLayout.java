@@ -21,6 +21,8 @@ public final class SettingsLayout {
     /** 변속 알림음's third step, 항상 (pref float_beep): the beep and the downshift sounds also while only the floating
      *  window is up (VehicleDash.shiftTick). Set with the beep on; the row steps 끔 -> 계기판 -> 항상 -> 끔. */
     static volatile boolean floatBeep;
+    /** 엔진 사운드 = 항상: it goes on while the floating window is up (the dashboard away), not only on the dashboard. */
+    static volatile boolean floatSound;
     public static final String[] DOWN_SCOPES={"람다 · RPM","람다 · RPM · 레이스 · F1 · 퍼포먼스","모든 화면"};
     /** Whether screen (ClusterPicker index) is in downshift-sound scope s: 람다 and RPM (its dial shows the downshift targets) always, the rev-match screens (F1,
      *  퍼포먼스, 레이스: their rpm turns green on a match too) from 1, every screen at 2. */
