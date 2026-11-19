@@ -393,6 +393,18 @@ public final class VehicleDash extends View implements Runnable {
         FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */
+    /** '내 앱' 계기판에서 숨김: while the dashboard is on screen it asks 내 앱 to hide its edge button (again every 20 s; 내 앱 brings
+     *  it back by itself 75 s after the last ask), and to bring it back when it leaves. 내 앱 decides (its option, default off). */
+    private boolean dashHideSent;private long dashHideAt;
+    private void dashHide(long now){
+        boolean want=resumed&&getVisibility()==VISIBLE&&!standalone;
+        if(want&&(!dashHideSent||now-dashHideAt>=20000)){dashHideSent=true;dashHideAt=now;dashHideSend(true);}
+        else if(!want&&dashHideSent){dashHideSent=false;dashHideSend(false);}
+    }
+    private void dashHideSend(boolean on){
+        try{activity.sendBroadcast(new android.content.Intent("com.veloster.carplayhub.QUICK_ENTRY_HIDE").setPackage("com.veloster.carplayhub").putExtra("hide",on).putExtra("from","dashboard"));}
+        catch(RuntimeException ignored){/* 내 앱 not installed */}
+    }
     /** The floating window is up (FloatService): with 엔진 사운드 = 항상 the engine sound goes on while the dashboard is away. */
     public static volatile boolean floatUp;
     private boolean soundWanted(){return soundOn&&(resumed&&getVisibility()==VISIBLE||floatUp&&SettingsLayout.floatSound&&!resumed);}
@@ -453,6 +465,7 @@ public final class VehicleDash extends View implements Runnable {
         if(resumed&&!standalone&&tick-lastPolicyCheck>=1000){lastPolicyCheck=tick;int status=RegulationState.read(activity);if(status>=0)policy(status==1,"service");}
         tryRequestedEntry();
         sound.play(soundWanted()?soundRoute:-1);
+        dashHide(tick);
         {int ck=EcoCluster.clink;if(ck!=0){EcoCluster.clink=0;   // a coin reaches the road on the 에코 screen (negative: its bounce)
             if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*EcoCluster.clinkGain);}}
         {int ck=CassetteCluster.cue;if(ck!=0){CassetteCluster.cue=0;   // a key of the 카세트 screen: latched, released or tapped

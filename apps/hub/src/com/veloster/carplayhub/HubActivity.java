@@ -202,6 +202,8 @@ public final class HubActivity extends Activity {
         heading(right,UiText.t("설정"));
         int mode=QuickEntryService.mode(this);
         settingRow(right,UiText.t("바로가기 버튼"),QuickEntryService.status(this),mode!=QuickEntryPolicy.OFF,new Runnable(){public void run(){quickEntry();}});
+        final boolean hod=QuickEntryService.hideOnDash(this);
+        settingRow(right,UiText.t("계기판에서 숨김"),UiText.t(hod?"켬":"끔"),hod,new Runnable(){public void run(){hideOnDash();}});
         String star=StarKey.status(this);
         settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),new Runnable(){public void run(){starKey();}});
         TextView help=label(UiText.t("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요."),14,MUT,false);
@@ -228,6 +230,15 @@ public final class HubActivity extends Activity {
                 new AlertDialog.Builder(HubActivity.this).setMessage(UiText.t("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again."))
                     .setPositiveButton(UiText.t("설정으로 / Back"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){quickEntry();}}).show();
             }}).show();
+    }
+    /** 계기판에서 숨김: the edge button steps aside while the dashboard is on screen. */
+    private void hideOnDash(){
+        final boolean on=QuickEntryService.hideOnDash(this);
+        new AlertDialog.Builder(this).setTitle(UiText.t("계기판에서 숨김"))
+            .setMessage(UiText.t("계기판이 보이는 동안 바로가기 버튼을 숨깁니다."))
+            .setPositiveButton(UiText.t(on?"끄기":"켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
+                QuickEntryService.hideOnDash(HubActivity.this,!on);recreate();}})
+            .setNegativeButton(UiText.t("취소"),null).show();
     }
     private void starKey(){
         new AlertDialog.Builder(this).setTitle(UiText.t("☆ 버튼 → 계기판"))
