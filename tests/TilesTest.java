@@ -51,6 +51,7 @@ public final class TilesTest {
         check("ON".equals(Tiles.text(Telemetry.PARK_BRAKE,1))&&"13.8".equals(Tiles.text(Telemetry.BAT_VOLTAGE,13.8f)),"words and decimals");
         check(Tiles.level(2,105)==1&&Tiles.level(2,112)==2&&Tiles.level(Telemetry.TPMS_FL,28)==1&&Tiles.level(Telemetry.CLUTCH_ODD,190)==2,"warning levels");
         check(Math.abs(Tiles.fraction(2,80)-0.5f)<1e-6&&Float.isNaN(Tiles.fraction(Telemetry.ODOMETER,1000)),"bars");
+        check(Tiles.fraction(10,50)==0.5f&&Tiles.fraction(Telemetry.BAT_VOLTAGE,12.5f)==0.5f,"brake pressure and battery voltage have a bar");
         System.out.println("PASS "+checks+" tile checks");
     }
     private static boolean contains(int[] a,int v){for(int x:a)if(x==v)return true;return false;}

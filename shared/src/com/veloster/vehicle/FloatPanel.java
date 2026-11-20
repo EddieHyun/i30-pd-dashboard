@@ -256,7 +256,7 @@ public final class FloatPanel {
     /** A cell's value: the reading, or for 4 wheels the lowest pressure / the highest temperature. */
     static float value(Telemetry.Sample[] q,int sig){
         if(sig==DCT2){float a=value(q,Telemetry.CLUTCH_ODD),b=value(q,Telemetry.CLUTCH_EVEN);return Float.isNaN(a)?b:Float.isNaN(b)?a:Math.max(a,b);}
-        if(!quad(sig)){if(sig<0||sig>=q.length)return Float.NaN;Telemetry.Sample m=q[sig];return m!=null&&m.valid?m.value:Float.NaN;}
+        if(!quad(sig)){if(sig<0||sig>=q.length)return Float.NaN;Telemetry.Sample m=q[sig];return m!=null&&m.valid?Telemetry.displayValue(sig,m.value):Float.NaN;}   // as the dashboard shows it: corrected speed, steering sign
         float r=Float.NaN;for(int w=0;w<4;w++){Telemetry.Sample m=q[quadSig(sig,w)];if(m==null||!m.valid)continue;float v=m.value;r=Float.isNaN(r)?v:sig==QUAD_P?Math.min(r,v):Math.max(r,v);}
         return r;}
     /** A cell's value as shown: both clutches as "odd·even", else the reading's text. */
