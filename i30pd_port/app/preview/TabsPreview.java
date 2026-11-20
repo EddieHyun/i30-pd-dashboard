@@ -107,7 +107,7 @@ public final class TabsPreview {
         int[] tl={9,11,13,8,10,6,5};String[] tn={"night","engine","warp","gcircle","drag","8bit","hud"};
         for(int ti=0;ti<tl.length;ti++){rec.setPage(PitRenderer.PAGE_CLASSIC+tl[ti]);save(out,"z_theme_"+tn[ti]+"_copper",rec,model,now,false,false);}
         Theme.select(System.getProperty("preview.theme","n"));   // back to the theme this run renders in
-        String[] cats={"screens","theme","paint","mode","rpm","sound","lang","diag","float"};   // settings (the gear), one shot per category
+        String[] cats={"screens","mode","float","theme","paint","lang","rpm","sound","fx","diag"};   // settings (the gear), one shot per category, in SettingsLayout order
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
@@ -160,6 +160,8 @@ public final class TabsPreview {
             FloatPanel.shape=shape0;FloatPanel.glideOn=glide0;
             FloatPanel.music(null,null);
         }
+        rec.setSettings(SettingsLayout.SOUND,"auto",-1,targets);rec.setOrder(null,80);save(out,"9_settings_sound_scrolled",rec,model,now,false,false);   // hints above and below
+        rec.setSettings(SettingsLayout.SCREENS,"auto",-1,targets);rec.setOrder(null,62);rec.setScreenDrag(2,250);save(out,"9_settings_screens_drag",rec,model,now,false,false);rec.setScreenDrag(-1,0);rec.setOrder(null,0);
         {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
             int[][] combos={{1,4,1},{1,4,3},{1,2,1},{1,1,2},{2,4,1},{2,2,0},{3,4,1},{3,2,2}};
             String[] cn={"card4","card4_xl","card2","card1_l","strip4","strip2_s","side4","side2_l"};FloatPanel.cells[2]=-1;
@@ -326,15 +328,15 @@ public final class TabsPreview {
             FloatPanel.cells[0]=Telemetry.DPF_SOOT;if(FloatPanel.signal(0,VehicleProfile.PETROL_DCT)!=Telemetry.BOOST)throw new AssertionError("float: a saved DPF cell falls back to 자동 on a petrol");FloatPanel.cells[0]=-1;
             FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.BAR;FloatPanel.count=2;
         }
-        rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);SettingsLayout.floatBeep=true;save(out,"9_settings_rpm_beep",rec,model,now,false,false);SettingsLayout.floatBeep=false;rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
-        rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
-        rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
+        rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(SettingsLayout.RPM,"auto",-1,targets);SettingsLayout.floatBeep=true;save(out,"9_settings_rpm_beep",rec,model,now,false,false);SettingsLayout.floatBeep=false;rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
+        rec.setModeOptions(true,true);rec.setSettings(SettingsLayout.MODE,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
+        rec.setSettings(SettingsLayout.MODE,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
         {Telemetry.Sample[] q=model.snapshot(now);q[7]=new Telemetry.Sample(103,true,false,true,false,0);   // GPS speed calibration off / on: the speedometer's 103 shown as a true 100
          for(int on=0;on<2;on++){Telemetry.speedScale=on==1?0.971f:1;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
           new PitRenderer().draw(c,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
           new RaceRenderer().draw(c,q,ShiftGuide.evaluate(q,ShiftGuide.target(0,VehicleProfile.PETROL_DCT),VehicleProfile.PETROL_DCT),now,rec.stats(),VehicleProfile.PETROL_DCT,false,null,null);
           ImageIO.write(img,"png",new File(out,on==1?"x_speedcal_on.png":"x_speedcal_off.png"));}Telemetry.speedScale=1;}
-        rec.setSpeedCal(true,0.968f,1240);rec.setSettings(7,"auto",-1,targets);save(out,"9_settings_diag_speedcal",rec,model,now,false,false);rec.setSpeedCal(false,0.968f,1240);save(out,"9_settings_diag_speedcal_off",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,35);save(out,"9_settings_diag_measuring",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,0);   // GPS speed calibration learned, on
+        rec.setSpeedCal(true,0.968f,1240);rec.setSettings(SettingsLayout.DIAG,"auto",-1,targets);save(out,"9_settings_diag_speedcal",rec,model,now,false,false);rec.setSpeedCal(false,0.968f,1240);save(out,"9_settings_diag_speedcal_off",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,35);save(out,"9_settings_diag_measuring",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,0);   // GPS speed calibration learned, on
         rec.setPicker(false,false,0);rec.setModeOptions(false,false);
         // Missing signals (empty model) and a 6MT profile, drawn straight through ClusterRenderer.
         Telemetry none=new Telemetry();
