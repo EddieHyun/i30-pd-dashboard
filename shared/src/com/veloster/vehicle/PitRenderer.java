@@ -267,9 +267,11 @@ public final class PitRenderer {
         box(c,0,52,800,480,0xf2040506);
         for(int i=0;i<SettingsLayout.CATS.length;i++){
             float l=SettingsLayout.CAT_L,t=SettingsLayout.catTop(i);boolean on=i==settingsCat,done=i==SettingsLayout.DONE;
-            box(c,l,t,l+SettingsLayout.CAT_W,t+SettingsLayout.CAT_H,on?0xff1c303b:done?0xff16232b:0xff101315);
+            if(done){box(c,l,t,l+SettingsLayout.CAT_W,t+SettingsLayout.CAT_H,BLUE);   // 완료: filled, not a menu item
+                centered(c,UiText.t(SettingsLayout.CATS[i]),l+SettingsLayout.CAT_W/2,t+SettingsLayout.CAT_H/2+7,18,DARK_INK,true);continue;}
+            box(c,l,t,l+SettingsLayout.CAT_W,t+SettingsLayout.CAT_H,on?0xff1c303b:0xff101315);
             if(on)box(c,l,t,l+4,t+SettingsLayout.CAT_H,BLUE);
-            text(c,UiText.t(SettingsLayout.CATS[i]),l+16,t+SettingsLayout.CAT_H/2+7,18,on||done?BLUE:WHITE,true);
+            text(c,UiText.t(SettingsLayout.CATS[i]),l+16,t+SettingsLayout.CAT_H/2+7,18,on?BLUE:WHITE,true);
         }
         box(c,SettingsLayout.PANE_L-8,SettingsLayout.TOP,SettingsLayout.PANE_L-7,SettingsLayout.BOTTOM,LINE);
         if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){drawScreenList(c);return;}
@@ -287,7 +289,7 @@ public final class PitRenderer {
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
                 case SettingsLayout.PAINT:
                     if(i==CarPaint.IDS.length){name="8비트 하늘";sub="자동: 와이퍼·외기온·낮 전조등";value=Weather.skyLabel();break;}
-                    sel=i==CarPaint.index();name=CarPaint.LABELS[i];swatch=CarPaint.color(i);break;
+                    {int pi=SettingsLayout.PAINT_ORDER[i];sel=pi==CarPaint.index();name=CarPaint.LABELS[pi];swatch=CarPaint.color(pi);}break;
                 case SettingsLayout.MODE:
                     if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";
                         sub=i==0?"ECO 초록 · SPORT 주황":"모드를 바꾸면 아래 화면으로";value=sel?"켬":"끔";}
@@ -312,13 +314,15 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
                     else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
-                    else if(i==SettingsLayout.SOUND_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
-                    else if(i==SettingsLayout.SOUND_CHIME){int k=SpeedChime.kmh;sel=k>0;name="과속 차임";sub="정한 속도를 넘는 동안 반복해서 울림 (AE86 같은 옛 일본차) · 엔진 사운드와 별개";value=k>0?k+" km/h":"끔";}
-                    else if(i==SettingsLayout.SOUND_CHIME_SOUND){name="차임 소리";dim=SpeedChime.kmh<=0;sub="누를 때마다 다음 소리를 들려줌";value=SpeedChime.NAMES[SpeedChime.sound];}
-                    else if(i==SettingsLayout.SOUND_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
-                        dim=!soundOn||noTurbo;}   // one line per row: the engine-sound rows, then the eco coin switch
+                        dim=!soundOn||noTurbo;}
+                    break;
+                case SettingsLayout.FX:   // sounds that are not the engine: each its own switch (strings kept as they were, for the translations)
+                    if(i==SettingsLayout.FX_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
+                    else if(i==SettingsLayout.FX_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
+                    else if(i==SettingsLayout.FX_CHIME){int k=SpeedChime.kmh;sel=k>0;name="과속 차임";sub="정한 속도를 넘는 동안 반복해서 울림 (AE86 같은 옛 일본차) · 엔진 사운드와 별개";value=k>0?k+" km/h":"끔";}
+                    else{name="차임 소리";dim=SpeedChime.kmh<=0;sub="누를 때마다 다음 소리를 들려줌";value=SpeedChime.NAMES[SpeedChime.sound];}
                     break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
                 default:if(i==1){sel=speedCalOn;name="실제 속도로 표시";value=speedCalOn?"켬":"끔";
@@ -346,11 +350,9 @@ public final class PitRenderer {
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
             }
-            if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
+            if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.FX||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
         }
-        if(paneScroll){c.restore();float max=SettingsLayout.maxPaneScroll(cat);
-            if(max>0){float top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM,hh=bot-top,vis=Math.max(24,hh*hh/(max+hh)),y=top+(hh-vis)*(settingsScroll/max);
-                box(c,798,top,800,bot,0xff0c1012);box(c,798,y,800,y+vis,0xff2a3b44);}}
+        if(paneScroll){c.restore();drawScrollHint(c,settingsScroll,SettingsLayout.maxPaneScroll(cat));}
     }
     // --- 플로팅 pane: preview, switches, button rows, and the cell chooser sheet ---
     private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph,floatEditTab;
@@ -386,33 +388,45 @@ public final class PitRenderer {
             if(FloatPanel.round())c.drawCircle(sx+cw*k/2,sy+ch*k/2,cw*k/2,paint);else c.drawRect(sx+2,sy+2,sx+cw*k-2,sy+ch*k-2,paint);paint.setStyle(Paint.Style.FILL);}
         text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
         // right column
-        chip(c,SettingsLayout.F_ON_BOX,UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬"),null,!off,false);
+        {float[] b=SettingsLayout.F_ON_BOX;String on=UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬");   // the main switch: filled while on
+            if(off)chip(c,b,on,null,false,false);else{box(c,b[0],b[1],b[2],b[3],BLUE);centered(c,on,(b[0]+b[2])/2,(b[1]+b[3])/2+6,15,DARK_INK,true);}}
         boolean ms=FloatPanel.musicStrip&&shape!=FloatPanel.MUSIC;   // the 음악 shape shows the track itself: the strip is dim there
-        chip(c,SettingsLayout.F_MUSIC_BOX,UiText.t("음악 띠")+"  "+UiText.t(ms?"켬":"끔"),null,ms&&!off,shape==FloatPanel.MUSIC);
+        chip(c,SettingsLayout.F_MUSIC_BOX,UiText.t("음악 띠")+"  "+UiText.t(ms?"켬":"끔"),null,ms&&!off,shape==FloatPanel.MUSIC||off);
         chip(c,SettingsLayout.F_HIDE_BOX,UiText.t("내 앱 버튼 숨김")+"  "+UiText.t(FloatPanel.hideButton?"켬":"끔"),null,FloatPanel.hideButton&&!off,off);
         float[] cb=SettingsLayout.F_CELL_BOX;panel(c,cb[0],cb[1],cb[2]-cb[0],cb[3]-cb[1],0xff101315,LINE);
         int sig=FloatPanel.signal(sel,profile);
-        text(c,String.format(Locale.US,UiText.t("%d번 칸"),sel+1),cb[0]+12,cb[1]+18,11,MUTED,false);
-        fitted(c,UiText.t(FloatPanel.name(sig))+(!FloatPanel.graphsUsed()?"":" · "+UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[sel]])),cb[0]+12,cb[1]+42,16,cb[2]-cb[0]-24,WHITE);
+        fitted(c,String.format(Locale.US,UiText.t("%d번 칸"),sel+1)+" · "+UiText.t(FloatPanel.name(sig))+(!FloatPanel.graphsUsed()?"":" · "+UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[sel]])),cb[0]+12,cb[1]+22,14,cb[2]-cb[0]-24,off?MUTED:WHITE);
         chip(c,SettingsLayout.F_EDIT_BOX,UiText.t("칸 값 바꾸기")+"  ›",null,false,false);
         // button rows
         for(int r=0;r<SettingsLayout.F_ROW_LABELS.length;r++)text(c,UiText.t(SettingsLayout.F_ROW_LABELS[r]),SettingsLayout.PANE_L+6,SettingsLayout.F_ROW_Y[r]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
         text(c,UiText.t("칸 수"),SettingsLayout.F_COUNT_X-50,SettingsLayout.F_ROW_Y[0]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
-        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE)continue;int g=t/10*10,i=t-g;String label;boolean on;
+        text(c,UiText.t("투명도"),SettingsLayout.F_ALPHA_LABEL_X,SettingsLayout.F_ROW_Y[2]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
+        slider(c,SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,SettingsLayout.F_SIZES,size,off);
+        slider(c,SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,SettingsLayout.F_ALPHAS,FloatPanel.alpha,off);
+        for(int i=0;i<SettingsLayout.F_PRESETS.length;i++)chip(c,SettingsLayout.floatBox(SettingsLayout.F_PRESET+i),UiText.t(SettingsLayout.F_PRESETS[i]),null,FloatPanel.presetMatch(i),false);   // a preset turns the window on: never dim
+        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE||t==SettingsLayout.F_SIZE||t==SettingsLayout.F_ALPHA||t>=SettingsLayout.F_PRESET)continue;int g=t/10*10,i=t-g;String label;boolean on;
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
                 case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;
                 case SettingsLayout.F_CORNER:label=SettingsLayout.F_CORNERS[i];on=FloatPanel.corner==i&&FloatPanel.skinNow()==0;break;
                 case SettingsLayout.F_COLOR:label=SettingsLayout.F_COLORS[i];on=FloatPanel.color==i&&(FloatPanel.skinNow()==0||FloatPanel.round());break;
                 default:label=SettingsLayout.F_ALPHAS[i];on=FloatPanel.alpha==i;}
-            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,g==SettingsLayout.F_COUNT&&!FloatPanel.fits(shape,FloatPanel.COUNTS[i]));}   // a count the shape would leave a hole in is dim
+            chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,off||g==SettingsLayout.F_COUNT&&!FloatPanel.fits(shape,FloatPanel.COUNTS[i]));}   // a count the shape would leave a hole in is dim
         boolean rnd=FloatPanel.round(shape),auto=FloatPanel.skin<0;   // round gauges take the theme's colours; following the screen, the look is not picked here
-        chip(c,SettingsLayout.F_AUTO_BOX,UiText.t("계기판 따라")+"  "+UiText.t(auto&&!rnd?"켬":"끔"),null,auto&&!rnd,rnd);
-        chip(c,SettingsLayout.F_SKIN_BOX,rnd?UiText.t("원형 게이지는 테마 색"):UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNow()])+"  ›",null,false,rnd||auto);
+        chip(c,SettingsLayout.F_AUTO_BOX,UiText.t("계기판 따라")+"  "+UiText.t(auto&&!rnd?"켬":"끔"),null,auto&&!rnd,rnd||off);
+        chip(c,SettingsLayout.F_SKIN_BOX,rnd?UiText.t("원형 게이지는 테마 색"):UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNow()])+"  ›",null,false,rnd||auto||off);
         text(c,UiText.t("손을 떼면 적용 · 끌면 취소"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
-        chip(c,SettingsLayout.F_FORM_BOX,UiText.t(FloatPanel.SHAPE_NAMES[shape])+"  ›",null,false,false);
+        chip(c,SettingsLayout.F_FORM_BOX,UiText.t(FloatPanel.SHAPE_NAMES[shape])+"  ›",null,false,off);
         if(floatEdit==SettingsLayout.SKIN_SHEET||floatEdit==SettingsLayout.FORM_SHEET)cachedSheet(c,floatEdit);
         else{sheetBmp=null;if(floatEdit>=0)drawFloatSheet(c);}
+    }
+    /** A bar that snaps to names.length stops: a track with a dot per stop, the knob a chip with the current name. */
+    private void slider(Canvas c,float[] bar,float knob,String[] names,int value,boolean dim){
+        int n=names.length;float cy=(bar[1]+bar[3])/2;
+        box(c,SettingsLayout.sliderX(bar,knob,n,0),cy-2,SettingsLayout.sliderX(bar,knob,n,n-1),cy+2,LINE);
+        for(int i=0;i<n;i++){float x=SettingsLayout.sliderX(bar,knob,n,i);box(c,x-3,cy-3,x+3,cy+3,dim?LINE:0xff2a3b44);}
+        int v=Math.max(0,Math.min(n-1,value));float kx=SettingsLayout.sliderX(bar,knob,n,v);
+        chip(c,new float[]{kx-knob/2,bar[1],kx+knob/2,bar[3]},UiText.t(names[v]),null,!dim,dim);
     }
     /** The 모양 / 색감 sheets draw 17-20 small windows: drawn once into a bitmap and shown from it until something they show changes
      *  (a tap on the sheet redrew every window and lagged). */
@@ -487,32 +501,58 @@ public final class PitRenderer {
         chip(c,SettingsLayout.S_CANCEL_BOX,UiText.t("취소"),null,false,false);
         chip(c,SettingsLayout.S_DONE_BOX,UiText.t("완료"),null,true,false);
     }
+    private static final int DARK_INK=0xff04121a;
+    /** A pane that overflows: a scroll bar right of the pane, a fade and "▼ 아래에 더 있음" while rows are below,
+     *  a fade at the top once scrolled. */
+    private void drawScrollHint(Canvas c,float scroll,float max){
+        if(max<=0)return;
+        float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM,h=bot-top,vis=Math.max(32,h*h/(max+h)),y=top+(h-vis)*(scroll/max);
+        box(c,791,top,797,bot,0xff0f1518);box(c,791,y,797,y+vis,BLUE);
+        int bg=T(0xff040506),clear=bg&0x00ffffff;
+        if(scroll<max-1){paint.setShader(new LinearGradient(0,bot-56,0,bot,clear,bg,Shader.TileMode.CLAMP));c.drawRect(L,bot-56,R,bot,paint);paint.setShader(null);
+            centered(c,UiText.t("▼ 아래에 더 있음"),(L+R)/2,bot-8,13,BLUE,true);}
+        if(scroll>1){paint.setShader(new LinearGradient(0,top,0,top+20,bg,clear,Shader.TileMode.CLAMP));c.drawRect(L,top,R,top+20,paint);paint.setShader(null);}
+    }
+    /** A 화면 row being dragged by its grip: its display position (-1 none) and the finger's y. */
+    private int dragRow=-1;private float dragY;
+    public void setScreenDrag(int row,float y){dragRow=row;dragY=y;}
     /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */
     private void drawScreenList(Canvas c){
         int[] ord=ClusterPicker.validOrder(order);
         float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,rh=SettingsLayout.SCREEN_ROW_H,top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM;
+        boolean drag=dragRow>=0&&dragRow<ord.length;
         c.save();c.clipRect(L-6,top,800,bot);
         for(int p=0;p<ord.length;p++){
-            int s=ord[p];float t=top+p*rh-settingsScroll;
+            float t=top+p*rh-settingsScroll;
             if(t+rh<top||t>bot)continue;
-            boolean off=(hidden&(1<<s))!=0;
-            box(c,L,t+4,R,t+rh-4,off?0xff08090a:0xff101315);
-            float tw=SettingsLayout.THUMB_W-10,th=rh-18;
-            Bitmap tb=thumb(s);
-            if(tb!=null){cellRect.set(L+6,t+9,L+6+tw,t+9+th);c.drawBitmap(tb,null,cellRect,paint);}
-            else box(c,L+6,t+9,L+6+tw,t+9+th,0xff05070a);
-            float tx=L+SettingsLayout.THUMB_W+8;int ink=off?MUTED:WHITE;
-            text(c,UiText.t(ClusterPicker.NAMES[s]),tx,t+rh/2-3,17,ink,true);
-            text(c,UiText.t(ClusterPicker.DESC[s]),tx,t+rh/2+16,11,MUTED,false);
-            String use=UiText.t(off?"미사용":"사용");paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(13);
-            text(c,use,SettingsLayout.upBtnL()-12-paint.measureText(use),t+rh/2+5,13,off?MUTED:BLUE,true);
-            float by=t+(rh-SettingsLayout.SBTN_W)/2;
-            moveBtn(c,SettingsLayout.upBtnL(),by,true,p>0);
-            moveBtn(c,SettingsLayout.downBtnL(),by,false,p<ord.length-1);
+            if(drag&&p==dragRow){box(c,L,t+4,R,t+rh-4,0xff08090a);continue;}   // the lifted row's empty place
+            screenRow(c,p,ord.length,ord[p],t,0,false);
         }
+        if(drag){int to=SettingsLayout.dropRow(dragY,settingsScroll);float ly=top+(to>dragRow?to+1:to)*rh-settingsScroll;
+            box(c,L,ly-2,R,ly+1,BLUE);   // where it lands
+            screenRow(c,dragRow,ord.length,ord[dragRow],dragY-rh/2,8,true);}
         c.restore();
-        float max=SettingsLayout.maxScreenScroll();
-        if(max>0){float h=bot-top,vis=Math.max(24,h*h/(ord.length*rh)),y=top+(h-vis)*(settingsScroll/max);box(c,798,top,800,bot,0xff0c1012);box(c,798,y,800,y+vis,0xff2a3b44);}
+        drawScrollHint(c,settingsScroll,SettingsLayout.maxScreenScroll());
+    }
+    /** One 화면 row at y t (shifted dx): grip, mini preview, name and description, 사용/미사용, ▲▼. lifted = being dragged. */
+    private void screenRow(Canvas c,int p,int n,int s,float t,float dx,boolean lifted){
+        float L=SettingsLayout.PANE_L+dx,R=SettingsLayout.PANE_R+dx,rh=SettingsLayout.SCREEN_ROW_H;
+        boolean off=(hidden&(1<<s))!=0;
+        box(c,L,t+4,R,t+rh-4,lifted?0xff1c303b:off?0xff08090a:0xff101315);
+        if(lifted){box(c,L,t+4,R,t+6,BLUE);box(c,L,t+rh-6,R,t+rh-4,BLUE);box(c,L,t+4,L+2,t+rh-4,BLUE);box(c,R-2,t+4,R,t+rh-4,BLUE);}
+        for(int k=-1;k<=1;k++)box(c,L+5,t+rh/2+k*6-1,L+19,t+rh/2+k*6+1,BLUE);   // the grip
+        float tx0=L+24,tw=SettingsLayout.THUMB_W-28,th=rh-18;
+        Bitmap tb=thumb(s);
+        if(tb!=null){cellRect.set(tx0,t+9,tx0+tw,t+9+th);c.drawBitmap(tb,null,cellRect,paint);}
+        else box(c,tx0,t+9,tx0+tw,t+9+th,0xff05070a);
+        float tx=L+SettingsLayout.THUMB_W+8;int ink=off?MUTED:WHITE;
+        text(c,UiText.t(ClusterPicker.NAMES[s]),tx,t+rh/2-3,17,ink,true);
+        text(c,UiText.t(ClusterPicker.DESC[s]),tx,t+rh/2+16,11,MUTED,false);
+        String use=UiText.t(off?"미사용":"사용");paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(13);
+        text(c,use,SettingsLayout.upBtnL()+dx-12-paint.measureText(use),t+rh/2+5,13,off?MUTED:BLUE,true);
+        float by=t+(rh-SettingsLayout.SBTN_W)/2;
+        moveBtn(c,SettingsLayout.upBtnL()+dx,by,true,p>0);
+        moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1);
     }
     private void moveBtn(Canvas c,float x,float y,boolean up,boolean on){
         float w=SettingsLayout.SBTN_W;box(c,x,y,x+w,y+w,on?0xff16232b:0xff0c0e10);
