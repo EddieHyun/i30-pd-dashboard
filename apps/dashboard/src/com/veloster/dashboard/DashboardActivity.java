@@ -28,6 +28,8 @@ public final class DashboardActivity extends Activity {
     // Out of sight: with only the floating window up (it draws from FloatPanel, not the screens) the screens' bitmaps are
     // let go; also when Android says our UI is hidden or memory is short. Coming back draws them again once.
     protected void onStop(){super.onStop();android.util.Log.i("VehicleDash","dashboard stopped, floating "+(FloatService.wanted?"up":"off"));if(FloatService.wanted)VehicleDash.trimStandalone(this);}
+    /** The back key closes the settings first (as 완료 does); otherwise it leaves as usual. */
+    @Override public void onBackPressed(){if(!VehicleDash.closeSettings(this))super.onBackPressed();}
     @Override public void onTrimMemory(int level){super.onTrimMemory(level);if(level>=TRIM_MEMORY_UI_HIDDEN&&!resumed)VehicleDash.trimStandalone(this);}
     protected void onDestroy(){if(client!=null&&!FloatService.wanted&&!resumed)client.stop();super.onDestroy();}
 }

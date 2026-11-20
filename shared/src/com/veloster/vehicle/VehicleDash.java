@@ -54,6 +54,22 @@ public final class VehicleDash extends View implements Runnable {
     /** Screen per ClusterPicker.MODES slot (-1 = 원래 화면), and the slot being chosen in settings (-1 none). */
     private final int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
     private int pickSlot=-1;
+    /** 화면 list drag: gripRow = the row pressed on its grip (a tap until the finger moves 16 px), dragRow = the row being dragged. */
+    private int gripRow=-1,dragRow=-1;private float dragY;
+    /** 플로팅 크기 / 투명도 bar under the finger (SettingsLayout.F_SIZE or F_ALPHA), -1 none. */
+    private int sliderDrag=-1;
+    /** While a row is dragged: scroll the list when the finger rests near the top or bottom edge. */
+    private final Runnable dragTick=new Runnable(){public void run(){
+        if(dragRow<0)return;float d=SettingsLayout.autoScroll(dragY);
+        if(d!=0){settingsScroll=Math.max(0,Math.min(SettingsLayout.maxScreenScroll(),settingsScroll+d));invalidate();}
+        postDelayed(this,30);}};
+    /** Closes settings (완료, 돌아가기, the back key). Every choice is already saved. */
+    private void closeSettingsNow(){picker=false;editing=false;pickSlot=-1;floatEdit=-1;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);invalidate();}
+    /** The back key: true when it closed the open settings (the activity stays), false to let it go back as usual. */
+    public static boolean closeSettings(Activity a){VehicleDash d=current.get();if(d==null||d.activity!=a||!(d.picker&&d.editing))return false;d.closeSettingsNow();return true;}
+    private void setSlider(int which,float x){
+        if(which==SettingsLayout.F_SIZE)FloatPanel.size=SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,SettingsLayout.F_SIZES.length,x);
+        else FloatPanel.alpha=SettingsLayout.sliderStop(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,SettingsLayout.F_ALPHAS.length,x);}
     /** 플로팅 pane: the cell whose chooser is open (-1 none), the cell shown on the right, and the chooser's pick. */
     private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph,floatEditTab;
     private final HeaderTabs header=renderer.header();
@@ -356,13 +372,14 @@ public final class VehicleDash extends View implements Runnable {
             floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&FloatPanel.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
             int[] gs=FloatPanel.groups(prof);int want=FloatPanel.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
             return;}
+        else if(t>=SettingsLayout.F_PRESET&&t<SettingsLayout.F_PRESET+SettingsLayout.F_PRESETS.length){FloatPanel.applyPreset(t-SettingsLayout.F_PRESET);
+            floatSel=Math.max(0,Math.min(floatSel,FloatPanel.used(FloatPanel.shape,FloatPanel.count)-1));}
         else{int g=t/10*10,i=t-g;
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
             else if(g==SettingsLayout.F_COUNT){if(!FloatPanel.fits(shape,FloatPanel.COUNTS[i]))return;FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
-            else if(g==SettingsLayout.F_SIZE)FloatPanel.size=i;
             else if(g==SettingsLayout.F_CORNER){if(FloatPanel.skinNow()==0)FloatPanel.corner=i;}
             else if(g==SettingsLayout.F_COLOR){if(FloatPanel.skinNow()==0||FloatPanel.round())FloatPanel.color=i;}
-            else if(g==SettingsLayout.F_ALPHA)FloatPanel.alpha=i;}
+            }
         SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();
     }
     public static void loadFloat(android.content.SharedPreferences p){
@@ -517,7 +534,7 @@ public final class VehicleDash extends View implements Runnable {
             if(modeScreen&&!picker){int[] st=ClusterPicker.onMode(lastMode,mode,screen,modeBack,hidden,modeTargets);modeBack=st[1];if(st[0]!=screen){screen=st[0];showCluster();}}
             lastMode=mode;
         }
-        renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);
+        renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);renderer.setScreenDrag(dragRow,dragY);
         renderer.setModeOptions(modeColor,modeScreen);
         if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);}
         renderer.setLap(lap);
@@ -569,6 +586,10 @@ public final class VehicleDash extends View implements Runnable {
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
             removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
+            gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);
+            if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.SCREENS&&SettingsLayout.onGrip(x))gripRow=SettingsLayout.screenRow(y,settingsScroll);
+            if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.FLOAT){float[] sb=SettingsLayout.F_SIZE_BAR,ab=SettingsLayout.F_ALPHA_BAR;
+                if(x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3])sliderDrag=SettingsLayout.F_SIZE;else if(x>=ab[0]&&x<=ab[2]&&y>=ab[1]&&y<=ab[3])sliderDrag=SettingsLayout.F_ALPHA;}
             removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;lapHeld=false;if(!blocked&&!picker&&onLap(x,y))postDelayed(lapHold,700);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
@@ -576,14 +597,21 @@ public final class VehicleDash extends View implements Runnable {
             if(!blocked&&!picker&&renderer.ecoShown()&&EcoCluster.onFare(x,y)){EcoCluster.holding=true;postDelayed(ecoHold,1000);}
             return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&pickSlot<0&&(settingsCat==SettingsLayout.SCREENS||settingsCat==SettingsLayout.SOUND)&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&gripRow>=0){   // a row held by its grip: drag it once the finger has moved
+            if(dragRow<0&&Math.abs(y-downY)>=16){dragRow=gripRow;touching=false;postDelayed(dragTick,30);}
+            if(dragRow>=0){dragY=y;invalidate();}
+            return true;
+        }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&sliderDrag>=0){int was=sliderDrag==SettingsLayout.F_SIZE?FloatPanel.size:FloatPanel.alpha;setSlider(sliderDrag,x);
+            touching=false;if((sliderDrag==SettingsLayout.F_SIZE?FloatPanel.size:FloatPanel.alpha)!=was)invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&pickSlot<0&&SettingsLayout.scrolls(settingsCat)&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
             settingsScroll=Math.max(0,Math.min(SettingsLayout.maxPaneScroll(settingsCat),settingsScroll-(y-lastMoveY)));lastMoveY=y;
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
         if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;invalidate();return true;}
         if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;header.up();return true; }
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
         removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
@@ -593,9 +621,16 @@ public final class VehicleDash extends View implements Runnable {
             boolean open=!(picker&&editing);picker=open;editing=open;if(open)showCluster();invalidate();return true;
         }
         if(picker&&editing){   // settings: a category on the left opens its choices (완료 closes); a choice applies at once
+            if(dragRow>=0){   // a dragged 화면 row lands where the finger is
+                int to=SettingsLayout.dropRow(y,settingsScroll);
+                if(to!=dragRow){order=ClusterPicker.move(order,dragRow,to);activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).apply();showCluster();}
+                gripRow=-1;dragRow=-1;removeCallbacks(dragTick);invalidate();return true;}
+            gripRow=-1;
+            if(sliderDrag>=0){setSlider(sliderDrag,x);sliderDrag=-1;SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();invalidate();return true;}
             if(!tap)return true;
+            if(x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){closeSettingsNow();return true;}   // 돌아가기 = 완료 here
             int k=SettingsLayout.cat(x,y);
-            if(floatEdit<0&&k>=0&&k==SettingsLayout.cat(downX,downY)){pickSlot=-1;if(k==SettingsLayout.DONE){picker=false;editing=false;}else{settingsCat=k;settingsScroll=0;}invalidate();return true;}
+            if(floatEdit<0&&k>=0&&k==SettingsLayout.cat(downX,downY)){pickSlot=-1;if(k==SettingsLayout.DONE)closeSettingsNow();else{settingsCat=k;settingsScroll=0;}invalidate();return true;}
             if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){   // the 화면 list: ▲▼ reorder, tap elsewhere toggles 사용/미사용
                 int p=SettingsLayout.screenRow(y,settingsScroll);
                 if(p>=0&&p==SettingsLayout.screenRow(downY,settingsScroll)){
@@ -622,7 +657,7 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.THEME:Theme.select(Theme.IDS[i]);e.putString("theme",Theme.current().id);break;
                 case SettingsLayout.PAINT:
                     if(i==CarPaint.IDS.length){Weather.nextSky();e.putString("sky_8bit",Weather.skyId());break;}   // the sky tile cycles 자동 -> 맑음 -> 흐림
-                    CarPaint.select(i);e.putString("car_paint",CarPaint.id());break;
+                    CarPaint.select(SettingsLayout.PAINT_ORDER[i]);e.putString("car_paint",CarPaint.id());break;
                 case SettingsLayout.MODE:
                     if(i==SettingsLayout.MODE_COLOR)modeColor=!modeColor;
                     else if(i==SettingsLayout.MODE_SCREEN){modeScreen=!modeScreen;modeBack=-1;}
@@ -648,14 +683,6 @@ public final class VehicleDash extends View implements Runnable {
                     break;}
                 case SettingsLayout.SOUND:
                     if(!SettingsLayout.ENGINE_SOUND)break;
-                    if(i==SettingsLayout.SOUND_COIN){EcoCluster.coinSound=!EcoCluster.coinSound;saveEco();   // eco coin sound: independent of the engine sound, plays through the beep channel
-                        if(EcoCluster.coinSound&&EcoCluster.coins)beep.playCoin(soundOn&&soundRoute==0?sound:null,500,beepVol/100f);break;}   // a sample clink
-                    if(i==SettingsLayout.SOUND_CHIME){SpeedChime.kmh=SpeedChime.next(SpeedChime.kmh);e.putInt("speed_chime_kmh",SpeedChime.kmh);
-                        if(SpeedChime.kmh>0)beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}   // a sample ring
-                    if(i==SettingsLayout.SOUND_CHIME_SOUND){if(SpeedChime.kmh<=0)break;SpeedChime.sound=(SpeedChime.sound+1)%SpeedChime.NAMES.length;e.putInt("speed_chime_sound",SpeedChime.sound);
-                        beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}
-                    if(i==SettingsLayout.SOUND_CLICK){CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);
-                        if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;}   // a sample click
                     if(i==SettingsLayout.SOUND_FAST){EngineSound.fast=!EngineSound.fast;e.putBoolean("engine_sound_fast",EngineSound.fast);sound.play(-1);}   // the block size is read when the thread starts: stop it here, the play() below starts it again
                     else if(i==SettingsLayout.SOUND_ON){boolean was=soundOn;SettingsLayout.floatSound=soundOn&&!SettingsLayout.floatSound;soundOn=!was||SettingsLayout.floatSound;   // 끔 -> 계기판 -> 항상 -> 끔, like 변속 알림음
                         e.putBoolean("float_sound",SettingsLayout.floatSound);}
@@ -667,6 +694,15 @@ public final class VehicleDash extends View implements Runnable {
                     applySound();
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
                     sound.play(soundWanted()?soundRoute:-1);break;
+                case SettingsLayout.FX:   // sounds that are not the engine: each its own switch, a sample when it goes on
+                    if(i==SettingsLayout.FX_COIN){EcoCluster.coinSound=!EcoCluster.coinSound;saveEco();   // eco coin sound: plays through the beep channel
+                        if(EcoCluster.coinSound&&EcoCluster.coins)beep.playCoin(soundOn&&soundRoute==0?sound:null,500,beepVol/100f);break;}   // a sample clink
+                    if(i==SettingsLayout.FX_CHIME){SpeedChime.kmh=SpeedChime.next(SpeedChime.kmh);e.putInt("speed_chime_kmh",SpeedChime.kmh);
+                        if(SpeedChime.kmh>0)beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}   // a sample ring
+                    if(i==SettingsLayout.FX_CHIME_SOUND){if(SpeedChime.kmh<=0)break;SpeedChime.sound=(SpeedChime.sound+1)%SpeedChime.NAMES.length;e.putInt("speed_chime_sound",SpeedChime.sound);
+                        beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}
+                    CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);   // FX_CLICK
+                    if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;   // a sample click
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}
