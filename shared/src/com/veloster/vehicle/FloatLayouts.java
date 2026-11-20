@@ -14,8 +14,20 @@ final class FloatLayouts extends ClusterKit {
     static final int PILL=5,HERO=6,GEAR=7,DIAG=8,DIAL=9,SHIFT=10,TICK=11,FILLS=12,BARS=13,TWIN=14,WEDGE=15,TOWER=16,LAST=TOWER;
     /** 세로 띠 + RPM: after 음악 (FloatPanel.MUSIC = LAST + 1), so a saved shape number keeps its meaning. */
     static final int VRPM=LAST+2;
-    /** VRPM geometry, base px: a 124 wide column of 60 high rows, the rpm bar in an 18 wide lane on the right. */
-    private static final int VR_COL=100,VR_ROW=60,VR_LANE=16;
+    /** 세로 캡슐: after 세로 띠 + RPM, so saved shape numbers keep their meaning. */
+    static final int VCAP=LAST+3;
+    /** VRPM geometry, base px: an 80 wide column of 60 high rows, the rpm bar in a 16 wide lane on the right (narrow, so CarPlay shows more). */
+    private static final int VR_COL=80,VR_ROW=60,VR_LANE=16;
+    /** TOWER: a 62 wide column (gear box, readings), the rpm in a 14 wide lane on the right. */
+    private static final int TW_COL=62,TW_LANE=14;
+    /** VCAP, base px: 88 wide; the top end (VC_TOP high) holds the first reading as a dial, rows in a 70 wide column with the rpm
+     *  lane beside them, the bottom end (VC_END high) the gear. Screen-high like VRPM. */
+    private static final int VC_W=88,VC_COL=70,VC_TOP=100,VC_END=48;
+    static float vcRow(int n){return (vrH()-VC_TOP-VC_END)/Math.max(1,n-1);}
+    /** Where the track goes while one plays (base px): 세로 띠 + RPM's box under its rows, 세로 캡슐's last two rows. */
+    static float[] musicBox(int shape,int n){
+        if(shape!=VCAP)return rect(shape,n,6);
+        float R=vcRow(n);return new float[]{0,VC_TOP+(n-3)*R,VC_COL,VC_TOP+(n-1)*R};}
     /** VRPM fills the screen's height (472 of its 480 px, at any size): six rows up to VR_ROW high, then a box at least VR_BOX high
      *  for the rest: the track while one plays (with 음악 띠 on; FloatMusic.box, drawn by FloatPanel each frame), else the seventh reading. */
     private static final int VR_SCREEN=472,VR_BOX=90;
@@ -30,21 +42,23 @@ final class FloatLayouts extends ClusterKit {
     /** Cells shown: the pill has room for two. */
     static int used(int shape,int n){return shape==PILL?Math.min(n,2):n;}
     /** The cell counts a layout fills without a hole (the settings offer these only). */
-    static int[] counts(int shape){return shape==VRPM?new int[]{7}:shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
+    static int[] counts(int shape){return shape==VRPM?new int[]{7}:shape==VCAP?new int[]{6}:shape==PILL?new int[]{1,2}:shape==HERO||shape==DIAL?new int[]{1,4}:shape==TICK||shape==FILLS||shape==TWIN||shape==TOWER?new int[]{1,2,4}:new int[]{2,4};}
     private static int rows(int n){return Math.min(3,n-1);}
     static float w(int shape,int n){
         if(shape==VRPM)return VR_COL+VR_LANE;
-        switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;case TICK:return n*96;case FILLS:return 180;case BARS:return n*56+8;case TWIN:return Math.min(2,n)*116;case TOWER:return 92;default:return 248;}
+        if(shape==VCAP)return VC_W;
+        switch(shape){case PILL:return 44+used(shape,n)*81;case HERO:return rows(n)>0?248:140;case DIAL:return rows(n)>0?248:132;case SHIFT:return n*70;case TICK:return n*96;case FILLS:return 180;case BARS:return n*56+8;case TWIN:return Math.min(2,n)*116;case TOWER:return TW_COL+TW_LANE;default:return 248;}
     }
     static float h(int shape,int n){
-        if(shape==VRPM)return vrH();
-        switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 112;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 84+n*40;default:return 64;}
+        if(shape==VRPM||shape==VCAP)return vrH();
+        switch(shape){case PILL:return 40;case HERO:return 112;case GEAR:return 112;case DIAG:return n>=4?144:72;case DIAL:return 112;case TICK:return 26;case FILLS:return n*30+8;case BARS:return 112;case TWIN:return (n+1)/2*92;case WEDGE:return n<=2?82:126;case TOWER:return 76+n*40;default:return 64;}
     }
     /** Cell i's rectangle in base px, or null when the layout does not show it. */
     static float[] rect(int shape,int n,int i){
         if(i>=used(shape,n))return null;float W=w(shape,n),H=h(shape,n);
         switch(shape){
             case VRPM:{float R=vrRow();return i<6?new float[]{0,4+i*R,VR_COL,4+(i+1)*R}:new float[]{0,vrBox(),VR_COL,H-4};}
+            case VCAP:{if(i==0)return new float[]{0,0,W,VC_TOP};float R=vcRow(n),y=VC_TOP+(i-1)*R;return new float[]{0,y,VC_COL,y+R};}
             case PILL:return new float[]{38+i*81,0,38+(i+1)*81,H};
             case HERO:return i==0?new float[]{0,0,140,H}:new float[]{140,6+(i-1)*32,W,6+i*32};
             case DIAL:return i==0?new float[]{0,0,132,H}:new float[]{132,8+(i-1)*30,W,8+i*30};
@@ -55,7 +69,7 @@ final class FloatLayouts extends ClusterKit {
             case BARS:return new float[]{4+i*56,0,60+i*56,H};
             case TWIN:return new float[]{(i%2)*116,(i/2)*92,(i%2+1)*116,(i/2+1)*92};
             case WEDGE:return new float[]{(i%2)*124,34+(i/2)*44,(i%2+1)*124,78+(i/2)*44};
-            case TOWER:return new float[]{0,80+i*40,W,120+i*40};
+            case TOWER:return new float[]{0,72+i*40,TW_COL,112+i*40};
             default:return new float[]{i*70,0,(i+1)*70,H};
         }
     }
@@ -120,6 +134,14 @@ final class FloatLayouts extends ClusterKit {
         if(pass!=DYN)fill(c,x,y,x+w,y+h,track);if(pass==STAT||Float.isNaN(d.f)||!d.bar)return;float f=Math.max(0,Math.min(1,d.f)),z=d.zero,a=Math.min(z,f),b=Math.max(z,f);
         fill(c,x+w*a,y,Math.max(x+w*b,x+w*a+2),y+h,warn(d.lv,acc));
         if(peak&&d.pk!=null&&!Float.isNaN(d.pf)){float px=x+w*Math.max(0,Math.min(1,d.pf));fill(c,px-k,y-2*k,px+k,y+h+2*k,plain?0xffffffff:txt);}
+    }
+    /** The rpm as a lit column (l..rr, from b up to t): the skin's accent, amber near the top, red at the redline end; the track
+     *  is kept, the lit part drawn each frame. */
+    private void lane(Canvas c,float l,float rr,float t,float b,float k,boolean rOk,float rf,boolean st,boolean dy){
+        int segs=Math.max(8,Math.round((b-t)/(9*k)));float sh=(b-t)/segs;
+        if(st)fill(c,l-4*k,t,l-4*k+1,b,div);
+        for(int i=0;i<segs;i++){boolean on=rOk&&(i+.5f)/segs<rf;if(on&&!dy||!on&&!st)continue;
+            float f=(i+.5f)/segs,y1=b-(i+1)*sh+k,y2=b-i*sh-k;fill(c,l,y1,rr,y2,on?(f<.7f?acc:f<.85f?0xffffaa3c:0xffff4b3c):track);}
     }
     private int led(int i,int n){float t=(i+.5f)/n;if(greenRed)return t<.45f?0xff2fe06a:t<.8f?0xffff3b3b:0xff4aa8ff;return t<.6f?acc:t<.85f?0xffffaa3c:0xffff4b3c;}
 
@@ -228,10 +250,7 @@ final class FloatLayouts extends ClusterKit {
             break;}
         case VRPM:{   // 세로 띠 + RPM: six readings stacked, the rpm as a lit column the window's height on the right
             if(st)body(c,W,H,k,-1);
-            float bl=(VR_COL+3)*k,br=(VR_COL+VR_LANE-5)*k,bt=8*k,bb=H-8*k;int segs=Math.max(12,Math.round((bb-bt)/(9*k)));float sh=(bb-bt)/segs;
-            if(st)fill(c,bl-4*k,bt,bl-4*k+1,bb,div);
-            for(int i=0;i<segs;i++){boolean on=rOk&&(i+.5f)/segs<rf;if(on&&!dy||!on&&!st)continue;   // the track is kept, the lit part drawn each frame
-                float t=(i+.5f)/segs,y1=bb-(i+1)*sh+k,y2=bb-i*sh-k;fill(c,bl,y1,br,y2,on?(t<.7f?acc:t<.85f?0xffffaa3c:0xffff4b3c):track);}   // the skin's accent, amber near the top, red at the redline end
+            lane(c,(VR_COL+3)*k,(VR_COL+VR_LANE-5)*k,8*k,H-8*k,k,rOk,rf,st,dy);
             float R=vrRow(),rk=k*R/VR_ROW;   // rows shorter than VR_ROW (the larger sizes) scale their insides
             for(int i=0;i<Math.min(n,6);i++){FloatSkin.Cell a=d[i];float y=(4+i*R)*k;
                 if(st){if(i>0)fill(c,8*k,y,(VR_COL-6)*k,y+1,div);fit(c,nm(a),8*k,y+12*rk,8*rk,(VR_COL-16)*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
@@ -243,12 +262,34 @@ final class FloatLayouts extends ClusterKit {
                     if(dy){if(a.quad!=null&&!pix)FloatPanel.tyres(c,2*k,by+20*k,(VR_COL-4)*k,bh-24*k,k,a.quad,a.l4,a.t4,txt,div,bold);
                         else vu(c,a,8*k,by+Math.min(bh-12*k,20*k+(bh-20*k)/2+13*k),Math.min(34*k,bh*.4f),(VR_COL-14)*k,k,Paint.Align.LEFT);}}}
             break;}
-        case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it
-            if(st){body(c,W,H,k,-1);fill(c,10*k,10*k,82*k,66*k,box);fill(c,10*k,70*k,82*k,73*k,track);}
-            if(dy){fit(c,gear,46*k,56*k,(pix?35:46)*k,60*k,boxInk,Paint.Align.CENTER,bold);if(rOk)fill(c,10*k,70*k,10*k+72*k*rf,73*k,rf>.85f?0xffff4b3c:acc);}
-            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(80+i*40)*k;
-                if(st){if(i>0)fill(c,8*k,y,W-8*k,y+1,div);fit(c,nm(a),10*k,y+13*k,8*k,72*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
-                if(dy)vu(c,a,10*k,y+33*k,17*k,72*k,k,Paint.Align.LEFT);}
+        case TOWER:{   // a narrow column for the screen's side: the gear box on top, readings stacked under it, the rpm as a lit lane on the right
+            float C=TW_COL*k;
+            if(st){body(c,W,H,k,-1);fill(c,8*k,8*k,C-4*k,64*k,box);}
+            if(dy)fit(c,gear,(C+4*k)/2,54*k,(pix?35:44)*k,C-16*k,boxInk,Paint.Align.CENTER,bold);
+            lane(c,C+2*k,W-5*k,8*k,H-8*k,k,rOk,rf,st,dy);
+            for(int i=0;i<n;i++){FloatSkin.Cell a=d[i];float y=(72+i*40)*k;
+                if(st){if(i>0)fill(c,6*k,y,C-4*k,y+1,div);fit(c,nm(a),8*k,y+13*k,8*k,C-14*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
+                if(dy)vu(c,a,8*k,y+33*k,17*k,C-12*k,k,Paint.Align.LEFT);}
+            break;}
+        case VCAP:{   // 세로 캡슐: a screen-high pill; the first reading (boost) as a dial in the top end, the rest stacked, the rpm lane beside them, the gear in the bottom end
+            float C=VC_COL*k,cx=W/2,cy=46*k,rad=34*k,top=VC_TOP*k,end=H-VC_END*k;FloatSkin.Cell a=d[0];
+            if(st){body(c,W,H,k,W/2);fill(c,8*k,top,W-8*k,top+1,div);fill(c,8*k,end,W-8*k,end+1,div);}
+            r.set(cx-rad,cy-rad,cx+rad,cy+rad);
+            if(st){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(track);c.drawArc(r,135,270,false,p);p.setStyle(Paint.Style.FILL);
+                fit(c,nm(a)+(a.unit.isEmpty()?"":" "+a.unit),cx,cy+rad+12*k,8*k,W-16*k,mut,Paint.Align.CENTER,Typeface.DEFAULT);}
+            if(dy){boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
+                if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(warn(a.lv,acc));c.drawArc(r,135+270*lo,Math.max(1,270*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);
+                    double an=Math.toRadians(135+270*f);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-7*k),cy+(float)Math.sin(an)*(rad-7*k),2*k,0xffff6b5b);}
+                dot(c,cx,cy,3*k,0xffff6b5b);fit(c,a.val,cx,cy+30*k,14*k,44*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}   // under the hub, where the needle never goes
+            lane(c,C+2*k,W-8*k,top+6*k,end-6*k,k,rOk,rf,st,dy);
+            float R=vcRow(n),rk=Math.min(1,R/64f)*k;
+            for(int i=1;i<n;i++){FloatSkin.Cell b=d[i];float y=top+(i-1)*R*k;
+                if(st&&i>1&&!(vrMusic&&i==n-1))fill(c,8*k,y,C-4*k,y+1,div);   // the track box (FloatPanel draws it) takes the last two rows
+                if(vrMusic&&i>=n-2)continue;
+                if(st){fit(c,nm(b),10*k,y+14*rk,8*rk,C-16*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
+                if(dy){if(b.quad!=null&&!pix)FloatPanel.tyres(c,2*k,y+14*rk,C-6*k,R*k-16*rk,rk,b.quad,b.l4,b.t4,txt,div,bold);   // the wheels as a car seen from above
+                    else vu(c,b,10*k,y+44*rk,24*rk,C-16*k,rk,Paint.Align.LEFT);}}
+            if(dy)fit(c,gear,W/2,H-16*k,(pix?14:26)*k,W-24*k,txt,Paint.Align.CENTER,bold);
             break;}
         default:{   // SHIFT: a shift-light strip the window's width, the readings in a row under it
             if(st)body(c,W,H,k,-1);int leds=n*5;float lw=(W-16*k)/leds;

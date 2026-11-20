@@ -111,6 +111,55 @@ public final class TabsPreview {
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
+        {   // 플로팅 전체 모양 시안: FORMS 18개를 개요 배경 위에 자동 칸으로 (design overhaul reference)
+            int[] FG=FloatPanel.FORMS;
+            String[] fs={"card","strip","side","tick","fills","round","dial","twin","bars","pill","gearbox","wedge","shift","vcap","vrpm","tower","hero","diag","music"};
+            if(fs.length!=FG.length)throw new AssertionError("float gallery names out of step with FloatPanel.FORMS");
+            MediaState fm=new MediaState();fm.mode(0x36);fm.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);fm.playback(1,1);
+            FloatPanel.music(fm.snapshot(now),null);
+            int shape0=FloatPanel.shape;boolean glide0=FloatPanel.glideOn;FloatPanel.glideOn=false;FloatPanel.shape=FloatPanel.CARD;   // no glide: every shot here shares one clock, so a bar would never arrive   // 자동 cells: a DCT shows both clutches 4th, a 6MT moves intake up
+            if(FloatPanel.resolve(-1,3,VehicleProfile.PETROL_DCT)!=FloatPanel.DCT2)throw new AssertionError("auto: DCT clutches 4th on a DCT");
+            if(FloatPanel.resolve(-1,3,VehicleProfile.PETROL_MT)!=Telemetry.INTAKE)throw new AssertionError("auto: a 6MT skips the DCT cell");
+            Telemetry.Sample[] gq=model.snapshot(now).clone();   // the log predates the BCM tyre temperatures: example ones, so the tyre cells show them
+            {float[] tt={28,29,31,30};for(int w=0;w<4;w++)gq[Telemetry.TIRE_TEMP_FL+w]=new Telemetry.Sample(tt[w],true,false,true,false,0);}
+            for(int i=0;i<FG.length;i++){int sh=FG[i],n=FloatPanel.fitCount(sh,4),sz=1;FloatPanel.shape=sh;   // each shape's own 자동 cells
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
+                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,gq,VehicleProfile.PETROL_DCT,now);
+                ImageIO.write(img,"png",new File(out,"x_floatall_"+fs[i]+".png"));}
+            {   // 세로 캡슐 with 음악 띠 on and a track playing: its last two rows give way to the track box
+                int sh=FloatPanel.VCAP,n=FloatPanel.fitCount(sh,4);FloatPanel.shape=sh;FloatPanel.musicStrip=true;
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,1),FloatPanel.defaultY(sh,n,1));
+                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,1,gq,VehicleProfile.PETROL_DCT,(now/100000)*100000);
+                ImageIO.write(img,"png",new File(out,"x_floatall_vcap_music.png"));FloatPanel.musicStrip=false;}
+            {   // 변속 알림 steps: 800, 400 and 100 rpm under the shift point (yellow warming to red), then at it (the flash on), side by side
+                int tgt=ShiftGuide.target(0,VehicleProfile.PETROL_DCT);int[] rpms={tgt-800,tgt-400,tgt-100,tgt+100};
+                if(!Float.isNaN(FloatPanel.shiftLevel(gq,VehicleProfile.PETROL_DCT)))throw new AssertionError("shift light: idle rpm shows nothing");
+                String[] sn={"card","vcap","pill"};int[] ss={FloatPanel.CARD,FloatPanel.VCAP,FloatPanel.PILL};
+                for(int m=0;m<ss.length;m++){int sh=ss[m],n=FloatPanel.fitCount(sh,4);FloatPanel.shape=sh;int w=FloatPanel.width(sh,n,1),h=FloatPanel.height(sh,n,1),x0=FloatPanel.defaultX(sh,n,1),y0=FloatPanel.defaultY(sh,n,1);
+                    int pad=10,cw=w+2*pad,ch=Math.min(480,h+2*pad);BufferedImage strip=new BufferedImage(cw*rpms.length+8*(rpms.length-1),ch,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D sg=strip.createGraphics();sg.setColor(new java.awt.Color(0x282828));sg.fillRect(0,0,strip.getWidth(),ch);
+                    for(int st=0;st<rpms.length;st++){Telemetry.Sample[] sq=gq.clone();sq[0]=new Telemetry.Sample(rpms[st],true,false,true,false,0);sq[8]=new Telemetry.Sample(3,true,false,true,false,0);
+                        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                        new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                        java.awt.Graphics2D g2=img.createGraphics();g2.translate(x0,y0);
+                        FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,1,sq,VehicleProfile.PETROL_DCT,now-now%180);
+                        int cx=Math.max(0,x0-pad),cy=Math.max(0,y0-pad);sg.drawImage(img.getSubimage(cx,cy,Math.min(cw,800-cx),Math.min(ch,480-cy)),st*(cw+8),0,null);}
+                    ImageIO.write(strip,"png",new File(out,"x_floatstage_"+sn[m]+".png"));}}
+            {   // 변속 번쩍임: 6,500 rpm in 3rd (over the default shift point), the flash's on phase
+                Telemetry.Sample[] hq=gq.clone();hq[0]=new Telemetry.Sample(6500,true,false,true,false,0);hq[8]=new Telemetry.Sample(3,true,false,true,false,0);
+                long on=now-now%180;
+                for(int i=0;i<FG.length;i++){int sh=FG[i],n=FloatPanel.fitCount(sh,4),sz=1;FloatPanel.shape=sh;
+                    BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                    new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                    java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
+                    FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,hq,VehicleProfile.PETROL_DCT,on);
+                    ImageIO.write(img,"png",new File(out,"x_floatflash_"+fs[i]+".png"));}}
+            FloatPanel.shape=shape0;FloatPanel.glideOn=glide0;
+            FloatPanel.music(null,null);
+        }
         {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
             int[][] combos={{1,4,1},{1,4,3},{1,2,1},{1,1,2},{2,4,1},{2,2,0},{3,4,1},{3,2,2}};
             String[] cn={"card4","card4_xl","card2","card1_l","strip4","strip2_s","side4","side2_l"};FloatPanel.cells[2]=-1;

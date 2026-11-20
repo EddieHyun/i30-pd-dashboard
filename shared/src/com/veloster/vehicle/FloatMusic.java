@@ -129,7 +129,7 @@ final class FloatMusic {
         float side=width(gear,18*k,sFace);
         for(int j=Math.min(n,2)-1;j>=0;j--){int sig=sigs[j];float v=FloatPanel.value(q,sig);if(rec)FloatPanel.record(first+j,sig,v,now);
             int f=FloatPanel.fmt(sig),lv=Tiles.level(f,v),col=lv==2?0xffff4b3c:lv==1?0xffffaa3c:sInk;
-            String val=Tiles.text(f,v),unit=Telemetry.UNITS[f]==null?"":Telemetry.UNITS[f];
+            String val=FloatPanel.valText(q,sig,v),unit=Telemetry.UNITS[f]==null?"":Telemetry.UNITS[f];
             if(j==0){say(c,FloatPanel.label(sig),x,76*k,10*k,sMut,Paint.Align.LEFT,sFace);
                 // 26 down to 14 until value and unit end 8 short of the right column: -0.65 bar beside 1561 rpm ran into it
                 float uw=unit.isEmpty()?0:3*k+width(unit,10*k,sFace),room=right-side-8*k-x,size=26*k;

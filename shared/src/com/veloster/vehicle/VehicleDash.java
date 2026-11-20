@@ -378,9 +378,10 @@ public final class VehicleDash extends View implements Runnable {
             FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
             FloatPanel.count=FloatPanel.fitCount(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,FloatPanel.count);
             int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
+            FloatPanel.shiftTarget=p.getInt("shift_target",0);   // the edge flashes at 설정 → RPM's shift point
             FloatPanel.corner=FloatPanel.CORNER_THEME;FloatPanel.color=FloatPanel.COLOR_THEME;   // the 모서리 / 색 rows are gone: the theme's (an earlier pick is ignored)
             if(current.get()==null)Theme.select(p.getString("theme","n"));   // the window started at boot, before the dashboard: its colours follow the theme too
-            for(int k=0;k<FloatPanel.MAX_CELLS;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=FloatPanel.quad(v)||v>=0&&v<Telemetry.LABELS.length?v:-1;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
+            for(int k=0;k<FloatPanel.MAX_CELLS;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=FloatPanel.pseudo(v)||v>=0&&v<Telemetry.LABELS.length?v:-1;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
