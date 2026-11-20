@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--aapt2", required=True)
     parser.add_argument("--java", default="java")
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--version-name")
     args = parser.parse_args()
     subprocess.run([sys.executable, str(ROOT / "scripts/generate_translations.py"), "--check"], check=True)
     java = executable(args.java)
@@ -85,7 +86,10 @@ def main():
     if (app / "res").is_dir():
         run("resources", [aapt2, "compile", "--dir", app / "res", "-o", out / "resources.zip"])
         resources = ["--auto-add-overlay", "-R", out / "resources.zip"]
-    run("manifest", [aapt2, "link", "-I", sdk, "--manifest", app / "AndroidManifest.xml", *resources,
+    # --version-name: the release's own name (v1.16.1, test-1120-abc1234) in place of the manifest's, so the installers and
+    # the diagnostics can tell which build is on the car. versionCode stays: the head unit refuses a lower one on reinstall.
+    named = ["--version-name", args.version_name, "--replace-version"] if args.version_name else []
+    run("manifest", [aapt2, "link", "-I", sdk, "--manifest", app / "AndroidManifest.xml", *resources, *named,
                      "--min-sdk-version", "17", "--target-sdk-version", "17", "-o", out / "base.apk"])
     target = out / (args.app + "-UNSIGNED.apk")
     with zipfile.ZipFile(out / "base.apk") as source, zipfile.ZipFile(target, "w") as archive:

@@ -66,7 +66,7 @@ def preflight(branch_ref):
     print("HEAD", sh("git", "log", "--oneline", "-1", capture=True))
 
 
-def build(t, out):
+def build(t, out, name):
     env = dict(os.environ, JAVA_HOME=str(t["java"].parents[1]))
     os.environ.update(env)
     print("== host tests")
@@ -75,7 +75,7 @@ def build(t, out):
     build_dir = ROOT / "build/dashboard"
     shutil.rmtree(build_dir, ignore_errors=True)
     sh(sys.executable, "-X", "utf8", "scripts/build.py", "dashboard", "--java", t["java"], "--android-jar", t["android"],
-       "--aapt2", t["aapt2"], "--r8-jar", t["d8"], "--out", build_dir)
+       "--aapt2", t["aapt2"], "--r8-jar", t["d8"], "--out", build_dir, "--version-name", name)
     aligned = build_dir / "dashboard-aligned.apk"
     sh(t["zipalign"], "-f", "-p", "4", build_dir / "dashboard-UNSIGNED.apk", aligned)
     apk = out / DASH
@@ -109,7 +109,7 @@ def stable(a):
     ver = a.version or next_version(prev)
     notes = Path(a.notes).read_text(encoding="utf-8")
     out = Path(tempfile.mkdtemp(prefix="release-"))
-    apk = build(t, out)
+    apk = build(t, out, ver)
     print(f"== other assets from {prev}")
     sh("gh", "release", "download", prev, "-R", REPO, "-D", out, "--skip-existing", "--pattern", "*")
     for item in a.asset or []:
@@ -154,7 +154,7 @@ def test(a):
     preflight("origin/beta")
     t = tools()
     out = Path(tempfile.mkdtemp(prefix="release-test-"))
-    apk = build(t, out)
+    apk = build(t, out, "test-" + sh("git", "log", "-1", "--format=%cd-%h", "--date=format:%m%d", capture=True))   # test-1120-abc1234
     if not a.publish:
         print("Dry run. Add --publish to replace the test APK and refresh the notes.")
         return
