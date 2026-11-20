@@ -441,7 +441,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void chimeTick(){
         VehicleDash d=current.get();if(d==null||d.beep==null||SpeedChime.kmh<=0)return;
         long now=SystemClock.elapsedRealtime();Telemetry.Sample sp=DATA.sample(7,now);
-        if(d.chime.due(sp.valid?sp.value:Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,d.beepVol/100f))d.chime.rang(now);
+        if(d.chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,d.beepVol/100f))d.chime.rang(now);
     }
     /** The floating window's tick (FloatService): while the dashboard is away its onDraw does not run, so the shift beep and
      *  the downshift sounds are worked out here from the samples, with the same edges and settings (the 맞춤 소리 화면 scope
@@ -554,7 +554,7 @@ public final class VehicleDash extends View implements Runnable {
         if(beepEdge.fire(up,now)&&beepOn&&shown)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);
         int dn=downCue.fire(scoped?renderer.revMatchDowns():0,now);   // the blip landed on a gear's target: that gear's sound
         if(dn>0&&downSounds[dn-1]>=0&&shown)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dn-1],beepVol/100f);
-        {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?sp.value:Float.NaN,now)&&shown&&beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f))chime.rang(now);}   // 과속 차임
+        {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&shown&&beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f))chime.rang(now);}   // 과속 차임
         long took=System.nanoTime()-drawStart;drawNs+=took;drawMaxNs=Math.max(drawMaxNs,took);drawFrames++;
         if(introStart==0)introStart=now;
         long introEl=now-introStart;

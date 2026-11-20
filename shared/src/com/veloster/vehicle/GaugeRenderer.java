@@ -26,14 +26,14 @@ public final class GaugeRenderer {
         p.setTextAlign(Paint.Align.CENTER);
     }
     private void line(Canvas c,float x,float y,float xx,float yy,int color,float width){p.setColor(T(color));p.setStrokeWidth(width);c.drawLine(x,y,xx,yy,p);}
-    static float min(int i,String u){return "G".equals(u)?-2:"°C".equals(u)?-40:i==Telemetry.STEERING?-540:i==Telemetry.SPARK?-20:i==Telemetry.STEER_TORQUE?-5:i==Telemetry.YAW?-50:i==Telemetry.SHIFT_HINT?-7:0;}
+    static float min(int i,String u){return "G".equals(u)?-2:i==Telemetry.CAT_TEMP?0:"°C".equals(u)?-40:i==Telemetry.STEERING?-540:i==Telemetry.SPARK?-20:i==Telemetry.STEER_TORQUE?-5:i==Telemetry.YAW?-50:i==Telemetry.SHIFT_HINT?-7:0;}
     static float max(int i,String u){
         if(i>=Telemetry.TCS&&i<=Telemetry.ABS)return 1;
         if(i==Telemetry.ELSD)return 6553.5f;
         if(i==Telemetry.BAT_VOLTAGE)return 18;if(i==Telemetry.STEERING_SPEED)return 1020;
         if("psi".equals(u))return 60;
         if("rpm".equals(u))return 8000;if("km/h".equals(u))return 300;if("%".equals(u))return 100;
-        if(i==Telemetry.CLUTCH_ODD||i==Telemetry.CLUTCH_EVEN)return 250;if("°C".equals(u))return 160;if("G".equals(u))return 2;if("PS".equals(u)||"hp".equals(u))return 350;
+        if(i==Telemetry.CLUTCH_ODD||i==Telemetry.CLUTCH_EVEN)return 250;if(i==Telemetry.CAT_TEMP)return 1000;if("°C".equals(u))return 160;if("G".equals(u))return 2;if("PS".equals(u)||"hp".equals(u))return 350;
         if(i!=Telemetry.STEER_TORQUE&&("Nm".equals(u)||"N·m".equals(u)))return 500;if("kPa".equals(u))return 250;
         if("bar".equals(u))return i==10?100:2.5f;if(i==Telemetry.STEERING)return 540;
         if(i==Telemetry.RANGE)return 800;if(i==Telemetry.SPARK)return 50;if(i==Telemetry.STEER_TORQUE)return 5;if(i==Telemetry.BRAKE_SWITCH||i>=Telemetry.DOOR_DRIVER)return i==Telemetry.WIPER?2:1;if("L/h".equals(u))return 40;if("km/L".equals(u))return 30;
