@@ -25,9 +25,9 @@ final class VfdCluster extends ClusterKit {
         seg7(c,sp,300,184,118,ON,GHOST,false);
         mono(c,"KM/H",300,322,16,DIM,Paint.Align.RIGHT);
         // warning words, lit only while on
-        String[] w={"DOOR","PARK","BRAKE","SHIFT"};
-        boolean[] on={v(Telemetry.DOOR_DRIVER)>0||v(Telemetry.DOOR_PASSENGER)>0,v(Telemetry.PARK_BRAKE)>0,v(10)>35,!Float.isNaN(rpm)&&rpm>prof.redline-500};
-        for(int i=0;i<4;i++)mono(c,w[i],70+i*62,346,15,on[i]?AMB:AMB_GHOST,Paint.Align.CENTER);
+        String[] w={"DOOR","PARK","BRAKE","SHIFT","ENGINE"};   // ENGINE = the MIL (engine warning lamp), lit amber like the others
+        boolean[] on={v(Telemetry.DOOR_DRIVER)>0||v(Telemetry.DOOR_PASSENGER)>0,v(Telemetry.PARK_BRAKE)>0,v(10)>35,!Float.isNaN(rpm)&&rpm>prof.redline-500,v(Telemetry.MIL)>0};
+        for(int i=0;i<w.length;i++)mono(c,w[i],70+i*62,346,15,on[i]?AMB:AMB_GHOST,Paint.Align.CENTER);
         // rising tach 0..8000
         for(int i=0;i<40;i++){
             float r=(i+1)*200,x=336+i*11,h=14+i*3.4f;boolean isOn=!Float.isNaN(rpm)&&rpm>=r-100;
