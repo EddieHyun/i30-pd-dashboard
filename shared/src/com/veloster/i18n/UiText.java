@@ -344,6 +344,7 @@ public final class UiText {
         EN.put("바로가기 끄기","Turn shortcut off");
         EN.put("바로가기 버튼","Shortcut button");
         EN.put("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요.","The shortcut button is a small button that stays on the screen edge. A short tap opens the dashboard, a long press opens My Apps, and it comes back after a reboot. The factory home screen does not list these apps, so turn it on after the first installation.");
+        EN.put("바로가기 버튼을 켜야 동작합니다","Needs the shortcut button on");
         EN.put("바로가기 서비스 종료 요청에 실패했습니다.","Could not request shortcut service shutdown.");
         EN.put("바로가기 시작 실패. 내 앱을 다시 열어 설정을 확인하세요.","Shortcut could not start. Reopen My Apps and check its settings.");
         EN.put("바로가기 시작 실패. 설정 상태와 시스템 권한을 확인하세요.","Shortcut could not start. Check its settings and system permissions.");
