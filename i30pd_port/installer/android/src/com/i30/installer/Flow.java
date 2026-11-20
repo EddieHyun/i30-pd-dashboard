@@ -44,7 +44,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-17b";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-20";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -319,7 +319,7 @@ final class Flow {
         return dst;
     }
 
-    private static void download(String url, File dst, Ui ui) throws Exception {
+    static void download(String url, File dst, Ui ui) throws Exception {
         try {
             URLConnection c = new URL(url).openConnection();
             c.setConnectTimeout(15_000);
@@ -405,23 +405,32 @@ final class Flow {
         return t.length() > 90 ? t.substring(0, 89) + "…" : t;
     }
 
-    /** A line about a newer phone installer on main (stable) or beta (test); null when none or offline. */
-    static String newer() {
-        StringBuilder b = new StringBuilder();
-        for (String branch : new String[]{"main", "beta"}) {
+    /** The phone installer's VERSION on main (stable) and beta (test), from the published source; null for a branch not reached. */
+    static String[] newerVersions() {
+        String[] v = new String[2];
+        String[] branches = {"main", "beta"};
+        for (int i = 0; i < 2; i++) {
             try {
-                URLConnection c = new URL(RAW + branch + "/i30pd_port/installer/android/src/com/i30/installer/Flow.java").openConnection();
+                URLConnection c = new URL(RAW + branches[i] + "/i30pd_port/installer/android/src/com/i30/installer/Flow.java").openConnection();
                 c.setConnectTimeout(5_000);
                 c.setReadTimeout(5_000);
                 ByteArrayOutputStream o = new ByteArrayOutputStream();
                 try (InputStream in = c.getInputStream()) { byte[] buf = new byte[8192]; for (int n; (n = in.read(buf)) > 0; ) o.write(buf, 0, n); }
                 Matcher m = Pattern.compile("VERSION = \"([^\"]+)\"").matcher(o.toString("UTF-8"));
-                if (m.find() && m.group(1).compareTo(VERSION) > 0)
-                    b.append("새 휴대폰 설치 앱이 있습니다 (").append(branch.equals("main") ? "안정화 " : "테스트 ").append(m.group(1)).append("): ")
-                            .append(RELEASES).append(branch.equals("main") ? "/latest" : "/tag/test").append(" 에서 i30pd-installer-android.apk를 다시 받으세요.\n");
+                if (m.find()) v[i] = m.group(1);
             } catch (IOException ignored) { /* offline or not published on that branch yet */ }
         }
-        return b.length() == 0 ? null : b.toString().trim();
+        return v;
+    }
+    /** The branch to update to: the newer of the two, stable on a tie; null when neither is newer than mine. */
+    static String pick(String mainVer, String betaVer, String mine) {
+        boolean m = mainVer != null && mainVer.compareTo(mine) > 0, b = betaVer != null && betaVer.compareTo(mine) > 0;
+        if (m && b) return betaVer.compareTo(mainVer) > 0 ? "beta" : "main";
+        return m ? "main" : b ? "beta" : null;
+    }
+    /** Where that branch's phone installer APK is published: the stable release, or the test pre-release. */
+    static String apkUrl(String branch) {
+        return RELEASES + (branch.equals("main") ? "/latest/download/" : "/download/test/") + "i30pd-installer-android.apk";
     }
 
     /** This phone's adb key, kept so the car's "항상 허용" holds next time. */
