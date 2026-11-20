@@ -27,7 +27,7 @@ public final class EngineSynth {
     public static final int RATE=11025;   // 11.025 kHz: engine content is under ~5 kHz, and the head unit cannot afford 22 kHz of synthesis
     static final double PUNCH=3;   // weight of the 3x band next to the thump (burble about 80 % below 150 Hz)
     // The wavelet design (the listening page's V2 table; keep the two in step).
-    static final int OS=4,MAXI=64;        // table oversampling; firings ringing at once (V8 at 6500 rpm: about 42)
+    static final int OS=4,RING=1024;      // table oversampling; the mix ring: one wavelet (529 samples) plus the latest start (9 deg at 300 rpm: 55)
     static final double WAVE=.048,        // seconds of exhaust ringing kept per firing
         FB=1.6,                            // blow-down decay shape (Friedlander b)
         HARD_T=.0022,HARD_RISE=.00018,     // full load: short, steep pulse (bright)
@@ -114,6 +114,13 @@ public final class EngineSynth {
     private double phase,whistlePhase,wobblePhase;   // phase = half-order phase: 2*pi per 720 degrees of crank
     private int firing=-1,firingI=-1;
     private double puff,blowoff,liftTimer,lastPedal,peakBoost;
+    /** The pedal gates the rpm lead: letting it go ends the trend the lead extrapolates (a lift, then often an upshift), and
+     *  the sound used to keep climbing past the engine. pedTop follows the pedal up at once and sinks LEAD_SINK a second; a
+     *  pedal LEAD_DROP under it holds the lead for LEAD_HOLD s. Scored on five recorded drives (two cars), 80 ms lead: rpm
+     *  error in the 0.5 s after a lift 65 -> 55 rpm rms (our car 92 -> 65), elsewhere unchanged. Raising the rpm early on
+     *  a pedal press was tried too: it helped the diesel and made our car worse, so a press only changes the load. */
+    static final double LEAD_DROP=.15,LEAD_SINK=.4,LEAD_HOLD=.4;
+    private double pedTop,leadHold;
     private double hp,hpIn,blowLp,blowBp,whLp,flut;
     private int popT=-1;
     private double popA,popT0,popB,popTau,crLp;
@@ -123,12 +130,12 @@ public final class EngineSynth {
     private double[] popBq,punchBq;
     private boolean running;
     private Voice p;
-    // The wavelets of the voice (per cylinder: soft and hard pulse; one intake pulse) and the firings ringing now.
+    // The wavelets of the voice (per cylinder: soft and hard pulse; one intake pulse) and the firings ringing now: each
+    // is added whole into the ring when it fires (its strength and mix are fixed then), so a sample is one read instead
+    // of a walk over every firing still ringing (38 of them for a V8 at 6000 rpm, slow on the head unit's Dalvik).
     private int len;private double even;
     private float[][] tabS,tabH;private float[] tabI;
-    private int ni;
-    private final int[] ipos=new int[MAXI];private final double[] ia=new double[MAXI],ib=new double[MAXI];
-    private final float[][] itA=new float[MAXI][],itB=new float[MAXI][];
+    private final double[] mix=new double[RING];private int tick;
     /** Listener tuning (tune()): brightness, flow noise, pipe reflections, intake, firing scatter (1 = as designed), off-load strength. */
     private double tone=1,rough=1,body=1,intakeVol=1,uneven=1,low=LOW;
     /** Listener trims on the voice's own values (1 = as designed). */
@@ -217,6 +224,13 @@ public final class EngineSynth {
         reflect(y,lp,shared);reflect(y,hi,own);return finish(y,energy);
     }
 
+    /** Where a wavelet's tail has faded for good: everything after stays under -80 dB of its peak (under one 16-bit step
+     *  in the output). The intake pulse is done in about half the 48 ms, so half its additions are saved. */
+    private static int end(float[] t){
+        float pk=0;for(float v:t)pk=Math.max(pk,Math.abs(v));
+        int e=t.length;while(e>1&&Math.abs(t[e-1])<=pk*1e-4f)e--;
+        return e;
+    }
     /** Builds the wavelets of the voice (a few ms of work, once per voice or brightness / reflection change) and switches
      *  in place: inputs, phase and smoothing carry on, and the firings still ringing keep their old tables. */
     public void use(Voice v){
@@ -229,13 +243,14 @@ public final class EngineSynth {
         double[] baseH=disperse(shape(through(pulse(HARD_T/root,HARD_RISE/v.high,r4),v.formants,RIDGES,1,root,v.dry*v.high,r4),aa,r4),r4),
             baseS=disperse(shape(through(pulse(SOFT_T/root,SOFT_RISE,r4),v.formants,RIDGES,1,root,v.dry,r4),aa,r4),r4);
         float[][] h=new float[v.nc][],s=new float[v.nc][];
-        for(int c=0;c<v.nc;c++){double[][] own=taps(OWN,r4);h[c]=cylinder(baseH,1,shared,own,r4);s[c]=cylinder(baseS,SOFT_LEVEL*SOFT_LEVEL,shared,own,r4);}
+        for(int c=0;c<v.nc;c++){double[][] own=taps(OWN,r4);h[c]=cylinder(baseH,1,shared,own,r4);s[c]=cylinder(baseS,SOFT_LEVEL*SOFT_LEVEL,shared,own,r4);
+            int e=Math.max(end(h[c]),end(s[c]));h[c]=java.util.Arrays.copyOf(h[c],e);s[c]=java.util.Arrays.copyOf(s[c],e);}   // spawn() adds the pair over one length
         // intake: one suction pulse per induction stroke through the intake tract
         double[] a=new double[len];int n=Math.min(len,(int)Math.round(INTAKE_T/root*r4));
         for(int i=0;i<n;i++){double q=Math.sin(Math.PI*i/n);a[i]=-q*q;}
         double[] base=shape(through(a,INTAKE_FORMANTS,null,v.fScale,1,INTAKE_DRY,r4),aa,r4),y=base.clone();
         reflect(y,base,taps(INTAKE_TAPS,r4));
-        tabH=h;tabS=s;tabI=finish(y,1);
+        tabH=h;tabS=s;tabI=finish(y,1);tabI=java.util.Arrays.copyOf(tabI,end(tabI));
         nbq=new double[2][];for(int b=0;b<2;b++)nbq[b]=bandPass(Math.min(NOISE_BANDS[b][0]*root,rate*.42),NOISE_BANDS[b][1],rate);
         double w=2*Math.PI*v.popBodyHz/rate,alpha=Math.sin(w)/(2*1.1),cw=Math.cos(w),a0=1+alpha;   // pop body: resonant low-pass
         popBq=new double[]{(1-cw)/2/a0,(1-cw)/a0,(1-cw)/2/a0,-2*cw/a0,(1-alpha)/a0};
@@ -273,25 +288,32 @@ public final class EngineSynth {
         peakBoost=Math.max(b,peakBoost*.9);
         lastPedal=pd;targetPedal=pd;targetBoost=b;
     }
+    /** Adds one wavelet into the ring: a*tA + b*tB, table index pos at the sample being made (negative = it starts later). */
     private void spawn(float[] tA,float[] tB,double a,double b,int pos){
-        if(ni>=MAXI)return;
-        int j=ni++;itA[j]=tA;itB[j]=tB;ia[j]=a;ib[j]=b;ipos[j]=pos;
+        int m=pos<0?(OS-1-pos)/OS:0,k=pos+m*OS,x=(tick+m)&(RING-1);final double[] r=mix;final int L=tA.length;
+        if(b==0)for(;k<L;k+=OS,x=(x+1)&(RING-1))r[x]+=a*tA[k];
+        else if(a==0)for(;k<L;k+=OS,x=(x+1)&(RING-1))r[x]+=b*tB[k];
+        else for(;k<L;k+=OS,x=(x+1)&(RING-1))r[x]+=a*tA[k]+b*tB[k];
     }
 
     /** Fills out[off..off+n) with -1..1 samples at the given master volume (0 = silent, 1 = as designed, up to 2 louder:
      *  at or below 1 the finished sound is scaled, above 1 it is driven harder into the soft clip so it gets louder and
      *  more saturated without ever leaving -1..1 — no hard clipping). */
     public void render(float[] out,int off,int n,double volume){
-        Voice P=p;int nc=P.nc,L=len;double popC=1-(1-P.popChance)*popRate,tv=turboVol,bv=bovVol;
+        Voice P=p;int nc=P.nc;double popC=1-(1-P.popChance)*popRate,tv=turboVol,bv=bovVol;
         double k=1-Math.exp(-1/(.08*rate)),ka=1-Math.exp(-1/(.025*rate)),kr=lead>0?1-Math.exp(-1/(.03*rate)):k,leadN=lead*rate,ke=1-Math.exp(-1/(.15*rate)),
             puffDecay=Math.exp(-1/(NOISE_TAU*rate)),blowDecay=Math.exp(-1/(.15*rate)),dt=n/rate,
             step=2*Math.PI/nc,kw=1-Math.exp(-2*Math.PI*70/rate),kf=1-Math.exp(-2*Math.PI*6/rate);
-        if(!running&&master<1e-5){master=0;ni=0;for(int i=0;i<n;i++)out[off+i]=0;return;}   // fully faded: silence
+        if(!running&&master<1e-5){master=0;java.util.Arrays.fill(mix,0);for(int i=0;i<n;i++)out[off+i]=0;return;}   // fully faded: silence
         liftTimer=Math.max(0,liftTimer-dt);flameHold=Math.max(0,flameHold-dt);
+        pedTop=Math.max(targetPedal,pedTop-LEAD_SINK*dt);leadHold=Math.max(0,leadHold-dt);
+        if(pedTop-targetPedal>LEAD_DROP){leadHold=LEAD_HOLD;pedTop=targetPedal;}
         for(int i=0;i<n;i++){
             if(leadN>0&&running&&!Double.isNaN(lastRaw)){   // predicted rpm, never more than 400 rpm from the last sample
                 double ahead=Math.min(sinceNew+leadN,leadN+1.5*interval);
-                targetRpm=lastRaw+Math.max(-400,Math.min(400,slope*ahead));
+                // no lead while the pedal holds it, nor on a slope gone stale: an rpm that stops changing sends no new
+                // sample, and the last slope used to stay added for as long as the value repeated (188 rpm sharp after a pull)
+                targetRpm=leadHold>0||sinceNew>2.5*interval?lastRaw:lastRaw+Math.max(-400,Math.min(400,slope*ahead));
             }
             sinceNew++;
             rpm+=(targetRpm-rpm)*kr;pedal+=(targetPedal-pedal)*(targetPedal>pedal?ka:k);/* pressing follows in 25 ms, lifting eases off over 80 ms */boost+=(targetBoost-boost)*k;
@@ -327,12 +349,7 @@ public final class EngineSynth {
                     spawn(tabI,tabI,a,0,(int)Math.round(fracI*OS));
                 }
             }
-            double v=0;
-            for(int j=0;j<ni;j++){   // the firings still ringing
-                int kx=ipos[j];
-                if(kx>=0)v+=ia[j]*itA[j][kx]+ib[j]*itB[j][kx];
-                if((ipos[j]=kx+OS)>=L){int l=--ni;ipos[j]=ipos[l];ia[j]=ia[l];ib[j]=ib[l];itA[j]=itA[l];itB[j]=itB[l];j--;}
-            }
+            int tx=tick&(RING-1);double v=mix[tx];mix[tx]=0;tick++;   // the firings still ringing
             // flow noise that breathes with the firings, through two fixed bands
             double nz=noise();flut+=(nz-flut)*kf;
             double nin=nz*(NOISE_BASE+NOISE_DEPTH*puff)*P.flow*25*(.12+load)*P.high*rough*tone;   // the hiss follows the brightness

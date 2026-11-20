@@ -51,6 +51,18 @@ public final class EngineSynthTest {
         }
         return new double[]{sum/n,low};
     }
+    /** How far the sound is past the engine (rpm) after a 2000 rpm/s pull ends at t = 1 s and the rpm stays put, CAN frames
+     *  every 80 ms, 80 ms of lead, with the pedal let go at that moment or held: {worst from 50 to 200 ms after, at 1.8 s}.
+     *  (What the lead had added by t = 1 s is there either way; held, it goes on until the slope is seen to be stale.) */
+    private static double[] overshoot(boolean lift){
+        EngineSynth s=new EngineSynth();s.lead=.08;float[] x=new float[512];double over=0;
+        for(int i=0;i<(int)(1.8*EngineSynth.RATE/512);i++){
+            double t=i*512.0/EngineSynth.RATE,ct=Math.floor(t/.08)*.08;
+            s.set(2000+Math.min(1,ct)*2000,lift&&ct>=1?0:.8,.5);s.render(x,0,512,1);
+            if(t>1.05&&t<1.2)over=Math.max(over,s.rpmForTest()-4000);
+        }
+        return new double[]{over,s.rpmForTest()-4000};
+    }
     private static double truth(double t){return t<.5?1500:t<2?1500+(t-.5)*2000:3000+Math.max(0,t-2.15)*1500;}
 
     public static void main(String[] args){
@@ -105,6 +117,9 @@ public final class EngineSynthTest {
         double[] plain=lag(0,50),comp=lag(.08,50);
         check(plain[0]>200&&Math.abs(comp[0])<80,"lag "+plain[0]+" rpm -> "+comp[0]+" rpm");
         check(comp[1]>-150,"no dive after the upshift: "+comp[1]);
+        double[] held=overshoot(false),let=overshoot(true);
+        check(held[0]>100&&let[0]<50,"letting the pedal go holds the lead: the sound is "+held[0]+" rpm past the engine with the pedal held, "+let[0]+" with it let go");
+        check(Math.abs(held[1])<5&&Math.abs(let[1])<5,"a slope gone stale is dropped: "+held[1]+" / "+let[1]+" rpm off once the rpm has stopped");
         EngineSynth b=new EngineSynth();run(b,4000,1,1,1);
         float[] stop=run(b,Double.NaN,0,0,2);
         check(peak(stop)<.001,"fades out when the engine stops: "+peak(stop));

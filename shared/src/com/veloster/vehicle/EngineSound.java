@@ -77,6 +77,7 @@ final class EngineSound implements Runnable {
             track.play();
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min+" block "+blk+" buffer "+bytes+" B ahead "+aheadMs+" ms");
             EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[blk];short[] pcm=new short[blk];int flames=0;
+            long cost=0;int made=0;   // the synth's own CPU time (this thread's, not the wait behind the drawing), logged every 30 s of sound: the head unit's figure, which a PC cannot give
             while(thread==Thread.currentThread()){
                 long now=SystemClock.elapsedRealtime();EngineSynth.voiced=volume>0;
                 Telemetry.Sample rpm=data.sample(0,now),pedal=data.sample(9,now),boost=data.sample(Telemetry.BOOST,now),
@@ -87,7 +88,8 @@ final class EngineSound implements Runnable {
                 if(voice!=playing){playing=voice;synth.use(playing);}
                 synth.tune(tone,rough,body,intake,uneven,low);   // rebuilds the wavelets only when brightness or reflections changed
                 synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
-                synth.render(f,0,blk,volume);
+                long t0=android.os.Debug.threadCpuTimeNanos();synth.render(f,0,blk,volume);cost+=android.os.Debug.threadCpuTimeNanos()-t0;
+                if((made+=blk)>=30*EngineSynth.RATE){android.util.Log.i("VehicleDash","Engine sound: "+cost/1000000*EngineSynth.RATE/made+" ms of CPU per s of sound, rpm "+(rpm.valid?(int)rpm.value:-1));cost=0;made=0;}
                 if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
                 short[] bm=beepMix;
                 if(bm!=null){int bp=beepPos;float bg=beepGain;
