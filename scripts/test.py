@@ -25,6 +25,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/ShiftGuide.java",
                ROOT / "shared/src/com/veloster/vehicle/Dtc.java",
                ROOT / "shared/src/com/veloster/vehicle/DriveStats.java",
+               ROOT / "shared/src/com/veloster/vehicle/Records.java",
                ROOT / "shared/src/com/veloster/vehicle/Theme.java",
                ROOT / "shared/src/com/veloster/vehicle/HeaderTabs.java",
                ROOT / "shared/src/com/veloster/vehicle/ClusterPicker.java",

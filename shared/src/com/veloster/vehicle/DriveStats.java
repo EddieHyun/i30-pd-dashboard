@@ -121,7 +121,7 @@ public final class DriveStats {
                 else if(speed>=to){
                     long end=cross(prevSpeed,prevSpeedAt,speed,t,to);
                     last[i]=(end-runStart[i])/1000f;if(Float.isNaN(best[i])||last[i]<best[i])best[i]=last[i];
-                    running[i]=false;finishedAt[i]=end;
+                    running[i]=false;finishedAt[i]=end;Records.add(Records.runKey(i),last[i]);   // 기록실
                 }
             }else if(armed[i]&&speed>=from&&!Float.isNaN(prevSpeed)&&prevSpeed<from){
                 running[i]=true;runStart[i]=cross(prevSpeed,prevSpeedAt,speed,t,from);

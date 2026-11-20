@@ -201,6 +201,8 @@ public final class UiText {
         EN.put("기기 페어링","Pair device");
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
+        EN.put("기록 지우기","Clear records");
+        EN.put("기록실","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
         EN.put("기본","Default");
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
@@ -677,6 +679,7 @@ public final class UiText {
         EN.put("저장 / Save","Save");
         EN.put("저장공간","Storage");
         EN.put("저장된 고장코드가 없습니다.","No stored trouble codes.");
+        EN.put("저장된 기록을 모두 지울까요?","Clear all kept records?");
         EN.put("적음","Less");
         EN.put("전기·차체","Electrics · body");
         EN.put("전남","Jeonnam");
@@ -745,6 +748,7 @@ public final class UiText {
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난 랩","Last");
         EN.put("지연 보정","Latency compensation");
+        EN.put("지우기","Clear");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");

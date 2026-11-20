@@ -395,6 +395,7 @@ public final class RaceRenderer {
             box(c,l,60,rr,250,PANEL);
             text(c,run(i)+" km/h",l+12,84,16,MUTED,Paint.Align.LEFT);
             text(c,"BEST "+fmt("%.2f",st.best[i]),rr-12,84,16,!Float.isNaN(st.best[i])?GREEN:MUTED,Paint.Align.RIGHT);
+            text(c,"ALL-TIME "+fmt("%.2f",Records.best(Records.runKey(i))),rr-12,106,13,MUTED,Paint.Align.RIGHT);   // 기록실: kept across drives
             float shown=live?(now-st.runStart[i])/1000f:st.last[i];
             text(c,"s",rr-12,206,16,MUTED,Paint.Align.RIGHT);
             text(c,fmt(live?"%.1f":"%.2f",shown),rr-30,206,72,live?AMBER:WHITE,Paint.Align.RIGHT);
@@ -412,7 +413,7 @@ public final class RaceRenderer {
             box(c,l,258,rr,468,hot?D():PANEL);
             text(c,"MAX CLUTCH",l+12,282,13,hot?BG:MUTED,Paint.Align.LEFT);
             maxClutch(c,"ODD",st.maxClutchOdd,l,rr,390,hot);maxClutch(c,"EVEN",st.maxClutchEven,l,rr,446,hot);}
-        text(c,"Records reset when the app closes",R,478,10,MUTED,Paint.Align.RIGHT);
+        text(c,"BEST and MAX are this drive's · tap a run for the kept records (기록실)",R,478,10,MUTED,Paint.Align.RIGHT);
     }
     private void maxClutch(Canvas c,String name,float t,float l,float rr,float y,boolean filled){
         int lv=Telemetry.clutchLevel(t),ink=filled?BG:Float.isNaN(t)?MUTED:lv==1?AMBER:WHITE;

@@ -52,7 +52,9 @@ final class CircuitCluster extends ClusterKit {
         if(c<0){c=Circuits.pick(lat,lon,circuit);if(c<0)c=nearest();}
         if(c!=circuit){circuit=c;atCircuit();}
         lap.fix(lat,lon,t);fixT=t;fixNano=System.nanoTime()/1000000;
-        if(lap.laps!=lapsSeen){lapsSeen=lap.laps;lastVmax=vmax;vmax=Float.NaN;}
+        if(lap.laps!=lapsSeen){
+            if(lap.laps>lapsSeen&&lap.last>0&&circuit>=0)Records.add(Records.lapKey(Circuits.name(circuit)),lap.last/1000f);   // 기록실
+            lapsSeen=lap.laps;lastVmax=vmax;vmax=Float.NaN;}
     }
     /** A new circuit (or none): the laps start over, on that circuit's line. */
     private void atCircuit(){

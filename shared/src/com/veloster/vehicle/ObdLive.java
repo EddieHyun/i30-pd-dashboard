@@ -125,12 +125,16 @@ public final class ObdLive {
     public void stop(){running=false;Thread t=thread;if(t!=null)t.interrupt();}
 
     private void loop(Sink sink,Gate gate){
-        IBinder svc;
-        try{svc=(IBinder)Class.forName("android.os.ServiceManager").getMethod("getService",String.class).invoke(null,SERVICE);}
-        catch(Throwable e){return;}
-        if(svc==null)return;
-        Binder listener=new Listener(),token=new Binder();
-        try{call(svc,1,listener,token);}catch(Throwable e){return;}
+        // The service may not be up yet (a floating window from boot), or refuse the listener once: tried again every 30 s.
+        // One miss used to end the polling for the drive: running stayed true, so start() did nothing more.
+        IBinder svc=null;Binder listener=new Listener(),token=new Binder();
+        while(running){
+            try{svc=(IBinder)Class.forName("android.os.ServiceManager").getMethod("getService",String.class).invoke(null,SERVICE);if(svc!=null)call(svc,1,listener,token);}
+            catch(Throwable e){svc=null;}
+            if(svc!=null)break;
+            android.util.Log.i("VehicleDash","OBD service not ready, again in 30 s");nap(30000);
+        }
+        if(svc==null)return;   // stopped while waiting
         long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();current=sched;this.sink=sink;
         try{
             while(running){

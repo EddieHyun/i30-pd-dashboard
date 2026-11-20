@@ -164,6 +164,9 @@ public final class VehicleDash extends View implements Runnable {
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
         gaugeEditor=new GaugeEditor(a,gaugeLayout,new Runnable(){public void run(){invalidate();}});
         tilePicker=new TilePicker(a);
+        {final SharedPreferences rp=a.getApplicationContext().getSharedPreferences("pit_vehicle_records",0);   // 기록실
+         Records.store(new Records.Store(){public String get(String k){return rp.getString(k,"");}
+             public void put(String k,String l){rp.edit().putString(k,l).apply();}public void clear(){rp.edit().clear().apply();}});}
         {SharedPreferences tp=a.getSharedPreferences("pit_vehicle_ui",0);   // the tiles' picks (Tiles), -1 = default
          for(int l=0;l<Tiles.KEYS.length;l++)for(int i=0;i<Tiles.picked[l].length;i++)
              try{Tiles.picked[l][i]=tp.getInt(Tiles.key(l,i),-1);}catch(ClassCastException e){Tiles.picked[l][i]=-1;}}
@@ -733,12 +736,15 @@ public final class VehicleDash extends View implements Runnable {
         if(!blocked&&downY>52&&Math.abs(x-downX)>=60&&Math.abs(x-downX)>Math.abs(y-downY)*1.5f){
             screen=x<downX?ClusterPicker.next(order,screen,hidden):ClusterPicker.prev(order,screen,hidden);showCluster();invalidate();return true;
         }
-        if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
+        // 돌아가기 puts the dashboard behind, as the home key does: finish() threw away the run times, the taxi fare and the
+        // laps, and with the floating window up left the old screen's engine sound playing beside the new one's
+        if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.moveTaskToBack(true);return true;}
         if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
             overviewLayout.cycle(overviewDown);
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("overview_style_"+overviewDown,overviewLayout.style(overviewDown)).apply();
             invalidate();return true;
         }
+        if(tap&&!blocked&&symmetric&&page==PitRenderer.PAGE_RECORDS&&y>=60&&y<=250&&downY>=60&&downY<=250){RecordsDialog.show(activity);return true;}   // a run box: 기록실
         if(tap&&!blocked&&onLap(x,y)&&onLap(downX,downY)){   // tap: start / next lap / resume; a hold (lapHold) stops, then clears
             if(!lapHeld)lap.tap(SystemClock.elapsedRealtime());
             invalidate();return true;
