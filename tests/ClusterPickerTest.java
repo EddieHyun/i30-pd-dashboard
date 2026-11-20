@@ -59,6 +59,11 @@ public final class ClusterPickerTest {
         st=ClusterPicker.onMode(1,3,st[0],st[1],0,mine);check(st[0]==ClusterPicker.GAUGES&&st[1]==9,"ECO opens its chosen screen, keeps the return");
         st=ClusterPicker.onMode(3,0,st[0],st[1],0,mine);check(st[0]==ClusterPicker.OVERVIEW,"NORMAL opens its chosen screen");
         st=ClusterPicker.onMode(0,1,4,-1,0,new int[]{ClusterPicker.COUNT+3,-1,-1});check(st[0]==4,"a bad saved target moves nothing");
+        {int[] o=ClusterPicker.validOrder(null);int a=o[0],b=o[1],c=o[2],d=o[3];
+            int[] m=ClusterPicker.move(o.clone(),0,2);check(m[0]==b&&m[1]==c&&m[2]==a&&m[3]==d,"move: the first screen dropped at position 2");
+            m=ClusterPicker.move(o.clone(),3,0);check(m[0]==d&&m[1]==a&&m[2]==b&&m[3]==c,"move: position 3 dropped at the top");
+            m=ClusterPicker.move(o.clone(),2,2);check(java.util.Arrays.equals(m,o),"move: same place keeps the order");
+            m=ClusterPicker.move(o.clone(),0,o.length+5);check(java.util.Arrays.equals(m,o),"move: out of range keeps the order");}
         System.out.println("PASS "+checks+" cluster picker checks");
     }
 }

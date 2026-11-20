@@ -12,7 +12,7 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.CATS[SettingsLayout.DONE].equals("완료")&&SettingsLayout.DONE==n-1,"완료 last");
         check(SettingsLayout.catTop(n-1)+SettingsLayout.CAT_H<=SettingsLayout.BOTTOM,"categories fit the height");
         for(int i=0;i<n;i++)check(SettingsLayout.cat(SettingsLayout.CAT_L+10,SettingsLayout.catTop(i)+10)==i,"category "+i+" hits itself");
-        check(SettingsLayout.cat(SettingsLayout.PANE_L+10,SettingsLayout.TOP+10)==-1&&SettingsLayout.cat(SettingsLayout.CAT_L+10,SettingsLayout.catTop(1)-2)==-1,"pane and gaps are no category");
+        check(SettingsLayout.cat(SettingsLayout.PANE_L+10,SettingsLayout.TOP+10)==-1&&SettingsLayout.cat(SettingsLayout.CAT_L+10,SettingsLayout.catTop(1)-1)==-1,"pane and gaps are no category");
         check(SettingsLayout.THEME_NAMES.length==Theme.IDS.length,"a name per theme");
         check(SettingsLayout.count(SettingsLayout.SCREENS)==ClusterPicker.COUNT&&SettingsLayout.count(SettingsLayout.PAINT)==CarPaint.IDS.length+1,"every screen and paint listed, then the 8-bit sky");
         check(SettingsLayout.count(SettingsLayout.DONE)==0&&SettingsLayout.item(SettingsLayout.DONE,400,200)==-1,"완료 has no pane");
@@ -77,6 +77,36 @@ public final class SettingsLayoutTest {
         for(int i=0;i<9;i++){float[] b=SettingsLayout.tile3(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=150&&b[3]-b[1]>=90,"look tile "+i+" big and on the sheet");
             check(SettingsLayout.hit3((b[0]+b[2])/2,(b[1]+b[3])/2,9)==i,"look tile "+i+" hits");}
         check(SettingsLayout.hit3(30,30,9)==-2&&SettingsLayout.hit3(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,9)==-1,"outside closes, the sheet's edge does nothing");
+        // groups: 화면 · 주행 모드 · 플로팅 | 테마 · 차량 색 · 언어 | RPM · 엔진 사운드 · 효과음 | 진단 | 완료, a gap between groups
+        check(SettingsLayout.CATS[SettingsLayout.SCREENS].equals("화면")&&SettingsLayout.CATS[SettingsLayout.MODE].equals("주행 모드")&&SettingsLayout.CATS[SettingsLayout.FLOAT].equals("플로팅")
+            &&SettingsLayout.CATS[SettingsLayout.THEME].equals("테마")&&SettingsLayout.CATS[SettingsLayout.PAINT].equals("차량 색")&&SettingsLayout.CATS[SettingsLayout.LANG].equals("언어")
+            &&SettingsLayout.CATS[SettingsLayout.RPM].equals("RPM")&&SettingsLayout.CATS[SettingsLayout.SOUND].equals("엔진 사운드")&&SettingsLayout.CATS[SettingsLayout.FX].equals("효과음")
+            &&SettingsLayout.CATS[SettingsLayout.DIAG].equals("진단"),"categories in their groups");
+        check(SettingsLayout.PICK>SettingsLayout.DONE,"the chooser is not a category");
+        float step=SettingsLayout.CAT_H+SettingsLayout.CAT_GAP;
+        check(SettingsLayout.catTop(1)-SettingsLayout.catTop(0)==step&&SettingsLayout.catTop(3)-SettingsLayout.catTop(2)==step+SettingsLayout.GROUP_GAP
+            &&SettingsLayout.catTop(6)-SettingsLayout.catTop(5)==step+SettingsLayout.GROUP_GAP&&SettingsLayout.catTop(10)-SettingsLayout.catTop(9)==step+SettingsLayout.GROUP_GAP,"a gap before each group");
+        check(SettingsLayout.CAT_H>=33,"categories tall enough to tap");
+        // 효과음: the four sounds that are not the engine
+        check(SettingsLayout.count(SettingsLayout.FX)==4&&SettingsLayout.count(SettingsLayout.SOUND)==(SettingsLayout.ENGINE_SOUND?SettingsLayout.SOUND_FAST+1:1)&&SettingsLayout.SOUND_FAST==SettingsLayout.SOUND_LEAD+1,"effects pane, engine sound pane ends at 소리 반응 속도");
+        // 차량 색 shown by colour family: every paint once
+        {boolean[] seen=new boolean[CarPaint.IDS.length];check(SettingsLayout.PAINT_ORDER.length==CarPaint.IDS.length,"a slot per paint");
+            for(int p:SettingsLayout.PAINT_ORDER){check(p>=0&&p<seen.length&&!seen[p],"paint "+p+" once");seen[p]=true;}
+            check(CarPaint.IDS[SettingsLayout.PAINT_ORDER[0]].equals("white")&&CarPaint.IDS[SettingsLayout.PAINT_ORDER[4]].equals("blue")&&CarPaint.IDS[SettingsLayout.PAINT_ORDER[8]].equals("red"),"white first, blues from 5, reds from 9");}
+        // 화면 list: drag by the grip, drop rows clamp, auto-scroll at the edges
+        check(SettingsLayout.onGrip(SettingsLayout.PANE_L+10)&&!SettingsLayout.onGrip(SettingsLayout.PANE_L+SettingsLayout.THUMB_W+2)&&!SettingsLayout.onGrip(SettingsLayout.PANE_L-4),"grip = the thumbnail column");
+        check(SettingsLayout.dropRow(SettingsLayout.TOP+1,0)==0&&SettingsLayout.dropRow(SettingsLayout.TOP-50,0)==0&&SettingsLayout.dropRow(SettingsLayout.BOTTOM+50,SettingsLayout.maxScreenScroll())==ClusterPicker.COUNT-1
+            &&SettingsLayout.dropRow(SettingsLayout.TOP+SettingsLayout.SCREEN_ROW_H*1.5f,0)==1,"drop rows clamp to the list");
+        check(SettingsLayout.autoScroll(SettingsLayout.TOP+5)<0&&SettingsLayout.autoScroll(SettingsLayout.BOTTOM-5)>0&&SettingsLayout.autoScroll(260)==0,"auto-scroll near the edges only");
+        check(SettingsLayout.scrolls(SettingsLayout.SCREENS)&&SettingsLayout.scrolls(SettingsLayout.SOUND)&&!SettingsLayout.scrolls(SettingsLayout.THEME),"the panes that scroll");
+        // 플로팅: size / transparency bars snap to their stops, presets in a row
+        for(int i=0;i<4;i++)check(SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,SettingsLayout.sliderX(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,i))==i,"size stop "+i);
+        for(int i=0;i<3;i++)check(SettingsLayout.sliderStop(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,3,SettingsLayout.sliderX(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,3,i))==i,"alpha stop "+i);
+        check(SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,0)==0&&SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,800)==3,"a finger off the bar ends keeps to the ends");
+        check(SettingsLayout.floatHit(SettingsLayout.F_SIZE_BAR[0]+3,SettingsLayout.F_SIZE_BAR[1]+18,2,2,124,64)==SettingsLayout.F_SIZE&&SettingsLayout.floatHit(SettingsLayout.F_ALPHA_BAR[2]-3,SettingsLayout.F_ALPHA_BAR[1]+18,2,2,124,64)==SettingsLayout.F_ALPHA,"the bars hit anywhere along them");
+        check(SettingsLayout.F_PRESETS.length==4,"four presets");
+        for(int i=0;i<4;i++){float[] b=SettingsLayout.floatBox(SettingsLayout.F_PRESET+i);check(b!=null&&SettingsLayout.floatHit((b[0]+b[2])/2,(b[1]+b[3])/2,2,2,124,64)==SettingsLayout.F_PRESET+i,"preset "+i+" hits");}
+        check(SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[0]>=SettingsLayout.FC_L&&SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[1]>=SettingsLayout.F_HIDE_BOX[3],"음악 띠 in the right column, under the button hiding");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

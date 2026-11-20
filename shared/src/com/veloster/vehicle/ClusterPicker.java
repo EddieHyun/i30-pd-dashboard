@@ -48,6 +48,13 @@ public final class ClusterPicker {
         if(i<0||i>=order.length||j<0||j>=order.length)return order;
         int t=order[i];order[i]=order[j];order[j]=t;return order;
     }
+    /** The screen at display position from taken out and put back at position to (a dragged row); out of range keeps the order. */
+    public static int[] move(int[] order,int from,int to){
+        order=validOrder(order);if(from<0||from>=order.length||to<0||to>=order.length||from==to)return order;
+        int t=order[from];
+        if(from<to)System.arraycopy(order,from+1,order,from,to-from);else System.arraycopy(order,to,order,to+1,from-to);
+        order[to]=t;return order;
+    }
     /** The shown screen after cur in display order, wrapping; cur itself when it is the only one. */
     public static int next(int[] order,int cur,int hidden){
         order=validOrder(order);int at=pos(order,cur);
