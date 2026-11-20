@@ -21,24 +21,26 @@ public final class FloatPanel {
     public static final int MUSIC=FloatLayouts.LAST+1;
     /** 세로 띠 + RPM: six readings stacked, a full-height rpm bar on the right (FloatLayouts.VRPM; numbered after 음악 so saved choices keep their meaning). */
     public static final int VRPM=FloatLayouts.VRPM;
+    /** 세로 캡슐: a screen-high pill, a boost dial in its top end, readings with the rpm lane beside them, the gear at the bottom (FloatLayouts.VCAP). */
+    public static final int VCAP=FloatLayouts.VCAP;
     /** Readings a window can hold (세로 띠 + RPM shows six, and a seventh while no track plays). */
     public static final int MAX_CELLS=7;
-    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악","세로 띠 + RPM"};
+    public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악","세로 띠 + RPM","세로 캡슐"};
     /** The 모양 sheet's order; SettingsLayout.FORM_SLOTS puts each on its 5 x 4 grid. */
-    public static final int[] FORMS={CARD,STRIP,SIDE,TICK,FILLS, ROUND,DIAL,TWIN,BARS, PILL,GEARBOX,WEDGE,SHIFT, VRPM,TOWER,HERO,DIAG,MUSIC};
-    public static final int LAST_SHAPE=VRPM;
+    public static final int[] FORMS={CARD,STRIP,SIDE,TICK,FILLS, ROUND,DIAL,TWIN,BARS, PILL,GEARBOX,WEDGE,SHIFT,VCAP, VRPM,TOWER,HERO,DIAG,MUSIC};
+    public static final int LAST_SHAPE=VCAP;
     /** 음악 띠: the playing track in a strip under the window, any shape but 음악. */
     public static volatile boolean musicStrip;
     /** The window shows the track (FloatService then keeps the media receiver up while the dashboard is away). */
     public static boolean musicShown(){int s=shape;return s==MUSIC||musicStrip&&s!=OFF;}
     /** The track and its album art (null for none) for the next tick and draw. */
     public static void music(MediaState.Snapshot track,android.graphics.Bitmap art){FloatMusic.track=track;FloatMusic.art=art;}
-    private static boolean strip(int s){return musicStrip&&s>OFF&&s!=MUSIC&&s!=VRPM;}   // 세로 띠 + RPM keeps the track in its own box
-    /** 세로 띠 + RPM's box shows the track: 음악 띠 on and a track playing (else its seventh reading). */
-    static boolean vrMusic(int s){return s==VRPM&&musicStrip&&FloatMusic.playing(FloatMusic.track);}
+    private static boolean strip(int s){return musicStrip&&s>OFF&&s!=MUSIC&&s!=VRPM&&s!=VCAP;}   // 세로 띠 + RPM keeps the track in its own box; 세로 캡슐 is screen-high, no room under it
+    /** 세로 띠 + RPM's box shows the track: 음악 띠 on and a track playing (else its seventh reading); 세로 캡슐 gives its last two rows to it. */
+    static boolean vrMusic(int s){return (s==VRPM||s==VCAP)&&musicStrip&&FloatMusic.playing(FloatMusic.track);}
     /** The size's scale (작게 .85 ... 아주 크게 2). */
     static float sizeK(){return SIZES[clampSize(size)];}
-    public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST||s==VRPM;}
+    public static boolean layout(int s){return s>=PILL&&s<=FloatLayouts.LAST||s==VRPM||s==VCAP;}
     /** The cells' graph choice is used: the plain grid window only (skins and layouts have their own bars). */
     public static boolean graphsUsed(){int s=shape==OFF?lastShape:shape;return skinNow()==0&&!layout(s)&&s!=ROUND&&s!=MUSIC;}
     /** The cell counts shape s fills without a hole; the settings offer these only. */
@@ -60,8 +62,9 @@ public final class FloatPanel {
     public static final int[] CHOICES={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,9,7,0,Telemetry.AMBIENT,Telemetry.FUEL_LEVEL,
         Telemetry.ENGINE_LOAD,10,Telemetry.CLUTCH_ODD,Telemetry.CLUTCH_EVEN,Telemetry.DPF_SOOT,Telemetry.DPF_TEMP};
     public static final String[] CHOICE_NAMES={"부스트","냉각수","흡기","배터리","페달","속도","RPM","외기온","연료","엔진 부하","브레이크","클러치 홀수","클러치 짝수","DPF 포집","DPF 온도"};
-    /** -1 = automatic: boost, coolant, intake, battery; a diesel shows its DPF soot in the third. */
-    public static final int[] AUTO_PETROL={Telemetry.BOOST,2,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL},AUTO_DIESEL={Telemetry.BOOST,2,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL};
+    /** -1 = automatic: boost, coolant, the four tyres (pressure, temperature beside it where there is room), both DCT clutches, then intake (diesel: DPF soot); a reading the car lacks gives its place to the next (resolve). */
+    public static final int[] AUTO_PETROL={Telemetry.BOOST,2,FloatPanel.QUAD_P,FloatPanel.DCT2,Telemetry.INTAKE,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL,Telemetry.RANGE},
+        AUTO_DIESEL={Telemetry.BOOST,2,FloatPanel.QUAD_P,FloatPanel.DCT2,Telemetry.DPF_SOOT,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL,Telemetry.RANGE};
     public static volatile int shape=OFF,count=4,size=1;
     /** The shape the 켬 switch brings back (the window was switched off from it). */
     public static volatile int lastShape=CARD;
@@ -106,6 +109,7 @@ public final class FloatPanel {
     static final long PEAK_IDLE_MS=600000;
     private static final float[] peak={Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN};private static final int[] peakSig={-1,-1,-1,-1,-1,-1,-1};private static final long[] peakAt=new long[MAX_CELLS];
     public static boolean peaks(int s){
+        if(s==DCT2)return true;
         switch(s){case 0:case 1:case 2:case 7:case 9:case 10:case 11:case 12:case Telemetry.BOOST:case Telemetry.INTAKE:case Telemetry.ENGINE_LOAD:
             case Telemetry.THROTTLE_POS:case Telemetry.FUEL_RATE:case Telemetry.YAW:case Telemetry.STEERING_SPEED:case Telemetry.CLUTCH_ODD:case Telemetry.CLUTCH_EVEN:
             case Telemetry.CAT_TEMP:case Telemetry.DPF_TEMP:case Telemetry.EGT_CAT:case Telemetry.TIRE_TEMP_FL:case Telemetry.TIRE_TEMP_FR:case Telemetry.TIRE_TEMP_RL:case Telemetry.TIRE_TEMP_RR:return true;}
@@ -187,16 +191,17 @@ public final class FloatPanel {
     public static boolean tick(int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         int h=17;h=h*31+skinNow();h=h*31+alpha;h=h*31+color;h=h*31+corner;h=h*31+Theme.current().id.hashCode();
         for(int i=0;i<n;i++){int sig=signal(i,prof);float v=value(q,sig),f=frac(sig,v);record(i,sig,v,now);
-            h=h*31+sig;h=h*31+key(sig,v);h=h*31+Tiles.level(fmt(sig),v);h=h*31+graphs[i];
+            h=h*31+sig;h=h*31+key(sig,v);if(sig==DCT2)h=h*31+valText(q,sig,v).hashCode();h=h*31+Tiles.level(fmt(sig),v);h=h*31+graphs[i];
             h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(CARD,size)));
             if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];
             float pk=peak(i,sig);if(!Float.isNaN(pk))h=h*31+key(sig,pk);
             if(quad(sig)){quadTexts(q,sig);for(int w=0;w<4;w++)h=h*31+QV[w].hashCode()+QL[w]+QT[w].hashCode()*7;}}
         int s=shape==OFF?lastShape:shape;
-        if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
+        h=h*31+shiftStep(q,prof,now);   // the shift light on the window's edge
+        if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER||s==VRPM||s==VCAP){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
             h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
         if(s==MUSIC||strip(s))h=h*31+FloatMusic.key(strip(s)?now:-1);   // a scrolling 음악 띠 line moves every tick
-        if(s==VRPM&&musicStrip)h=h*31+(vrMusic(s)?FloatMusic.key(now):7);
+        if((s==VRPM||s==VCAP)&&musicStrip)h=h*31+(vrMusic(s)?FloatMusic.key(now):7);
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
     }
 
@@ -219,7 +224,7 @@ public final class FloatPanel {
     /** Where the window starts (screen 800 × 480, below the 52 px status bar): the card and the side column top right, the strip bottom middle. */
     private static boolean bottom(int s){return s==STRIP||s==PILL||s==SHIFT||s==TICK;}
     public static int defaultX(int shape,int n,int size){return bottom(shape)?(800-width(shape,n,size))/2:800-width(shape,n,size)-8;}
-    public static int defaultY(int shape,int n,int size){return shape==VRPM?(480-height(shape,n,size))/2:bottom(shape)?480-height(shape,n,size)-10:62;}
+    public static int defaultY(int shape,int n,int size){return shape==VRPM||shape==VCAP?(480-height(shape,n,size))/2:bottom(shape)?480-height(shape,n,size)-10:62;}
     /** The next cell count after the current one (1, 2, 4, 1 ...). */
     public static int nextCount(int n){return n>=4?1:n>=2?4:2;}
     /** The signal cell k shows: its choice, or the automatic one when it has none or this car lacks it (a DPF value on a
@@ -228,18 +233,27 @@ public final class FloatPanel {
     // ---- 타이어 4개: one cell with all four wheels (pressure or temperature) -------------------------------------------
     public static final int QUAD_P=2000,QUAD_T=2001;
     public static boolean quad(int s){return s==QUAD_P||s==QUAD_T;}
+    /** DCT 클러치: both 7DCT clutches in one cell (odd · even °C); its bar, warning and peak follow the hotter one. */
+    public static final int DCT2=2002;
+    /** A cell choice that is not one signal (4 wheels, both clutches), saved like a real one. */
+    public static boolean pseudo(int s){return quad(s)||s==DCT2;}
     private static String unit0(int s){String u=Telemetry.UNITS[fmt(s)];return u==null?"":u;}
     /** Wheel w (0 FL, 1 FR, 2 RL, 3 RR) of a 4-wheel cell. */
     public static int quadSig(int s,int w){return (s==QUAD_P?Telemetry.TPMS_FL:Telemetry.TIRE_TEMP_FL)+w;}
     /** The signal a cell formats and scales with: a wheel for the 4-wheel cells. */
-    static int fmt(int s){return quad(s)?quadSig(s,0):s;}
-    public static boolean available(int s,VehicleProfile p){return quad(s)?Tiles.available(quadSig(s,0),p):Tiles.available(s,p);}
+    static int fmt(int s){return quad(s)?quadSig(s,0):s==DCT2?Telemetry.CLUTCH_ODD:s;}
+    public static boolean available(int s,VehicleProfile p){return Tiles.available(fmt(s),p);}
     public static int groupOf(int s){return Tiles.groupOf(fmt(s));}
     /** A cell's value: the reading, or for 4 wheels the lowest pressure / the highest temperature. */
     static float value(Telemetry.Sample[] q,int sig){
+        if(sig==DCT2){float a=value(q,Telemetry.CLUTCH_ODD),b=value(q,Telemetry.CLUTCH_EVEN);return Float.isNaN(a)?b:Float.isNaN(b)?a:Math.max(a,b);}
         if(!quad(sig)){if(sig<0||sig>=q.length)return Float.NaN;Telemetry.Sample m=q[sig];return m!=null&&m.valid?m.value:Float.NaN;}
         float r=Float.NaN;for(int w=0;w<4;w++){Telemetry.Sample m=q[quadSig(sig,w)];if(m==null||!m.valid)continue;float v=m.value;r=Float.isNaN(r)?v:sig==QUAD_P?Math.min(r,v):Math.max(r,v);}
         return r;}
+    /** A cell's value as shown: both clutches as "odd·even", else the reading's text. */
+    static String valText(Telemetry.Sample[] q,int sig,float v){
+        if(sig!=DCT2||q==null)return Tiles.text(fmt(sig),v);
+        return Tiles.text(Telemetry.CLUTCH_ODD,value(q,Telemetry.CLUTCH_ODD))+"·"+Tiles.text(Telemetry.CLUTCH_EVEN,value(q,Telemetry.CLUTCH_EVEN));}
     static final String[] QV=new String[4];static final int[] QL=new int[4];
     /** With the pressures (QUAD_P): each wheel's temperature ("21°"), or "" until the BCM has answered. */
     static final String[] QT=new String[4];
@@ -250,22 +264,58 @@ public final class FloatPanel {
     public static String inline(Telemetry.Sample[] q,int sig){quadTexts(q,sig);return QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];}
     /** 세로 띠 + RPM's own 자동 (it has the rpm as its bar, so no rpm row): boost, coolant, the four tyres, intake (diesel: soot),
      *  battery, outside air, and in the box under them (shown while no track plays) the range left, short enough for the large box. */
-    public static final int[] AUTO_VR_PETROL={Telemetry.BOOST,2,QUAD_P,Telemetry.INTAKE,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.RANGE},
-        AUTO_VR_DIESEL={Telemetry.BOOST,2,QUAD_P,Telemetry.DPF_SOOT,Telemetry.BAT_VOLTAGE,Telemetry.AMBIENT,Telemetry.RANGE};
+    public static final int[] AUTO_VR_PETROL={Telemetry.BOOST,2,QUAD_P,QUAD_T,DCT2,Telemetry.INTAKE,Telemetry.RANGE,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL},
+        AUTO_VR_DIESEL={Telemetry.BOOST,2,QUAD_P,QUAD_T,DCT2,Telemetry.DPF_SOOT,Telemetry.RANGE,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL};
     public static int resolve(int c,int k,VehicleProfile p){boolean diesel=p!=null&&p.fuel==VehicleProfile.Fuel.DIESEL;
         if(c>=0&&(p==null||available(c,p)))return c;
-        int s=shape==OFF?lastShape:shape;return (s==VRPM?(diesel?AUTO_VR_DIESEL:AUTO_VR_PETROL):diesel?AUTO_DIESEL:AUTO_PETROL)[k];}
+        int s=shape==OFF?lastShape:shape;int[] a=s==VRPM?(diesel?AUTO_VR_DIESEL:AUTO_VR_PETROL):s==VCAP?(diesel?AUTO_VC_DIESEL:AUTO_VC_PETROL):diesel?AUTO_DIESEL:AUTO_PETROL;
+        int j=0;for(int x:a)if(p==null||available(x,p)){if(j==k)return x;j++;}   // a reading this car lacks (no DCT clutches on a 6MT) gives its place to the next
+        return a[Math.min(k,a.length-1)];}
+    /** 세로 캡슐's own 자동: boost in the dial, then coolant, tyre pressures, both DCT clutches, tyre temperatures, intake (diesel: soot); a playing track takes the last two rows. */
+    public static final int[] AUTO_VC_PETROL={Telemetry.BOOST,2,QUAD_P,DCT2,QUAD_T,Telemetry.INTAKE,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL,Telemetry.RANGE},
+        AUTO_VC_DIESEL={Telemetry.BOOST,2,QUAD_P,DCT2,QUAD_T,Telemetry.DPF_SOOT,Telemetry.ENGINE_LOAD,Telemetry.AVG_FUEL,Telemetry.RANGE};
+    // ---- 변속 알림: like the tacho's shift dots, every shape's edge (a border and a coloured glow inside it) warms from yellow to red
+    // over the last SHIFT_SPAN rpm before the shift point (설정 → RPM), then flashes the dots' blue at it -----------------------------
+    /** 설정 → RPM's shift point as saved (0 = the powertrain's default); read with the window's other choices. */
+    public static volatile int shiftTarget;
+    static final int SHIFT_SPAN=1000,SHIFT_YEL=0xffffd23f,SHIFT_RED=0xffff3b30,SHIFT_FLASH=0xff4aa8ff;
+    /** How near the shift point: 0..1 over the last SHIFT_SPAN rpm, 1 or more at it; NaN below that, or with no gear above. */
+    static float shiftLevel(Telemetry.Sample[] q,VehicleProfile prof){
+        if(prof==null||q==null||q.length<9)return Float.NaN;Telemetry.Sample rm=q[0],gm=q[8];
+        if(rm==null||!rm.valid||gm==null||!gm.valid||Float.isNaN(rm.value)||Float.isNaN(gm.value))return Float.NaN;
+        int g=(int)gm.value;if(g<1||g>=prof.topGear)return Float.NaN;
+        float f=(rm.value-(ShiftGuide.target(shiftTarget,prof)-SHIFT_SPAN))/SHIFT_SPAN;return f<0?Float.NaN:f;}
+    static boolean flashOn(long now){return now%180<90;}
+    /** What the edge shows, for the change test: 0 nothing, 1..13 the warming steps, 20 / 21 the flash off / on. */
+    static int shiftStep(Telemetry.Sample[] q,VehicleProfile prof,long now){
+        float f=shiftLevel(q,prof);return Float.isNaN(f)?0:f>=1?(flashOn(now)?21:20):1+Math.round(f*12);}
+    /** The edge round the window's body (w x h) at shift level f: the pill's round ends, the corner shape otherwise. A 3 px border,
+     *  then GLOW rings inside it fading out, so the window looks lit from its rim (rings, not a gradient: the same on the car and host). */
+    private static void shiftEdge(Canvas c,int shape,float w,float h,float k,float f,long now){
+        int col;float a;
+        if(f>=1){if(!flashOn(now))return;col=SHIFT_FLASH;a=1;}
+        else{float t=Math.max(0,Math.min(1,f));col=mix(SHIFT_YEL,SHIFT_RED,t);a=.3f+.7f*t;}
+        float sw=3*k,rad=shape==PILL?h/2:shape==VCAP?w/2:cornerShape()==1?10*k:4*k;
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(sw);p.setColor(withAlpha(col,a));r.set(sw/2,sw/2,w-sw/2,h-sw/2);c.drawRoundRect(r,rad,rad,p);
+        final int GLOW=6;float rw=2*k;p.setStrokeWidth(rw);
+        for(int i=0;i<GLOW;i++){float in=sw+rw*(i+.5f),rr=Math.max(0,rad-in+sw/2);p.setColor(withAlpha(col,a*.42f*(1-i/(float)GLOW)));
+            r.set(in,in,w-in,h-in);c.drawRoundRect(r,rr,rr,p);}
+        p.setStyle(Paint.Style.FILL);}
+    private static int mix(int x,int y,float t){int o=0xff000000;for(int s=0;s<24;s+=8){int a=(x>>s)&255,b=(y>>s)&255;o|=Math.round(a+(b-a)*t)<<s;}return o;}
+    private static int withAlpha(int c,float a){return Math.round(255*Math.max(0,Math.min(1,a)))<<24|c&0xffffff;}
     /** The reading groups a cell can choose from on this car (Tiles.GROUPS indices, single readings only). */
     public static int[] groups(VehicleProfile p){return Tiles.groups(p,false);}
     public static int[] group(int g,VehicleProfile p){int[] base=Tiles.group(g,p,false);
-        if(g!=Tiles.groupOf(Telemetry.TPMS_FL))return base;int n=0;int[] o=new int[base.length+2];   // the tyre group starts with the 4-wheel cells
-        for(int s:new int[]{QUAD_P,QUAD_T})if(p==null||available(s,p))o[n++]=s;for(int s:base)o[n++]=s;
+        int[] lead=g==Tiles.groupOf(Telemetry.TPMS_FL)?new int[]{QUAD_P,QUAD_T}:g==Tiles.groupOf(Telemetry.CLUTCH_ODD)?new int[]{DCT2}:null;   // the tyre group starts with the 4-wheel cells, the clutch group with both clutches in one
+        if(lead==null)return base;int n=0;int[] o=new int[base.length+lead.length];
+        for(int s:lead)if(p==null||available(s,p))o[n++]=s;for(int s:base)o[n++]=s;
         int[] r=new int[n];System.arraycopy(o,0,r,0,n);return r;}
     /** The next choice for a cell: automatic, then CHOICES in order, then automatic again. */
     public static int next(int current){if(current<0)return CHOICES[0];for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==current)return i+1<CHOICES.length?CHOICES[i+1]:-1;return -1;}
     /** The name as the window shows it (translated). */
     static String label(int sig){return com.veloster.i18n.UiText.t(name(sig));}
-    public static String name(int sig){if(sig==QUAD_P)return "타이어 공기압";if(sig==QUAD_T)return "타이어 온도";if(sig<0||sig>=Telemetry.LABELS.length)return "—";for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
+    public static String name(int sig){if(sig==DCT2)return "DCT 클러치";if(sig==QUAD_P)return "타이어 공기압";if(sig==QUAD_T)return "타이어 온도";if(sig<0||sig>=Telemetry.LABELS.length)return "—";for(int i=0;i<CHOICES.length;i++)if(CHOICES[i]==sig)return CHOICE_NAMES[i];return Telemetry.LABELS[sig];}
 
     private static final Paint p=new Paint(3);private static final RectF r=new RectF();
     private static final int WARM=0xffffaa3c,HOT=0xffff4b3c;
@@ -301,7 +351,7 @@ public final class FloatPanel {
     /** A cell's texts and scale positions for a skin or a layout. */
     private static void fillCell(FloatSkin.Cell d,int i,int sig,float v,int g,boolean first){float pk=peak(i,sig);
         d.name=label(sig);d.en=com.veloster.i18n.UiText.en(name(sig)).toUpperCase(java.util.Locale.US);d.sn="ko".equals(com.veloster.i18n.UiText.language())?d.name:d.en;   // skins in Korean too; only the 8-bit font keeps English
-        d.val=Tiles.text(fmt(sig),v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=glide(i,frac(sig,v));d.lv=Tiles.level(fmt(sig),v);
+        d.val=valText(LAST_Q,sig,v);String u=Telemetry.UNITS[fmt(sig)];d.unit=u==null?"":u;d.f=glide(i,frac(sig,v));d.lv=Tiles.level(fmt(sig),v);
         d.zero=zero(sig);d.pk=Float.isNaN(pk)?null:Tiles.text(fmt(sig),pk);d.pf=Float.isNaN(pk)?Float.NaN:frac(sig,pk);
         d.first=first;d.bar=g!=NUM;d.quad=null;
         if(quad(sig)){quadTexts(LAST_Q,sig);System.arraycopy(QV,0,d.q4,0,4);System.arraycopy(QL,0,d.l4,0,4);System.arraycopy(QT,0,d.t4,0,4);d.quad=d.q4;d.val=QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];d.f=Float.NaN;d.lv=0;}}
@@ -309,6 +359,8 @@ public final class FloatPanel {
     public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
         draw(c,shape,n,size,q,SIG,G,0,true,now);
+        float sl=shape>OFF?shiftLevel(q,prof):Float.NaN;
+        if(!Float.isNaN(sl))shiftEdge(c,shape,width(shape,n,size),bodyH(shape,n,size),SIZES[clampSize(size)],sl,now);
     }
     /** The window as draw does, but without recording (the settings' preview and sheets: example values must not reach
      *  the peaks or the line graphs). */
@@ -337,7 +389,7 @@ public final class FloatPanel {
         if(shape==MUSIC){colours();LAST_Q=q;drawNow=now;PASS=ALL;FloatMusic.shape(c,SIZES[clampSize(size)],n,q,sigs,first,rec,now);return;}   // drawn whole: its text changes every second
         body(c,shape,n,size,q,sigs,gs,first,rec,now);
         if(strip(shape))FloatMusic.strip(c,width(shape,n,size),bodyH(shape,n,size)+FloatMusic.GAP*SIZES[clampSize(size)],SIZES[clampSize(size)],now);
-        if(vrMusic(shape)){float[] b=FloatLayouts.rect(shape,n,6);float k=SIZES[clampSize(size)];if(b!=null)FloatMusic.box(c,b[0]*k,b[1]*k,b[2]*k,b[3]*k,k,now);}   // drawn each frame over the body
+        if(vrMusic(shape)){float[] b=FloatLayouts.musicBox(shape,n);float k=SIZES[clampSize(size)];if(b!=null)FloatMusic.box(c,b[0]*k,b[1]*k,b[2]*k,b[3]*k,k,now);}   // drawn each frame over the body
     }
     /** The window without the 음악 띠. */
     private static void body(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,int[] sigs,int[] gs,int first,boolean rec,long now){
@@ -385,7 +437,7 @@ public final class FloatPanel {
             if(st())text(c,label(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
             boolean barred=!(Float.isNaN(frac(sig,v))||g==NUM||g==LINE||g==LED||quad(sig));   // only the plain bar has a kept part (its track)
             if(!dy()){if(barred){float bl=x+8*k,br=x+cw-8*k,bt=y+ch-9*k,bb=bt+4*k;p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);}continue;}
-            String unit=Telemetry.UNITS[fmt(sig)],val=Tiles.text(fmt(sig),v);float f=g==LINE||g==NUM?frac(sig,v):glide(i,frac(sig,v));
+            String unit=Telemetry.UNITS[fmt(sig)],val=valText(q,sig,v);float f=g==LINE||g==NUM?frac(sig,v):glide(i,frac(sig,v));
             float pk=peak(i,sig),pf=Float.isNaN(pk)?Float.NaN:frac(sig,pk);
             if(quad(sig)){quadTexts(q,sig);text(c,unit0(sig),x+cw-8*k,y+16*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);quad(c,x,y,cw,ch,k,TXT,DIV,Typeface.DEFAULT_BOLD);continue;}   // the unit where the peak would be
             if(!Float.isNaN(pk)&&g!=LINE){String ps="▲ "+Tiles.text(fmt(sig),pk);   // the peak, small, top right (left out when the name leaves no room)
@@ -444,7 +496,7 @@ public final class FloatPanel {
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2*k);p.setColor(0xffffffff);
             c.drawLine(cx+(float)Math.cos(a)*in,cy+(float)Math.sin(a)*in,cx+(float)Math.cos(a)*o,cy+(float)Math.sin(a)*o,p);p.setStyle(Paint.Style.FILL);
             text(c,"▲ "+Tiles.text(fmt(sig),pk),cx,cy-ar*.42f,9*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);}
-        String val=Tiles.text(fmt(sig),v),unit=Telemetry.UNITS[fmt(sig)];float size=24*k,room=ar*1.5f;
+        String val=valText(LAST_Q,sig,v),unit=Telemetry.UNITS[fmt(sig)];float size=24*k,room=ar*1.5f;
         p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);float vw=p.measureText(val);if(vw>room)size*=room/vw;
         text(c,val,cx,cy+size*.36f,size,Float.isNaN(v)?MUT:col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
         if(unit!=null&&!unit.isEmpty())text(c,unit,cx,cy+size*.36f+13*k,10*k,MUT,Paint.Align.CENTER,Typeface.DEFAULT);
