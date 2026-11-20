@@ -93,7 +93,10 @@ public final class VehicleDash extends View implements Runnable {
      *  (SettingsLayout.SOUND_VOLUME on: volume, pop rate, turbo whistle, blow-off in %, latency compensation in ms). */
     private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;
     private final int[] soundVals=SettingsLayout.SOUND_DEFAULT.clone();
-    private static final String[] SOUND_KEYS={"engine_sound_volume","engine_sound_pop","engine_sound_turbo","engine_sound_bov","engine_sound_lead_ms"};
+    private static final String[] SOUND_KEYS={"engine_sound_volume","engine_sound_tone","engine_sound_rough","engine_sound_body","engine_sound_intake","engine_sound_uneven","engine_sound_low",
+        "engine_sound_pop","engine_sound_turbo","engine_sound_bov","engine_sound_lead_ms"};
+    /** The − / + value of a 사운드 row (SettingsLayout.SOUND_VOLUME..SOUND_LEAD). */
+    private int soundVal(int row){return soundVals[row-SettingsLayout.SOUND_VOLUME];}
     private EngineSound sound;
     /** Optional shift beep (설정 → RPM → 변속 알림음, off by default). */
     private final int[] downSounds=SettingsLayout.DOWN_DEFAULT.clone();private int downScope;private final RevMatch.Cue downCue=new RevMatch.Cue();
@@ -213,7 +216,9 @@ public final class VehicleDash extends View implements Runnable {
         setVisibility(GONE); }
     /** Hands the saved sound choices to the audio thread. */
     private void applySound(){
-        sound.volume(soundVals[0]);sound.voice(soundEngine,soundExhaust);sound.trims(soundVals[1],soundVals[2],soundVals[3],soundVals[4]);
+        sound.volume(soundVal(SettingsLayout.SOUND_VOLUME));sound.voice(soundEngine,soundExhaust);
+        sound.trims(soundVal(SettingsLayout.SOUND_POP),soundVal(SettingsLayout.SOUND_TURBO),soundVal(SettingsLayout.SOUND_BOV),soundVal(SettingsLayout.SOUND_LEAD));
+        sound.tune(soundVal(SettingsLayout.SOUND_TONE),soundVal(SettingsLayout.SOUND_ROUGH),soundVal(SettingsLayout.SOUND_BODY),soundVal(SettingsLayout.SOUND_INTAKE),soundVal(SettingsLayout.SOUND_UNEVEN),soundVal(SettingsLayout.SOUND_LOW));
     }
     public static void attach(Activity a) {
         try {

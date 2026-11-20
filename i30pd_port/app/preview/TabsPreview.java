@@ -164,6 +164,7 @@ public final class TabsPreview {
         for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
         com.veloster.i18n.UiText.configure("ko","ko");
         rec.setSettings(SettingsLayout.SOUND,"auto",-1,targets);rec.setOrder(null,80);save(out,"9_settings_sound_scrolled",rec,model,now,false,false);   // hints above and below
+        rec.setOrder(null,SettingsLayout.maxPaneScroll(SettingsLayout.SOUND));save(out,"9_settings_sound_end",rec,model,now,false,false);   // the last rows
         rec.setSettings(SettingsLayout.SCREENS,"auto",-1,targets);rec.setOrder(null,62);rec.setScreenDrag(2,250);save(out,"9_settings_screens_drag",rec,model,now,false,false);rec.setScreenDrag(-1,0);rec.setOrder(null,0);
         {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
             int[][] combos={{1,4,1},{1,4,3},{1,2,1},{1,1,2},{2,4,1},{2,2,0},{3,4,1},{3,2,2}};

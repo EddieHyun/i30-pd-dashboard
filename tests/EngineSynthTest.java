@@ -1,9 +1,10 @@
 import com.veloster.vehicle.EngineSynth;
 import com.veloster.vehicle.SettingsLayout;
 
-/** Virtual engine sound: silent when off, follows the firing order, louder with load, every engine and exhaust
- *  bounded, overrun burble that the pop rate scales, and latency compensation that cuts the lag without overshooting
- *  a gear change. */
+/** Virtual engine sound: silent when off, follows the firing order, louder and brighter with load, harmonics well
+ *  above 800 Hz (the first, sine-order version had almost none: an organ), every engine and exhaust bounded, the
+ *  listener's tuning, overrun burble that the pop rate scales, and latency compensation that cuts the lag without
+ *  overshooting a gear change. */
 public final class EngineSynthTest {
     private static int checks;
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
@@ -21,13 +22,21 @@ public final class EngineSynthTest {
         for(float v:x){double s0=v+c*s1-s2;s2=s1;s1=s0;}
         return s1*s1+s2*s2-c*s1*s2;
     }
-    /** Energy added by overrun pops over a 2.5 s lift from 4000 rpm: the voice minus the same voice with pops off. */
+    /** Power in lo..hi Hz (Goertzel every 2 Hz). */
+    private static double band(float[] x,double lo,double hi){double p=0;for(double hz=lo;hz<=hi;hz+=2)p+=power(x,hz);return p;}
+    private static float[] tuned(double tone,double rough,double body,double intake,double uneven,double low,double rpm,double pedal){
+        EngineSynth s=new EngineSynth();s.tune(tone,rough,body,intake,uneven,low);return run(s,rpm,pedal,0,2);
+    }
+    /** Energy added by overrun pops over three lifts from 4000 rpm (one lift is too few big pops to count on): the voice
+     *  minus the same voice with pops off. */
     static int lastFlames;
     private static double burble(double popRate){
         EngineSynth a=new EngineSynth(),b=new EngineSynth();a.popRate=popRate;b.popRate=0;
         float[] x=new float[512],y=new float[512];double e=0;
+        for(int lift=0;lift<3;lift++){
         for(int i=0;i<60;i++){a.set(4500,1,1);b.set(4500,1,1);a.render(x,0,512,1);b.render(y,0,512,1);}
         for(int i=0;i<108;i++){a.set(4000-i*15,0,-.5);b.set(4000-i*15,0,-.5);a.render(x,0,512,1);b.render(y,0,512,1);for(int k=0;k<512;k++){double d=x[k]-y[k];e+=d*d;}}
+        }
         lastFlames=a.flames;return e;
     }
     /** Mean rpm lag (rpm) while accelerating 2000 rpm/s with CAN frames every 50 ms arriving delayMs late, and the
@@ -55,10 +64,25 @@ public final class EngineSynthTest {
         double firing=power(full,100);   // order 2 at 3000 rpm
         check(firing>power(full,87)*4&&firing>power(full,113)*4,"firing order stands out");
         check(power(full,75)>power(full,81)*2,"half order 1.5 present under load");
+        // Rich like an engine, not an organ: under load at 3000 rpm the 800-2500 Hz band is within 10 dB of 80-250 Hz
+        // (measured -6 dB; the sine-order version was near -20 dB), and a lift dulls it.
+        double hiFull=band(full,800,2500),loFull=band(full,80,250),hiCoast=band(coast,800,2500),loCoast=band(coast,80,250);
+        check(hiFull>loFull*.1,"harmonics above 800 Hz under load: "+hiFull/loFull);
+        check(hiFull/loFull>hiCoast/loCoast*3,"brighter under load than off it: "+hiFull/loFull+" vs "+hiCoast/loCoast);
+        // The listener's tuning: each knob moves what it names, and the design values are the untuned sound.
+        float[] plainTune=tuned(1,1,1,1,1,SettingsLayout.SOUND_DEFAULT[SettingsLayout.SOUND_LOW-SettingsLayout.SOUND_VOLUME]/100.0,3000,1);   // the settings default is the design value
+        check(java.util.Arrays.equals(plainTune,full),"tuning at the design values changes nothing");
+        check(band(tuned(2.5,1,1,1,1,.3,3000,1),2500,4500)>band(tuned(.5,1,1,1,1,.3,3000,1),2500,4500)*4,"밝기 lifts the top");
+        check(power(tuned(1,3,1,1,0,.3,3000,1),987)>power(tuned(1,0,1,1,0,.3,3000,1),987)*4,"거칠기 fills between the orders");
+        check(rms(tuned(1,1,1,1,1,.6,3000,0))>rms(tuned(1,1,1,1,1,.1,3000,0))*3,"저부하 음량 sets the off-load level");
+        check(rms(tuned(1,1,1,3,1,.3,3000,1))>rms(tuned(1,1,1,0,1,.3,3000,1))*1.05,"흡기음 adds on the pedal");
+        check(power(tuned(1,0,1,1,3,.3,3000,1),2987)>power(tuned(1,0,1,1,0,.3,3000,1),2987)*4,"불규칙함 smears the high orders into noise");
+        float[] dry=tuned(1,1,0,1,1,.3,3000,1),wet=tuned(1,1,2,1,1,.3,3000,1);double differ=0;for(int i=0;i<dry.length;i++)differ+=Math.abs(dry[i]-wet[i]);
+        check(differ/dry.length>.01&&peak(wet)<=1,"울림 changes the wavelets, bounded");
         float[] boosted=run(new EngineSynth(),4000,1,1.2,2);
-        check(power(boosted,4600)>power(full,4600)*10,"turbo whistle with boost");
-        EngineSynth quiet=new EngineSynth();quiet.turboVol=0;
-        check(power(run(quiet,4000,1,1.2,2),4600)<power(boosted,4600)/10,"turbo whistle trim 0 silences it");
+        EngineSynth quiet=new EngineSynth();quiet.turboVol=0;EngineSynth loud=new EngineSynth();loud.turboVol=2;
+        double w0=band(run(quiet,4000,1,1.2,2),4450,4750),w1=band(boosted,4450,4750),w2=band(run(loud,4000,1,1.2,2),4450,4750);
+        check(w1>w0*2&&w2>w1*2,"turbo whistle stands out of the engine with boost and follows its trim: "+w1/w0+" / "+w2/w0);
         for(float[] x:new float[][]{idle,coast,full,boosted})check(peak(x)<=1,"bounded");
         // Every engine through every exhaust plays, bounded.
         check(SettingsLayout.SOUND_ENGINES.length==EngineSynth.engines()&&SettingsLayout.SOUND_EXHAUSTS.length==EngineSynth.exhausts(),"a name per engine and exhaust");
@@ -74,7 +98,7 @@ public final class EngineSynthTest {
         check(power(v8,200)>power(v8,180)*4,"V8 firing order");
         // Overrun burble follows the pop rate.
         double b0=burble(0);int f0=lastFlames;double b1=burble(1);int f1=lastFlames;double b2=burble(2);int f2=lastFlames;
-        check(f0==0&&f1>=1&&f1<=3&&f2<=3,"flames: a few big pops per lift, none with pops off: "+f0+" / "+f1+" / "+f2);
+        check(f0==0&&f1>=1&&f1<=9&&f2>=1&&f2<=9,"flames: a few big pops per lift (three lifts), none with pops off: "+f0+" / "+f1+" / "+f2);
         check(b0==0&&b1>0&&b2>b1*1.3,"burble scales with the pop rate: "+b1+" -> "+b2);
         // Latency compensation: with 50 ms of CAN delay, 80 ms of lead takes most of the lag away and the upshift
         // is held rather than extrapolated.
