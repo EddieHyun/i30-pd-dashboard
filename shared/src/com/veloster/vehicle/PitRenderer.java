@@ -504,14 +504,16 @@ public final class PitRenderer {
     private static final int DARK_INK=0xff04121a;
     /** A pane that overflows: a scroll bar right of the pane, a fade and "▼ 아래에 더 있음" while rows are below,
      *  a fade at the top once scrolled. */
+    private int fadeBg;private LinearGradient fadeDown,fadeUp;
     private void drawScrollHint(Canvas c,float scroll,float max){
         if(max<=0)return;
         float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM,h=bot-top,vis=Math.max(32,h*h/(max+h)),y=top+(h-vis)*(scroll/max);
         box(c,791,top,797,bot,0xff0f1518);box(c,791,y,797,y+vis,BLUE);
         int bg=T(0xff040506),clear=bg&0x00ffffff;
-        if(scroll<max-1){paint.setShader(new LinearGradient(0,bot-56,0,bot,clear,bg,Shader.TileMode.CLAMP));c.drawRect(L,bot-56,R,bot,paint);paint.setShader(null);
+        if(fadeBg!=bg){fadeBg=bg;fadeDown=new LinearGradient(0,bot-56,0,bot,clear,bg,Shader.TileMode.CLAMP);fadeUp=new LinearGradient(0,top,0,top+20,bg,clear,Shader.TileMode.CLAMP);}   // made once per theme, not per frame
+        if(scroll<max-1){paint.setShader(fadeDown);c.drawRect(L,bot-56,R,bot,paint);paint.setShader(null);
             centered(c,UiText.t("▼ 아래에 더 있음"),(L+R)/2,bot-8,13,BLUE,true);}
-        if(scroll>1){paint.setShader(new LinearGradient(0,top,0,top+20,bg,clear,Shader.TileMode.CLAMP));c.drawRect(L,top,R,top+20,paint);paint.setShader(null);}
+        if(scroll>1){paint.setShader(fadeUp);c.drawRect(L,top,R,top+20,paint);paint.setShader(null);}
     }
     /** A 화면 row being dragged by its grip: its display position (-1 none) and the finger's y. */
     private int dragRow=-1;private float dragY;

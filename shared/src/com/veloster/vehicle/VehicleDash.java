@@ -61,7 +61,7 @@ public final class VehicleDash extends View implements Runnable {
     /** While a row is dragged: scroll the list when the finger rests near the top or bottom edge. */
     private final Runnable dragTick=new Runnable(){public void run(){
         if(dragRow<0)return;float d=SettingsLayout.autoScroll(dragY);
-        if(d!=0){settingsScroll=Math.max(0,Math.min(SettingsLayout.maxScreenScroll(),settingsScroll+d));invalidate();}
+        float to=Math.max(0,Math.min(SettingsLayout.maxScreenScroll(),settingsScroll+d));if(to!=settingsScroll){settingsScroll=to;invalidate();}   // at either end: nothing to redraw
         postDelayed(this,30);}};
     /** Closes settings (완료, 돌아가기, the back key). Every choice is already saved. */
     private void closeSettingsNow(){picker=false;editing=false;pickSlot=-1;floatEdit=-1;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);invalidate();}
@@ -264,7 +264,7 @@ public final class VehicleDash extends View implements Runnable {
         d.floatEdit=-1;d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
     }
     /** Close the screen list and anything it opened (language chooser). */
-    private void dismissList(){picker=false;editing=false;}
+    private void dismissList(){picker=false;editing=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);}   // every close path: a drag cut off by the lock-out must not leave dragTick running
     private void showDashboard(){setVisibility(VISIBLE);if(entry!=null)entry.setVisibility(GONE);bringToFront();}
     private void close() { entryRequestUntil=0;removeCallbacks(editHold);removeCallbacks(tileHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
     public static void consumeEntryIntent(Activity a){entryIntent(a,a.getIntent());}
