@@ -159,6 +159,8 @@ public final class HubActivity extends Activity {
     private void text(String value) {
         content.addView(Look.note(this, value));
     }
+    /** A failed tap says so on screen: a note added to the list landed below the fold, so the tap looked dead. */
+    private void fail(String value){android.widget.Toast.makeText(this,value,android.widget.Toast.LENGTH_LONG).show();}
     private List<ResolveInfo> launchable() {
         Intent query = new Intent(Intent.ACTION_MAIN); query.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> all = getPackageManager().queryIntentActivities(query, 0);
@@ -202,8 +204,8 @@ public final class HubActivity extends Activity {
         heading(right,UiText.t("설정"));
         int mode=QuickEntryService.mode(this);
         settingRow(right,UiText.t("바로가기 버튼"),QuickEntryService.status(this),mode!=QuickEntryPolicy.OFF,new Runnable(){public void run(){quickEntry();}});
-        final boolean hod=QuickEntryService.hideOnDash(this);
-        settingRow(right,UiText.t("계기판에서 숨김"),UiText.t(hod?"켬":"끔"),hod,new Runnable(){public void run(){hideOnDash();}});
+        final boolean hod=QuickEntryService.hideOnDash(this),button=mode==QuickEntryPolicy.FLOATING;   // only the edge button can step aside
+        settingRow(right,UiText.t("계기판에서 숨김"),UiText.t(!button?"바로가기 버튼을 켜야 동작합니다":hod?"켬":"끔"),hod&&button,new Runnable(){public void run(){hideOnDash();}});
         String star=StarKey.status(this);
         settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),new Runnable(){public void run(){starKey();}});
         TextView help=label(UiText.t("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요."),14,MUT,false);
@@ -232,14 +234,7 @@ public final class HubActivity extends Activity {
             }}).show();
     }
     /** 계기판에서 숨김: the edge button steps aside while the dashboard is on screen. */
-    private void hideOnDash(){
-        final boolean on=QuickEntryService.hideOnDash(this);
-        new AlertDialog.Builder(this).setTitle(UiText.t("계기판에서 숨김"))
-            .setMessage(UiText.t("계기판이 보이는 동안 바로가기 버튼을 숨깁니다."))
-            .setPositiveButton(UiText.t(on?"끄기":"켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
-                QuickEntryService.hideOnDash(HubActivity.this,!on);recreate();}})
-            .setNegativeButton(UiText.t("취소"),null).show();
-    }
+    private void hideOnDash(){QuickEntryService.hideOnDash(this,!QuickEntryService.hideOnDash(this));render();}   // one tap, like any switch
     private void starKey(){
         new AlertDialog.Builder(this).setTitle(UiText.t("☆ 버튼 → 계기판"))
             .setMessage(UiText.t("현재: ")+StarKey.status(this)+UiText.t("\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다."))
@@ -280,8 +275,8 @@ public final class HubActivity extends Activity {
     }
     private void launch(String name) {
         Intent intent=getPackageManager().getLaunchIntentForPackage(name);
-        if(intent==null){text(UiText.t("실행 가능한 액티비티가 없습니다: ")+name);return;}
-        try{startActivity(intent);}catch(Exception e){text(UiText.t("실행 실패: ")+e.getClass().getSimpleName());}
+        if(intent==null){fail(UiText.t("실행 가능한 액티비티가 없습니다: ")+name);return;}
+        try{startActivity(intent);}catch(Exception e){fail(UiText.t("실행 실패: ")+e.getClass().getSimpleName());}
     }
     private boolean accessible(ActivityInfo info){
         return info!=null&&info.enabled&&info.exported&&info.applicationInfo.enabled&&
@@ -296,8 +291,8 @@ public final class HubActivity extends Activity {
         }catch(PackageManager.NameNotFoundException e){return null;}
     }
     private void open(Intent request,String name){
-        if(available(request)==null){text(name+UiText.t(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."));return;}
-        try{startActivity(request);}catch(RuntimeException e){text(name+UiText.t(" 실행 실패: ")+e.getClass().getSimpleName());}
+        if(available(request)==null){fail(name+UiText.t(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."));return;}
+        try{startActivity(request);}catch(RuntimeException e){fail(name+UiText.t(" 실행 실패: ")+e.getClass().getSimpleName());}
     }
     private void openDashboard(){
         Intent request=new Intent(Intent.ACTION_MAIN).setClassName("com.veloster.dashboard","com.veloster.dashboard.DashboardActivity");
@@ -345,7 +340,7 @@ public final class HubActivity extends Activity {
     private void confirmReboot(){
         if(rebootDialog!=null)return;
         final long ticket=rebootRequest.arm();
-        if(ticket<0){text(UiText.t("이미 내비게이션 재시작을 요청했습니다."));return;}
+        if(ticket<0){fail(UiText.t("이미 내비게이션 재시작을 요청했습니다."));return;}
         rebootDialog=new AlertDialog.Builder(this).setTitle(UiText.t("내비게이션 재시작"))
             .setMessage(UiText.t("내비게이션 시스템을 재시작합니다. 화면·음악·PC 연결이 잠시 끊깁니다. 정차 중에 사용하세요."))
             .setPositiveButton(UiText.t("재시작"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){requestReboot(ticket);}})

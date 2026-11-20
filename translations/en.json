@@ -30,6 +30,7 @@
   "버튼 숨김: 내 앱 → 계기판에서 숨김": "Hide the button: My Apps → Hide on the dashboard",
   "계기판이 보이는 동안 바로가기 버튼을 숨깁니다.": "Hides the shortcut button while the dashboard is on screen.",
   "계기판에서 숨김": "Hide on the dashboard",
+  "바로가기 버튼을 켜야 동작합니다": "Needs the shortcut button on",
   "블루투스가 꺼져 있습니다.": "Bluetooth is off.",
   "이미 기기를 검색 중입니다.": "Discovery is already running.",
   "기기 검색 요청이 거부되었습니다.": "The discovery request was denied.",
