@@ -119,6 +119,7 @@ public final class UiText {
         EN.put("−2분30초","-2m30s");
         EN.put("−30초","-30 s");
         EN.put("−5분","-5 min");
+        EN.put("▼ 아래에 더 있음","▼ More below");
         EN.put("☆ 버튼 → 계기판","☆ button → Dashboard");
         EN.put("☆ 버튼 설정 실패: ","☆ button setting failed: ");
         EN.put("☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.","The ☆ button setting did not apply. This head unit may not support it.");
@@ -330,6 +331,7 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
+        EN.put("미니","Mini");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
@@ -772,6 +774,7 @@ public final class UiText {
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
+        EN.put("추천","Presets");
         EN.put("축소","scaled down");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
@@ -905,6 +908,7 @@ public final class UiText {
         EN.put("활성 시험 백업이 없습니다. 기존 핫스팟 접속정보는 차량 설정에서 확인하세요.","No active test backup. Check existing hotspot credentials in the vehicle settings.");
         EN.put("회"," times");
         EN.put("횡가속","Lateral G");
+        EN.put("효과음","Effects");
         EN.put("후드","Hood");
         EN.put("후드 열림","Hood open");
         EN.put("흐림","Overcast");

@@ -160,6 +160,9 @@ public final class TabsPreview {
             FloatPanel.shape=shape0;FloatPanel.glideOn=glide0;
             FloatPanel.music(null,null);
         }
+        com.veloster.i18n.UiText.configure("en","ko");   // English: the longer words must still fit
+        for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
+        com.veloster.i18n.UiText.configure("ko","ko");
         rec.setSettings(SettingsLayout.SOUND,"auto",-1,targets);rec.setOrder(null,80);save(out,"9_settings_sound_scrolled",rec,model,now,false,false);   // hints above and below
         rec.setSettings(SettingsLayout.SCREENS,"auto",-1,targets);rec.setOrder(null,62);rec.setScreenDrag(2,250);save(out,"9_settings_screens_drag",rec,model,now,false,false);rec.setScreenDrag(-1,0);rec.setOrder(null,0);
         {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
