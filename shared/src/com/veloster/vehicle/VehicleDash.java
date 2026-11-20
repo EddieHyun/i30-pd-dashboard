@@ -410,7 +410,8 @@ public final class VehicleDash extends View implements Runnable {
     private static final Telemetry.Sample[] FLOAT_Q=new Telemetry.Sample[Telemetry.LABELS.length];
     /** Only the signals the floating window's n cells show, in an array indexed by signal that is reused (main thread only). */
     public static Telemetry.Sample[] floatSamples(int n){long now=SystemClock.elapsedRealtime();VehicleProfile prof=DATA.profile();
-        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);if(FloatPanel.quad(sig))for(int w=0;w<4;w++){int s=FloatPanel.quadSig(sig,w);FLOAT_Q[s]=DATA.sample(s,now);}else FLOAT_Q[sig]=DATA.sample(sig,now);}
+        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);if(FloatPanel.quad(sig))for(int w=0;w<4;w++){int s=FloatPanel.quadSig(sig,w);FLOAT_Q[s]=DATA.sample(s,now);}else if(sig==FloatPanel.DCT2){FLOAT_Q[Telemetry.CLUTCH_ODD]=DATA.sample(Telemetry.CLUTCH_ODD,now);FLOAT_Q[Telemetry.CLUTCH_EVEN]=DATA.sample(Telemetry.CLUTCH_EVEN,now);}   // both clutches in one cell
+            else if(sig>=0&&sig<FLOAT_Q.length)FLOAT_Q[sig]=DATA.sample(sig,now);}
         FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */
