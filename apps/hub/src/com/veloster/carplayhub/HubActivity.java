@@ -110,7 +110,9 @@ public final class HubActivity extends Activity {
             LinearLayout body=new LinearLayout(this);
             scroll.setVerticalScrollBarEnabled(false);body.addView(scroll,new LinearLayout.LayoutParams(300,-1));
             LinearLayout right=new LinearLayout(this);right.setOrientation(1);
-            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-1,1);rp.leftMargin=24;body.addView(right,rp);
+            // the settings outgrew the screen (the note was cut and 대시보드 앱 삭제 sat below it, out of reach): they scroll, bar always shown
+            ScrollView rs=new ScrollView(this);rs.setScrollbarFadingEnabled(false);right.setPadding(0,0,12,0);rs.addView(right);
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-1,1);rp.leftMargin=24;body.addView(rs,rp);
             LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,0,1);bp.topMargin=4;root.addView(body,bp);setContentView(root);
             appsPage(right);return;
         }
