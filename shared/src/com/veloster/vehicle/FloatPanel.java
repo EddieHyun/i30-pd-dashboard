@@ -25,7 +25,7 @@ public final class FloatPanel {
     public static final int MAX_CELLS=7;
     public static final String[] SHAPE_NAMES={"끔","카드","가로 띠","세로 띠","원형 게이지","캡슐","큰 값 + 목록","단수 중심","사선","계기 + 목록","변속등","얇은 띠","가로 막대","세로 막대","계기 묶음","RPM 막대","세로 단수","음악","세로 띠 + RPM"};
     /** The 모양 sheet's order; SettingsLayout.FORM_SLOTS puts each on its 5 x 4 grid. */
-    public static final int[] FORMS={CARD,STRIP,SIDE,TICK,VRPM, ROUND,DIAL,TWIN,BARS, HERO,FILLS,DIAG,PILL,MUSIC, GEARBOX,TOWER,SHIFT,WEDGE};
+    public static final int[] FORMS={CARD,STRIP,SIDE,TICK,FILLS, ROUND,DIAL,TWIN,BARS, PILL,GEARBOX,WEDGE,SHIFT, VRPM,TOWER,HERO,DIAG,MUSIC};
     public static final int LAST_SHAPE=VRPM;
     /** 음악 띠: the playing track in a strip under the window, any shape but 음악. */
     public static volatile boolean musicStrip;

@@ -38,6 +38,7 @@ final class EngineCluster extends ClusterKit {
         mono(c,"BATT",690,80,15,CY,Paint.Align.LEFT);mono(c,fmt("%.1f",v(Telemetry.BAT_VOLTAGE))+"V",786,80,15,WH,Paint.Align.RIGHT);
         round(c,562,94,788,308,4,0xff020405);outline(c,562,94,788,308,4,1,0xff1d2328);
         int n=0;
+        if(v(Telemetry.MIL)>0)n=msg(c,n,"CHECK ENGINE",AM);   // engine warning lamp (MIL), the master caution of this stack
         if(!Float.isNaN(rpm)&&rpm>prof.redline)n=msg(c,n,"RPM LIMIT",RD);
         if(!Float.isNaN(cool)&&cool>=110)n=msg(c,n,"ENG TEMP",RD);
         if(v(Telemetry.DOOR_DRIVER)>0||v(Telemetry.DOOR_PASSENGER)>0)n=msg(c,n,"DOOR OPEN",AM);

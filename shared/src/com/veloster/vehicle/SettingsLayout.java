@@ -190,8 +190,8 @@ public final class SettingsLayout {
      *  S_GRAPH + g, S_CANCEL, S_DONE, S_IN (on the sheet, nothing there) or -1 (outside the sheet). */
     /** The 모양 sheet: wider than the other sheets, a 5 x 4 grid of slots (FORM_SLOTS), each a shape drawn small. */
     public static final float F_SH_L=24,F_SH_R=776,F5_X=40,F5_W=(F_SH_R-F_SH_L-32-4*10)/5f;
-    /** Each of FloatPanel.FORMS' slot (row * 5 + column): rows grids, gauges, lists and 음악, rpm and gear. */
-    public static final int[] FORM_SLOTS={0,1,2,3,4, 5,6,7,8, 10,11,12,13,14, 15,16,17,18};
+    /** Each of FloatPanel.FORMS' slot (row * 5 + column): rows 칸·목록, 계기, 변속·RPM, then 세로·분할·음악 — like shapes together. */
+    public static final int[] FORM_SLOTS={0,1,2,3,4, 5,6,7,8, 10,11,12,13, 15,16,17,18,19};
     public static final float K_X=112,K_Y=72,K_GAP=10,K_W=(SH_R-SH_L-32-3*K_GAP)/4,K_H=(SH_B-K_Y-14-2*K_GAP)/3;
     public static final float F4_Y=64,F4_H=(SH_B-F4_Y-10-3*K_GAP)/4;   // four rows: 16 shapes
     public static float[] tile5(int slot){float x=F5_X+(slot%5)*(F5_W+K_GAP),y=F4_Y+(slot/5)*(F4_H+K_GAP);return new float[]{x,y,x+F5_W,y+F4_H};}

@@ -165,15 +165,17 @@ public final class RaceRenderer {
         if(!Float.isNaN(brake)||!Float.isNaN(bar))brake=Telemetry.braking(brake,bar)?1:0;
         float tcs=v(Telemetry.TCS),esc=absWarn?1:v(Telemetry.ESC);
         String[] name={Float.isNaN(mode)?"MODE":Telemetry.driveModeLabel((int)mode),tcs>0?"TCS OFF":"TCS",absWarn?"ABS":esc>0?"ESC OFF":"ESC","BRAKE","PARK",
-            "WIPER"+(Float.isNaN(wiper)?"":" "+Telemetry.label(Telemetry.WIPER,wiper)),openL&&openR?"DOORS":openR?"DOOR R":openL?"DOOR L":"DOOR","TRUNK","HOOD"};
-        float[] val={mode,tcs,esc,brake,v(Telemetry.PARK_BRAKE),wiper,door,v(Telemetry.TRUNK),v(Telemetry.HOOD)};
-        int[] on={0,AMBER,D(),AMBER,D(),BLUE,D(),D(),D()};   // the park brake and anything open are warnings
+            "WIPER"+(Float.isNaN(wiper)?"":" "+Telemetry.label(Telemetry.WIPER,wiper)),openL&&openR?"DOORS":openR?"DOOR R":openL?"DOOR L":"DOOR","TRUNK","HOOD","ENGINE"};
+        float[] val={mode,tcs,esc,brake,v(Telemetry.PARK_BRAKE),wiper,door,v(Telemetry.TRUNK),v(Telemetry.HOOD),v(Telemetry.MIL)};
+        int[] on={0,AMBER,D(),AMBER,D(),BLUE,D(),D(),D(),AMBER};   // the park brake and anything open are warnings; the last cell is the engine lamp
+        int mil=name.length-1;   // the engine lamp cell: the glyph, not a word
         int n=name.length;float aw=32,sl=L+aw+4,sr=R-aw-4,w=(sr-sl-4*(n-1))/n;
         for(int i=0;i<n;i++){
             float l=sl+i*(w+4),x=val[i];
             int fill=i==0?(x==1?RED:x==3?GREEN:0):!Float.isNaN(x)&&x>0?on[i]:0;
             box(c,l,56,l+w,80,fill!=0?fill:PANEL);if(fill==D())ThemeShapes.ring(c,p,l,56,l+w,80);
-            float size=12;p.setTypeface(Typeface.DEFAULT);p.setTextSize(size);while(size>9&&p.measureText(name[i])>w-6){size-=.5f;p.setTextSize(size);}   // WIPER HIGH in a ninth of the strip
+            if(i==mil){MilLamp.draw(c,l+w/2,68,18,fill!=0?BG:Float.isNaN(x)?0xff4a5860:MUTED);continue;}
+            float size=12;p.setTypeface(Typeface.DEFAULT);p.setTextSize(size);while(size>9&&p.measureText(name[i])>w-6){size-=.5f;p.setTextSize(size);}   // WIPER HIGH in a tenth of the strip
             text(c,name[i],l+w/2,73,size,fill!=0?BG:Float.isNaN(x)?0xff4a5860:MUTED,Paint.Align.CENTER);
         }
         turnArrow(c,L,L+aw,true,now-turnLeftAt<900);

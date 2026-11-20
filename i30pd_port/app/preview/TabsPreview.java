@@ -85,6 +85,17 @@ public final class TabsPreview {
                 if(diff>0){bad++;why.append(" page "+pg+": "+diff+" px");}}
             rec.setPage(PitRenderer.PAGE_CLASSIC);System.out.println("trim: "+pages.length+" screens redrawn, "+bad+" differ"+why);
             if(bad>0)throw new AssertionError("a screen draws differently after trim:"+why);}
+        {   // 엔진 경고등(MIL) lit: the new lamp where each screen gives it a home — race status strip, EICAS stack, classic/retro/rally warnings row
+            model.tm(Telemetry.MIL,1,true,now);
+            rec.setPage(PitRenderer.PAGE_RACE);save(out,"x_mil_race",rec,model,now,false,false);
+            rec.setPage(PitRenderer.PAGE_CLASSIC+11);save(out,"x_mil_engine",rec,model,now,false,false);
+            rec.setPage(PitRenderer.PAGE_CLASSIC+0);save(out,"x_mil_classic",rec,model,now,false,false);
+            rec.setPage(PitRenderer.PAGE_CLASSIC+1);save(out,"x_mil_retro",rec,model,now,false,false);
+            rec.setPage(PitRenderer.PAGE_CLASSIC+2);save(out,"x_mil_rally",rec,model,now,false,false);
+            rec.setPage(PitRenderer.PAGE_CLASSIC+4);save(out,"x_mil_80s",rec,model,now,false,false);
+            rec.setPage(PitRenderer.PAGE_CLASSIC+9);save(out,"x_mil_night",rec,model,now,false,false);
+            model.tm(Telemetry.MIL,0,true,now);rec.setPage(PitRenderer.PAGE_CLASSIC);
+        }
         Telemetry.Sample sel=model.sample(Telemetry.GEAR_SELECTOR,now);   // G circle in the DCT manual gate (S -> "M" + gear), then the lever back
         model.hscanPd(0xc7,0x1d,new byte[]{0,8,0,0,0,0,0,0},now);rec.setPage(PitRenderer.PAGE_CLASSIC+java.util.Arrays.asList(layouts).indexOf("9i_cluster_gcircle"));
         save(out,"9i_cluster_gcircle_m",rec,model,now,false,false);
