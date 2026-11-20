@@ -167,7 +167,10 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         installBtn.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(go, lp(-1, dp(52), 0, dp(4)));
         LinearLayout buttons = new LinearLayout(this);
-        removeBtn = button(buttons, "삭제", BG, TEXT, LINE, v -> start(Flow.Mode.UNINSTALL));
+        // one tap next to [취소] used to wipe both apps: asked first
+        removeBtn = button(buttons, "삭제", BG, TEXT, LINE, v -> new android.app.AlertDialog.Builder(this)
+                .setMessage("차에서 i30 계기판과 '내 앱', 그 설정을 지웁니다.")
+                .setPositiveButton("삭제", (d, w) -> start(Flow.Mode.UNINSTALL)).setNegativeButton("취소", null).show());
         cancelBtn = button(buttons, "취소", BG, TEXT, LINE, v -> { cancel.set(true); on(cancelBtn, false); say(recording ? "\n기록을 마무리하는 중..." : "\n취소하는 중..."); });
         root.addView(buttons, lp(-1, dp(42), 0, dp(8)));
         LinearLayout report = new LinearLayout(this);
