@@ -60,6 +60,7 @@ final class VehicleDataClient implements Runnable {
                     if(current!=null)current.stop();
                     VehicleDash.ignition(on);
                     if(on&&current!=null)current.start();
+                    if(on)pollers(token);   // OBD and tm_hscan too: made with the ignition off (a floating window up from boot at ACC), they never started
                 }
                 }
             }};
@@ -93,17 +94,23 @@ final class VehicleDataClient implements Runnable {
         }catch(RuntimeException e){hscan=null;log("HSCAN",e);}catch(LinkageError e){hscan=null;log("HSCAN",e);}
         if(hscan!=null&&(ignition||ignitionUnknown))hscan.start();
         if(obd==null)try{obd=new com.veloster.vehicle.ObdLive();}catch(RuntimeException e){obd=null;log("OBD",e);}catch(LinkageError e){obd=null;log("OBD",e);}
-        if(obd!=null&&(ignition||ignitionUnknown))obd.start(
-            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,byte[] d){if(accepts(token))VehicleDash.obd(pid,d);}},
-            new com.veloster.vehicle.ObdLive.Gate(){public boolean open(){return accepts(token);}});
         if(tm==null)try{tm=new com.veloster.vehicle.TmHscan();}catch(RuntimeException e){tm=null;log("tm_hscan",e);}catch(LinkageError e){tm=null;log("tm_hscan",e);}
-        if(tm!=null&&(ignition||ignitionUnknown))tm.start(
-            new com.veloster.vehicle.TmHscan.Sink(){public void value(int sig,float v,boolean ok){if(accepts(token))VehicleDash.tm(sig,v,ok);}},
-            new com.veloster.vehicle.TmHscan.Gate(){public boolean open(){return accepts(token);}});
+        pollers(token);
         // every missing subscriber is tried again (rear view, hscan and OBD too, which used to stay off until the app restarted);
         // the ones in place stay registered, and an absent service is asked less and less often (2 s doubling to 30 s)
         if((power==null&&!bcmAbsent())||nmode==null||vehicle==null||rear==null||hscan==null||obd==null||tm==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
         else retryMs=2000;
+    }
+    /** Starts the OBD and tm_hscan pollers while the ignition is on (each start does nothing while it already runs): from run(),
+     *  and when the ignition comes on, since run() is not called again once every subscriber is in place. */
+    private void pollers(final int token){
+        if(!(ignition||ignitionUnknown))return;
+        if(obd!=null)obd.start(
+            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,byte[] d){if(accepts(token))VehicleDash.obd(pid,d);}},
+            new com.veloster.vehicle.ObdLive.Gate(){public boolean open(){return accepts(token);}});
+        if(tm!=null)tm.start(
+            new com.veloster.vehicle.TmHscan.Sink(){public void value(int sig,float v,boolean ok){if(accepts(token))VehicleDash.tm(sig,v,ok);}},
+            new com.veloster.vehicle.TmHscan.Gate(){public boolean open(){return accepts(token);}});
     }
     synchronized void stop(){
         if(!active)return;active=false;generation++;handler.removeCallbacks(this);
