@@ -247,7 +247,9 @@ public final class Telemetry {
     }
     public synchronized Sample sample(int i, long now) {
         boolean stale=seen[i] && now-times[i]>=STALE_MS;
-        return new Sample(values[i], valid[i] && !stale, changed[i] && !stale, seen[i], stale,seen[i]?Math.max(0,now-times[i]):Long.MAX_VALUE);
+        // brake pressure rests at 1-2 bar with the pedal up; with the switch known released every screen reads 0, not "slightly pressed"
+        float v=i==10&&valid[BRAKE_SWITCH]&&values[BRAKE_SWITCH]==0&&now-times[BRAKE_SWITCH]<STALE_MS?0:values[i];
+        return new Sample(v, valid[i] && !stale, changed[i] && !stale, seen[i], stale,seen[i]?Math.max(0,now-times[i]):Long.MAX_VALUE);
     }
     public synchronized Sample[] snapshot(long now) {
         Sample[] result=new Sample[LABELS.length];
