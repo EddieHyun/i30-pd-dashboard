@@ -59,7 +59,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-12'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-20'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -75,6 +75,13 @@ $Apps = @(
   [pscustomobject]@{ apk='myapps-i30pd-platform.apk';   pkg='com.veloster.carplayhub'; name="'내 앱'" }
 )
 $script:adbExe = $null
+# 차에 깔린 두 앱의 버전 한 줄. 1.5-i18n = 릴리스 이름을 넣기 전(v1.16.0까지)의 대시보드.
+function Versions {
+  ($Apps | ForEach-Object {
+    $n = if([string](Adb '-s' $serial 'shell' 'dumpsys' 'package' $_.pkg) -match 'versionName=(\S+)'){ $Matches[1] } else { '없음' }
+    "$($_.name) " + $(if($n -eq '1.5-i18n'){ 'v1.16.0 이하' } else { $n })
+  }) -join ' · '
+}
 $LogDir = Join-Path $env:LOCALAPPDATA 'i30pd-installer'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Log = Join-Path $LogDir ("install_{0}.log" -f (Get-Date -Format yyyyMMdd_HHmmss))
@@ -398,6 +405,7 @@ foreach($k in 'ro.product.name','ro.product.device','ro.build.product','ro.build
 $build = $pv['ro.build.version.incremental']; $device = $pv['ro.product.device']
 $board = if($device -match 'daudiopluslow'){ 'D-Audio Plus LOW (블루링크 없음)' } elseif($device -match 'daudioplus'){ 'D-Audio Plus (블루링크)' } else { "확인 안 됨 ($device)" }
 Note "내비: $board / 빌드 $build / USB $($pv['sys.usb.state'])" DarkGray
+Note "차에 깔린 버전: $(Versions)" DarkGray
 
 # --- 진단 기록 모드: 읽기만 한다 -------------------------------------------------
 # 정해 둔 속성, 두 앱의 버전, 우리 앱 태그·충돌·설치 기록만. 차 기록 전체에는 블루투스로 붙은 폰 이름·번호·연락처가 섞인다.
@@ -429,7 +437,7 @@ if($build -eq $LowBuild){
   Note '블루링크 없는 내비(LOW 보드) — 설치가 확인된 빌드입니다.' DarkGray
 } elseif($build -eq $OldBuild){
   Note '블루링크 내비 2024-02 빌드 — 설치와 값이 확인된 빌드입니다.' DarkGray
-} elseif($build -and $build -ne $VerifiedBuild){
+} elseif($build -and $build -ne $VerifiedBuild -and -not $Uninstall){   # removing needs no "values may be wrong" question
   Note "주의: 검증된 빌드($VerifiedBuild)와 다릅니다. 값이 틀릴 수 있습니다." Yellow
   if(-not (Ask '그래도 계속할까요?')){ Note '사용자 취소.' Yellow; exit 1 }
 }
@@ -452,6 +460,8 @@ if($Uninstall){
     # Not Success: either it was never installed or the uninstall failed. pm path tells the two apart.
     $p = AdbWait 30 "$($app.name) 확인" @('-s',$serial,'shell','pm','path',$app.pkg)
     if($null -ne $p -and $p -match 'package:'){ Die "$($app.name) 삭제 실패 (앱이 아직 차에 있습니다):`n$($o.Trim())" 1 }
+    # pm path prints nothing for an app that is not there. Anything else (an adb error, no answer) is a lost connection, not a removed app.
+    if($null -eq $p -or $p.Trim() -ne ''){ Die "차와 연결이 끊긴 것 같습니다. $($app.name) 삭제를 확인하지 못했습니다.`n케이블을 확인하고 다시 실행하세요.`n$("$p".Trim())" 1 }
     Note "$($app.name): 설치돼 있지 않음" Gray
   }
   Note '삭제 완료. 순정 상태로 돌아갔습니다(순정 시스템은 원래 건드리지 않습니다).' Green; UsbOffNote; exit 0
@@ -492,6 +502,7 @@ foreach($app in $Apps){
   if($o -match 'Success'){ Note "$($app.name) 설치 완료" Green }
   else { Die "$($app.name) 설치 실패:`n$($o.Trim())" 1 }
 }
+Note "지금 차에 깔린 버전: $(Versions)" Green
 
 # --- '내 앱' 실행 -----------------------------------------------------------
 Head "5) '내 앱' 실행"

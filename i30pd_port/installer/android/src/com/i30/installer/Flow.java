@@ -44,7 +44,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-20";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-20.1";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -95,9 +95,10 @@ final class Flow {
             String build = prop(adb, "ro.build.version.incremental");
             if (mode == Mode.DIAG) return diag(adb, dir, ui);
             if (mode == Mode.RECORD) return record(adb, dir, car, ui);
-            if (!build.isEmpty() && !build.equals(VERIFIED_BUILD) && !build.equals(LOW_BUILD) && !build.equals(OLD_BUILD)
+            if (mode != Mode.UNINSTALL && !build.isEmpty() && !build.equals(VERIFIED_BUILD) && !build.equals(LOW_BUILD) && !build.equals(OLD_BUILD)
                     && !ui.ask("검증된 빌드(" + VERIFIED_BUILD + ")와 다릅니다. 값이 틀릴 수 있습니다. 그래도 계속할까요?"))
                 throw new Stop("사용자 취소.");
+            ui.say("차에 깔린 버전: " + versions(adb));
 
             if (mode == Mode.UNINSTALL) {
                 ui.say("\n■ 앱 삭제");
@@ -119,6 +120,7 @@ final class Flow {
             } else {
                 ui.say("\n■ 앱 설치");
                 for (int i = 0; i < APPS.length; i++) install(adb, APPS[i], apk[i], ui);
+                ui.say("지금 차에 깔린 버전: " + versions(adb));
                 adb.shell("am start -n com.veloster.carplayhub/.HubActivity", 30_000);
                 ui.say("\n완료! 차 화면 '내 앱'에서  바로가기 버튼 → 버튼 + 알림 → 저장  을 고르면");
                 ui.say("가장자리 '계기판' 버튼으로 대시보드가 열립니다.");
@@ -273,6 +275,17 @@ final class Flow {
                 else if (!o.startsWith("VN-ERROR")) b.append("읽지 못함 (").append(o.trim().split("\n")[0]).append(")\n");
                 else b.append("\n").append(tail(o.trim(), 400));
             }
+        return b.toString();
+    }
+
+    /** Both apps' versions on the car, one line. 1.5-i18n = a dashboard from before releases carried their name (up to v1.16.0). */
+    static String versions(Adb adb) throws IOException {
+        StringBuilder b = new StringBuilder();
+        for (String[] app : APPS) {
+            Matcher m = Pattern.compile("versionName=([!-~]+)").matcher(adb.shell("dumpsys package " + app[1], 30_000));
+            String n = m.find() ? m.group(1) : "없음";
+            b.append(b.length() == 0 ? "" : " · ").append(app[2]).append(' ').append(n.equals("1.5-i18n") ? "v1.16.0 이하" : n);
+        }
         return b.toString();
     }
 

@@ -12,7 +12,7 @@
 ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"
 # OS: Darwin(맥) / Linux. I30PD_OS로 바꿀 수 있다(시험 도구가 Windows Git Bash에서 리눅스 경로를 돌릴 때).
 OS="${I30PD_OS:-$(uname -s)}"; [ "$OS" = Darwin ] || OS=Linux
-INSTALLER_VERSION='2026-11-12'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-20'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 OLD_BUILD='eng.vmadmin.20240205.105401'        # 블루링크 D-Audio Plus 2024-02 빌드 — 2026-11-03 같은 차종 실차에서 설치·값 확인
@@ -313,6 +313,17 @@ case "$device" in
   *)               board="확인 안 됨 ($device)" ;;
 esac
 note "내비: $board / 빌드 $build / USB $usbst"
+# 차에 깔린 두 앱의 버전 한 줄. 1.5-i18n = 릴리스 이름을 넣기 전(v1.16.0까지)의 대시보드.
+versions() {
+  local apk n o=''
+  for apk in $APKS; do
+    n="$(adb_ -s "$SERIAL" shell dumpsys package "$(pkg_of $apk)" | tr -d '\r' | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1)"
+    [ "$n" = 1.5-i18n ] && n='v1.16.0 이하'
+    o="$o${o:+ · }$(name_of $apk) ${n:-없음}"
+  done
+  printf '%s' "$o"
+}
+note "차에 깔린 버전: $(versions)"
 
 # --- 진단 기록 모드: 읽기만 한다 -------------------------------------------------
 # 정해 둔 속성, 두 앱의 버전, 우리 앱 태그·충돌·설치 기록만. 차 기록 전체에는 블루투스로 붙은 폰 이름·번호·연락처가 섞인다.
@@ -347,7 +358,7 @@ if [ "$build" = "$LOW_BUILD" ]; then
   note '블루링크 없는 내비(LOW 보드) — 설치가 확인된 빌드입니다.'
 elif [ "$build" = "$OLD_BUILD" ]; then
   note '블루링크 내비 2024-02 빌드 — 설치와 값이 확인된 빌드입니다.'
-elif [ -n "$build" ] && [ "$build" != "$VERIFIED_BUILD" ]; then
+elif [ -n "$build" ] && [ "$build" != "$VERIFIED_BUILD" ] && [ -z "$UNINSTALL" ]; then   # removing needs no "values may be wrong" question
   warn "주의: 검증된 빌드($VERIFIED_BUILD)와 다릅니다. 값이 틀릴 수 있습니다."
   ask '그래도 계속할까요?' || { warn '사용자 취소.'; finish 1; }
 fi
@@ -368,7 +379,13 @@ if [ -n "$UNINSTALL" ]; then
     if printf '%s' "$OUT" | grep -q Success; then ok "$(name_of $apk): 삭제됨"; continue; fi
     # Not Success: never installed, or the uninstall failed. pm path tells the two apart.
     u="$OUT"
-    if adb_wait 30 "$(name_of $apk) 확인" -s "$SERIAL" shell pm path "$(pkg_of $apk)" && printf '%s' "$OUT" | grep -q 'package:'; then
+    # pm path prints nothing for an app that is not there. Anything else (an adb error, no answer) is a lost connection, not a removed app.
+    if ! adb_wait 30 "$(name_of $apk) 확인" -s "$SERIAL" shell pm path "$(pkg_of $apk)" || { ! printf '%s' "$OUT" | grep -q 'package:' && [ -n "$(printf '%s' "$OUT" | tr -d '[:space:]')" ]; }; then
+      die "차와 연결이 끊긴 것 같습니다. $(name_of $apk) 삭제를 확인하지 못했습니다.
+케이블을 확인하고 다시 실행하세요.
+$OUT" 1
+    fi
+    if printf '%s' "$OUT" | grep -q 'package:'; then
       die "$(name_of $apk) 삭제 실패 (앱이 아직 차에 있습니다):
 $u" 1
     fi
@@ -408,6 +425,7 @@ $OUT" 1
   printf '%s' "$res" | grep -q Success && ok "$name 설치 완료" || die "$name 설치 실패:
 $res" 1
 done
+ok "지금 차에 깔린 버전: $(versions)"
 
 # --- '내 앱' 실행 -----------------------------------------------------------
 head_ "5) '내 앱' 실행"

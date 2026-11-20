@@ -14,8 +14,11 @@ JAR="$SDK/platforms/android-34/android.jar"
 [ -f "$JAR" ] || { echo "missing $JAR: sdkmanager \"platforms;android-34\"" >&2; exit 1; }
 KS="${KS:?set KS to the release keystore path}"
 KS_PASS="${KS_PASS:?set KS_PASS to the keystore password}"
-# versionName = Flow.VERSION (one place); versionCode goes up by one with every published APK.
-VER_CODE="${VER_CODE:-11}"; VER_NAME="$(grep -o 'VERSION = "[^"]*"' "$(dirname "$0")/src/com/i30/installer/Flow.java" | head -1 | cut -d'"' -f2)"
+# versionName = Flow.VERSION (one place). versionCode comes from it too: YYYY-MM-DD[.N] -> YYYYMMDD*100+N, so the
+# [업데이트] band (compares VERSION) and the newer-APK check (compares versionCode) cannot disagree.
+VER_NAME="$(grep -o 'VERSION = "[^"]*"' "$(dirname "$0")/src/com/i30/installer/Flow.java" | head -1 | cut -d'"' -f2)"
+VER_DAY="${VER_NAME%%.*}"; VER_N="${VER_NAME#"$VER_DAY"}"; VER_N="${VER_N#.}"
+VER_CODE="${VER_CODE:-$(( ${VER_DAY//-/} * 100 + ${VER_N:-0} ))}"
 cd "$(dirname "$0")"
 rm -rf build && mkdir -p build/classes
 "$BT/aapt2" compile --dir res -o build/res.zip   # the launcher icon

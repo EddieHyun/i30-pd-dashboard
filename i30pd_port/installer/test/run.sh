@@ -30,6 +30,9 @@ grep -q 'persist.sys.key.custom: com.veloster.carplayhub.STAR_KEY' "$D" && grep 
 ! grep -qE '00:1A:7D|1234-5678|kim@example|FAKE123' "$D" && ! grep -qF "$([ $WHO = win ] && cygpath -w "$USERPROFILE" || echo "$F/home")" "$D" && grep -q '<MAC>' "$D" && grep -q '<전화번호>' "$D" && grep -q '<메일>' "$D" && grep -q '<기기번호>' "$D" || { cp "$D" "$F/diag_$WHO.txt"; fail "4 diag masking"; }
 [ "$(grep -c 'draw avg' "$D")" -le 1500 ] || fail "4 log capped"
 cp "$D" "$F/diag_$WHO.txt"; rm -f "$D"
+if [ $WHO = win ]; then FAKE_GONE=1 run -Uninstall; else FAKE_GONE=1 run --uninstall; fi   # cable out mid-way: not "삭제 완료"
+[ "$(cat $F/rc)" != 0 ] && grep -q '연결이 끊긴' $F/out.txt && ! grep -q '삭제 완료' $F/out.txt || fail "5 uninstall with the car gone"
+echo com.veloster.carplayhub.STAR_KEY > "$F/star.txt"
 if [ $WHO = win ]; then run -Uninstall; else run --uninstall; fi
 [ "$(cat $F/rc)" = 0 ] && grep -q '원래대로' $F/out.txt && [ -z "$(ls $F/inst)" ] || fail "5 uninstall + ☆"
 # an old installer must hear about the published one (network: raw.githubusercontent.com main)
