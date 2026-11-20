@@ -338,7 +338,12 @@ public final class HscanPdTelemetryTest {
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
         t.obd(0x0b,new byte[]{0x67},3404);check(t.boostCheck(3404).startsWith("MAP 103 kPa"),"MAP 01 0B kept for the boost-scale line: "+t.boostCheck(3404));
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DCT_LIFE_B_EVEN+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.ENGINE_DRIVE+1,"label/unit tables cover the added signals");
+        // tm_hscan_service read-only values (telematics): engine warning lamp and the run / idle / drive seconds.
+        t.tm(Telemetry.MIL,1,true,3420);check("WARN".equals(Telemetry.label(Telemetry.MIL,t.sample(Telemetry.MIL,3420).value)),"MIL WARN when lit");
+        check("OK".equals(Telemetry.label(Telemetry.MIL,0))&&com.veloster.vehicle.Tiles.level(Telemetry.MIL,1)==2&&com.veloster.vehicle.Tiles.level(Telemetry.MIL,0)==0,"MIL OK / red when lit");
+        t.tm(Telemetry.ENGINE_RUNTIME,985,true,3421);check("16:25".equals(Telemetry.label(Telemetry.ENGINE_RUNTIME,t.sample(Telemetry.ENGINE_RUNTIME,3421).value)),"run time 985 s = 16:25");
+        check("1:00:00".equals(Telemetry.timeLabel(3600))&&"0:16".equals(Telemetry.timeLabel(16)),"timeLabel M:SS and H:MM:SS");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
         t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");

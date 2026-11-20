@@ -23,6 +23,7 @@ final class VehicleDataClient implements Runnable {
     private volatile int generation;
     private volatile HscanDataClient hscan;
     private volatile com.veloster.vehicle.ObdLive obd;
+    private volatile com.veloster.vehicle.TmHscan tm;
     private NModeManager nmode;
     private VehicleInfoManager vehicle;
     private BCMManager power;
@@ -95,15 +96,20 @@ final class VehicleDataClient implements Runnable {
         if(obd!=null&&(ignition||ignitionUnknown))obd.start(
             new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,byte[] d){if(accepts(token))VehicleDash.obd(pid,d);}},
             new com.veloster.vehicle.ObdLive.Gate(){public boolean open(){return accepts(token);}});
+        if(tm==null)try{tm=new com.veloster.vehicle.TmHscan();}catch(RuntimeException e){tm=null;log("tm_hscan",e);}catch(LinkageError e){tm=null;log("tm_hscan",e);}
+        if(tm!=null&&(ignition||ignitionUnknown))tm.start(
+            new com.veloster.vehicle.TmHscan.Sink(){public void value(int sig,float v,boolean ok){if(accepts(token))VehicleDash.tm(sig,v,ok);}},
+            new com.veloster.vehicle.TmHscan.Gate(){public boolean open(){return accepts(token);}});
         // every missing subscriber is tried again (rear view, hscan and OBD too, which used to stay off until the app restarted);
         // the ones in place stay registered, and an absent service is asked less and less often (2 s doubling to 30 s)
-        if((power==null&&!bcmAbsent())||nmode==null||vehicle==null||rear==null||hscan==null||obd==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
+        if((power==null&&!bcmAbsent())||nmode==null||vehicle==null||rear==null||hscan==null||obd==null||tm==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
         else retryMs=2000;
     }
     synchronized void stop(){
         if(!active)return;active=false;generation++;handler.removeCallbacks(this);
         if(hscan!=null){hscan.stop();hscan=null;}
         if(obd!=null){obd.stop();obd=null;}
+        if(tm!=null){tm.stop();tm=null;}
         releaseNmode();releaseVehicle();releasePower();releaseRear();retryMs=2000;
     }
     // A registration that failed half way (manager made, listener not added) is undone here too, so a retry starts clean.

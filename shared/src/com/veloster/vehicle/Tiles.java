@@ -46,7 +46,7 @@ public final class Tiles {
     // ---- the grouped list --------------------------------------------------------------------------------------
     public static final String[] GROUPS={"엔진","온도","터보·연료","변속·구동","주행·자세","브레이크·안전","타이어","전기·차체","디젤 DPF"};
     private static final int[][] MEMBERS={
-        {0,32,59,36,9,42,15,16,40,41},
+        {0,32,59,36,9,42,15,16,40,41,Telemetry.MIL,Telemetry.ENGINE_RUNTIME,Telemetry.ENGINE_IDLE,Telemetry.ENGINE_DRIVE},
         {1,2,29,14,58,CLUTCH,66,67},
         {17,37,39,38,57},
         {8,30,52,56,34,28,74,75,76,77},
@@ -92,7 +92,8 @@ public final class Tiles {
         "SOC","BATT","STEER RATE","E-LSD","INTAKE","SELECTOR","ODO","LOAD","YAW","MODE","PARK BRK","THROTTLE","FUEL FLOW","RANGE",
         "AVG","TQ CORR","TQ FRIC","SPARK","BRK SW","STR TORQUE","DOOR L","WIPER","DOOR R","TRUNK","HOOD","TURN L","TURN R","SHIFT",
         "HEADLAMP","TAIL","HIGH BEAM","CLUTCH","FUEL","CAT","ABS LOAD","DPF ΔP","DPF TEMP","DPF REGEN","DPF TRIG","DPF LAST","DPF AVG",
-        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT","TIRE T FL","TIRE T FR","TIRE T RL","TIRE T RR","LIFE A ODD","LIFE A EVEN","LIFE B ODD","LIFE B EVEN"};
+        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT","TIRE T FL","TIRE T FR","TIRE T RL","TIRE T RR","LIFE A ODD","LIFE A EVEN","LIFE B ODD","LIFE B EVEN",
+        "MIL","RUN TIME","IDLE TIME","DRIVE TIME"};
     public static String caption(int s){
         switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case EXHAUST:return "EXHAUST";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
         return s>=0&&s<CAPTION.length?CAPTION[s]:"—";
@@ -138,6 +139,7 @@ public final class Tiles {
         if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN)return Telemetry.clutchLevel(v);
         if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR)return v<26?2:v<30?1:0;
         if(s==Telemetry.DPF_REGEN)return v>0?1:0;
+        if(s==Telemetry.MIL)return v!=0?2:0;
         return 0;
     }
     /** Where the reading sits on the tile's bar, 0..1, NaN for signals without a sensible scale. */
