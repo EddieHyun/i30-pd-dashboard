@@ -179,6 +179,7 @@ public final class UiText {
         EN.put("곧 출발","Get ready");
         EN.put("공짜 주행","Free distance");
         EN.put("공회전","Idle");
+        EN.put("공회전 시간","Idle time");
         EN.put("공회전 중","Idling");
         EN.put("과속 차임","Speed chime");
         EN.put("관성","Inertia");
@@ -541,6 +542,8 @@ public final class UiText {
         EN.put("엔진","Engine");
         EN.put("엔진 (EMS)","Engine (EMS)");
         EN.put("엔진 RPM","Engine RPM");
+        EN.put("엔진 가동 시간","Engine run time");
+        EN.put("엔진 경고등","Engine warning lamp");
         EN.put("엔진 부하","Engine load");
         EN.put("엔진 사운드","Engine sound");
         EN.put("엔진 회전 주파수 = RPM ÷ 60","Crank frequency = RPM ÷ 60");

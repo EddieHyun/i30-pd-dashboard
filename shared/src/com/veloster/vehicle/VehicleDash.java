@@ -317,6 +317,8 @@ public final class VehicleDash extends View implements Runnable {
         if(pid==0x0b&&now-mapLogAt>=4000&&DATA.profile().fuel==VehicleProfile.Fuel.DIESEL){mapLogAt=now;android.util.Log.i("VehicleDash","OBD "+DATA.boostCheck(now));}
     }
     private static long mapLogAt;
+    /** tm_hscan_service poller (telematics, read only): one decoded signal value. */
+    public static void tm(int sig,float v,boolean ok){DATA.tm(sig,v,ok,SystemClock.elapsedRealtime());}
     /** The floating window's choices from the dashboard's preferences (pit_vehicle_ui); FloatService reads the same. */
     /** A tap released on the 플로팅 pane (x, y; downX, downY where it went down). A button applies when the finger comes up
      *  on the same button it went down on; with the chooser open only the chooser answers, and 완료 applies its pick. */
