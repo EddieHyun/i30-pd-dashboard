@@ -11,22 +11,30 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 /**
- * Lends one file from files/diag to the mail app the user picks (read only, by a one-time grant; not exported).
+ * Lends one file from files/diag to the mail app the user picks, or the downloaded update in files/update to the system
+ * installer (read only, by a one-time grant; not exported).
  * Does what androidx FileProvider would, without a Gradle build.
  */
 public final class DiagProvider extends ContentProvider {
     static final String AUTHORITY = "com.i30.installer.diag";
 
-    static Uri uri(File f) { return Uri.parse("content://" + AUTHORITY + "/" + Uri.encode(f.getName())); }
+    static Uri uri(File f) {
+        String dir = f.getParentFile().getName().equals("update") ? "update/" : "";
+        return Uri.parse("content://" + AUTHORITY + "/" + dir + Uri.encode(f.getName()));
+    }
 
     private File file(Uri u) throws FileNotFoundException {
-        File dir = new File(getContext().getFilesDir(), "diag"), f = new File(dir, String.valueOf(u.getLastPathSegment()));
+        boolean upd = u.getPathSegments().size() == 2 && "update".equals(u.getPathSegments().get(0));
+        File dir = new File(getContext().getFilesDir(), upd ? "update" : "diag"), f = new File(dir, String.valueOf(u.getLastPathSegment()));
         if (!dir.equals(f.getParentFile()) || !f.isFile()) throw new FileNotFoundException(String.valueOf(u));
         return f;
     }
 
     @Override public boolean onCreate() { return true; }
-    @Override public String getType(Uri u) { return String.valueOf(u.getLastPathSegment()).endsWith(".zip") ? "application/zip" : "text/plain"; }
+    @Override public String getType(Uri u) {
+        String n = String.valueOf(u.getLastPathSegment());
+        return n.endsWith(".apk") ? "application/vnd.android.package-archive" : n.endsWith(".zip") ? "application/zip" : "text/plain";
+    }
 
     @Override public ParcelFileDescriptor openFile(Uri u, String mode) throws FileNotFoundException {
         return ParcelFileDescriptor.open(file(u), ParcelFileDescriptor.MODE_READ_ONLY);

@@ -52,6 +52,14 @@ public class FlowTest {
         check(t[0].equals("v1.8.2 + 칸 바꾸기 · 갱신 2026-11-05"), "test title: " + t[0]);
         check(t[1].equals("■ 대시보드: A (새로)\n   첫 문장입니다.\n■ 대시보드: B\n   링크 b café"), "test summary: " + t[1]);
         check(Flow.describe(test, true, 1)[1].equals("■ 대시보드: A (새로)\n   첫 문장입니다."), "heads limit");
+        // which branch's phone installer to update to: the newer one, stable on a tie, none when neither is newer or offline
+        check("beta".equals(Flow.pick("2026-11-21", "2026-11-22", "2026-11-20")), "pick: beta newer");
+        check("main".equals(Flow.pick("2026-11-21", "2026-11-21", "2026-11-20")), "pick: tie → main");
+        check("main".equals(Flow.pick("2026-11-21", null, "2026-11-20")), "pick: beta offline");
+        check(Flow.pick("2026-11-20", "2026-11-19", "2026-11-20") == null, "pick: nothing newer");
+        check(Flow.pick(null, null, "2026-11-20") == null, "pick: offline");
+        check(Flow.apkUrl("main").equals(Flow.RELEASES + "/latest/download/i30pd-installer-android.apk"), "apkUrl main");
+        check(Flow.apkUrl("beta").equals(Flow.RELEASES + "/download/test/i30pd-installer-android.apk"), "apkUrl beta");
         System.out.println("PASS release notes");
     }
     static void check(boolean ok, String what) { if (!ok) throw new AssertionError(what); }
