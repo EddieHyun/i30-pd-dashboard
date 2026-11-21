@@ -59,7 +59,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-20'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-21'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -265,7 +265,7 @@ foreach($app in $(if($Uninstall -or $Diag){ @() } else { $Apps })){
   Note "$($app.apk): 폴더에 없어 내려받습니다..." Gray
   try { Invoke-WebRequest -Uri $url -OutFile $dst -UseBasicParsing -ErrorAction Stop } catch {
     Die ("APK 다운로드 실패: $($app.apk)`n" +
-         "레포가 비공개면 받을 수 없습니다. 레포를 공개로 바꾸거나, APK를 설치.cmd 옆에 두거나, -ApkBase <공개 URL> 로 지정하세요.`n" +
+         "인터넷 연결을 확인한 뒤 다시 실행하세요. 인터넷이 안 되는 곳이라면, 다른 곳에서 받은 APK 두 개를 설치.cmd 옆에 두고 실행하면 됩니다.`n" +
          "$url`n$($_.Exception.Message)") 2
   }
   # APK(=ZIP)는 'PK'(0x50 0x4B)로 시작. 404 안내문 등이 저장된 경우를 거른다.
@@ -405,7 +405,15 @@ foreach($k in 'ro.product.name','ro.product.device','ro.build.product','ro.build
 $build = $pv['ro.build.version.incremental']; $device = $pv['ro.product.device']
 $board = if($device -match 'daudiopluslow'){ 'D-Audio Plus LOW (블루링크 없음)' } elseif($device -match 'daudioplus'){ 'D-Audio Plus (블루링크)' } else { "확인 안 됨 ($device)" }
 Note "내비: $board / 빌드 $build / USB $($pv['sys.usb.state'])" DarkGray
-Note "차에 깔린 버전: $(Versions)" DarkGray
+$cur = Versions
+Note "차에 깔린 버전: $cur" DarkGray
+# 받을 버전을 바로 아래에: 안정화는 차의 대시보드와 이름이 같으면 그 사실을 알린다(테스트 빌드 이름은 릴리스 정보에 없다).
+if(-not $Uninstall -and -not $Diag -and $Rel -and $Rel[$Channel]){
+  $tag = ($Rel[$Channel].title -split ' ')[0]
+  if($Channel -eq 'test'){ Note "받을 버전: 테스트 ($($Rel.test.title))" DarkGray }
+  elseif((" $cur ").Contains(" $tag ")){ Note "받을 버전: $tag — 차에 이미 같은 버전이 있습니다. 그대로 다시 설치합니다." DarkGray }
+  else { Note "받을 버전: $tag" DarkGray }
+}
 
 # --- 진단 기록 모드: 읽기만 한다 -------------------------------------------------
 # 정해 둔 속성, 두 앱의 버전, 우리 앱 태그·충돌·설치 기록만. 차 기록 전체에는 블루투스로 붙은 폰 이름·번호·연락처가 섞인다.

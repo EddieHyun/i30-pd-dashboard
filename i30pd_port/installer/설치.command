@@ -12,7 +12,7 @@
 ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"
 # OS: Darwin(맥) / Linux. I30PD_OS로 바꿀 수 있다(시험 도구가 Windows Git Bash에서 리눅스 경로를 돌릴 때).
 OS="${I30PD_OS:-$(uname -s)}"; [ "$OS" = Darwin ] || OS=Linux
-INSTALLER_VERSION='2026-11-20'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-21'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 OLD_BUILD='eng.vmadmin.20240205.105401'        # 블루링크 D-Audio Plus 2024-02 빌드 — 2026-11-03 같은 차종 실차에서 설치·값 확인
@@ -109,11 +109,13 @@ if [ -z "$ADB" ]; then
 fi
 [ -z "$ADB" ] && ADB="$(command -v adb)"
 command -v curl >/dev/null || die 'curl이 없습니다. 리눅스는  sudo apt install curl  로 설치한 뒤 다시 실행하세요.' 2
+SLOW='--connect-timeout 15 --speed-limit 1000 --speed-time 30'   # 내려받기: 연결 15초, 30초 동안 1 KB/s도 안 오면 그만둔다(끊긴 인터넷에서 멈춘 듯 보이지 않게)
 if [ -z "$ADB" ] && [ -n "$PT_URL" ]; then
   note 'adb(platform-tools)가 없습니다.'
   ask 'Google 공식 주소에서 받을까요?' || die 'adb가 없어 중단합니다.' 2
   note '내려받는 중...'
-  curl -fsSL -o "$LOGDIR/platform-tools.zip" "$PT_URL" || die "다운로드 실패: $PT_URL" 2
+  curl -fsSL $SLOW -o "$LOGDIR/platform-tools.zip" "$PT_URL" || die "다운로드 실패: $PT_URL
+인터넷 연결을 확인한 뒤 다시 실행하세요." 2
   # unzip이 없는 리눅스도 있다: python3의 zipfile로 대신 푼다(그때는 실행 권한을 붙인다).
   if command -v unzip >/dev/null; then unzip -qo "$LOGDIR/platform-tools.zip" -d "$ROOT" || die '압축 해제 실패' 2
   else python3 -I -m zipfile -e "$LOGDIR/platform-tools.zip" "$ROOT" || die '압축 해제 실패 (unzip 또는 python3 필요)' 2
@@ -235,8 +237,8 @@ for apk in $([ -z "$UNINSTALL$DIAG" ] && echo $APKS); do
   if [ -f "$ROOT/$apk" ] && [ "$(head -c 2 "$ROOT/$apk")" = 'PK' ]; then warn "$apk: 설치기 폴더에 있는 파일을 씁니다 (위에서 고른 버전과 상관없이 이 파일이 설치됩니다)"; continue; fi
   [ -f "$ROOT/$apk" ] && warn "$apk: 폴더 파일이 APK가 아니라 무시하고 내려받습니다."
   note "$apk: 폴더에 없어 내려받습니다..."
-  curl -fsSL -o "$LOGDIR/$apk" "$APK_BASE/$apk" || die "APK 다운로드 실패: $APK_BASE/$apk
-APK를 $ME 옆에 두거나 --apk-base <공개 URL> 로 지정하세요." 2
+  curl -fsSL $SLOW -o "$LOGDIR/$apk" "$APK_BASE/$apk" || die "APK 다운로드 실패: $APK_BASE/$apk
+인터넷 연결을 확인한 뒤 다시 실행하세요. 인터넷이 안 되는 곳이라면, 다른 곳에서 받은 APK 두 개를 $ME 옆에 두고 실행하면 됩니다." 2
   # APK(=ZIP)는 'PK'로 시작. 404 안내문 등이 저장된 경우를 거른다.
   [ "$(head -c 2 "$LOGDIR/$apk")" = 'PK' ] || die "받은 파일이 APK가 아닙니다($apk): $APK_BASE/$apk" 2
   note "$apk: 받음 ($(( $(wc -c < "$LOGDIR/$apk") / 1024 )) KB)"
@@ -323,7 +325,16 @@ versions() {
   done
   printf '%s' "$o"
 }
-note "차에 깔린 버전: $(versions)"
+cur="$(versions)"
+note "차에 깔린 버전: $cur"
+# 받을 버전을 바로 아래에: 안정화는 차의 대시보드와 이름이 같으면 그 사실을 알린다(테스트 빌드 이름은 릴리스 정보에 없다).
+if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ]; then
+  if [ "$CHANNEL" = test ] && [ -n "${REL_T:-}" ]; then note "받을 버전: 테스트 ($(printf '%s\n' "$REL_T" | head -1))"
+  elif [ "$CHANNEL" = stable ] && [ -n "${REL_S:-}" ]; then
+    tag="$(printf '%s\n' "$REL_S" | head -1 | cut -d' ' -f1)"
+    case " $cur " in *" $tag "*) note "받을 버전: $tag — 차에 이미 같은 버전이 있습니다. 그대로 다시 설치합니다." ;; *) note "받을 버전: $tag" ;; esac
+  fi
+fi
 
 # --- 진단 기록 모드: 읽기만 한다 -------------------------------------------------
 # 정해 둔 속성, 두 앱의 버전, 우리 앱 태그·충돌·설치 기록만. 차 기록 전체에는 블루투스로 붙은 폰 이름·번호·연락처가 섞인다.
