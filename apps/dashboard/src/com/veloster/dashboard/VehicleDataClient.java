@@ -10,6 +10,8 @@ import com.hkmc.micom.VehicleInfoListener;
 import com.hkmc.micom.VehicleInfoManager;
 import com.hkmc.pgs.PgsManager;
 import com.hkmc.pgs.PgsStatusListener;
+import com.hkmc.setup.VideoSetupListener;
+import com.hkmc.setup.VideoSetupManager;
 import com.veloster.vehicle.VehicleDash;
 
 /** Passive framework subscriptions only. No drive-mode setters, stream commands or OEM app IPC. */
@@ -28,11 +30,13 @@ final class VehicleDataClient implements Runnable {
     private VehicleInfoManager vehicle;
     private BCMManager power;
     private PgsManager rear;
+    private VideoSetupManager video;
     // volatile: a callback checks it is still the registered listener (a replaced one's late calls are ignored)
     private volatile NModeListener nlistener;
     private volatile VehicleInfoListener vlistener;
     private volatile BCMPowerListener plistener;
     private volatile PgsStatusListener rlistener;
+    private volatile VideoSetupListener dlistener;
     private VehicleDataClient(Context context){this.context=context;}
     private static VehicleDataClient shared;
     /** The app's one client: the dashboard and the floating window hand it to each other without a stop in between. */
@@ -89,6 +93,15 @@ final class VehicleDataClient implements Runnable {
             rlistener=new PgsStatusListener(){public void onRVMViewStatusChanged(int view){if(rlistener==this&&accepts(token))VehicleDash.rearView(view);}};
             rear.registerPgsStatusListener(rlistener);
         }catch(RuntimeException e){releaseRear();log("rear view",e);}catch(LinkageError e){releaseRear();log("rear view",e);}
+        if(video==null)try{   // the stock screen mode and illumination: FloatPanel reads the two ints (events only, no polling)
+            video=new VideoSetupManager(context);
+            dlistener=new VideoSetupListener(){
+                public void onDimChanged(int dim){if(dlistener==this&&accepts(token))com.veloster.vehicle.DayNight.oemDim=dim;}
+                public void onIlluminateStatusChanged(boolean on){if(dlistener==this&&accepts(token))com.veloster.vehicle.DayNight.oemIllum=on?1:0;}
+            };
+            video.addListener(dlistener);
+            com.veloster.vehicle.DayNight.oemDim=video.getDim();com.veloster.vehicle.DayNight.oemIllum=video.getIlluminateStatus()?1:0;
+        }catch(RuntimeException e){releaseVideo();log("video setup",e);}catch(LinkageError e){releaseVideo();log("video setup",e);}
         if(hscan==null)try{
             hscan=new HscanDataClient(new HscanDataClient.Gate(){public boolean accepts(){return VehicleDataClient.this.accepts(token);}});
         }catch(RuntimeException e){hscan=null;log("HSCAN",e);}catch(LinkageError e){hscan=null;log("HSCAN",e);}
@@ -98,7 +111,7 @@ final class VehicleDataClient implements Runnable {
         pollers(token);
         // every missing subscriber is tried again (rear view, hscan and OBD too, which used to stay off until the app restarted);
         // the ones in place stay registered, and an absent service is asked less and less often (2 s doubling to 30 s)
-        if((power==null&&!bcmAbsent())||nmode==null||vehicle==null||rear==null||hscan==null||obd==null||tm==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
+        if((power==null&&!bcmAbsent())||nmode==null||vehicle==null||rear==null||video==null||hscan==null||obd==null||tm==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
         else retryMs=2000;
     }
     /** Starts the OBD and tm_hscan pollers while the ignition is on (each start does nothing while it already runs): from run(),
@@ -117,7 +130,7 @@ final class VehicleDataClient implements Runnable {
         if(hscan!=null){hscan.stop();hscan=null;}
         if(obd!=null){obd.stop();obd=null;}
         if(tm!=null){tm.stop();tm=null;}
-        releaseNmode();releaseVehicle();releasePower();releaseRear();retryMs=2000;
+        releaseNmode();releaseVehicle();releasePower();releaseRear();releaseVideo();retryMs=2000;
     }
     // A registration that failed half way (manager made, listener not added) is undone here too, so a retry starts clean.
     private void releaseNmode(){NModeManager m=nmode;NModeListener l=nlistener;nmode=null;nlistener=null;
@@ -128,6 +141,9 @@ final class VehicleDataClient implements Runnable {
         try{if(m!=null&&l!=null)m.removePowerListener(l);}catch(RuntimeException e){log("power stop",e);}catch(LinkageError e){log("power stop",e);}}
     private void releaseRear(){PgsManager m=rear;PgsStatusListener l=rlistener;rear=null;rlistener=null;
         try{if(m!=null&&l!=null)m.unregisterPgsStatusListener(l);}catch(RuntimeException e){log("rear view stop",e);}catch(LinkageError e){log("rear view stop",e);}}
+    private void releaseVideo(){VideoSetupManager m=video;VideoSetupListener l=dlistener;video=null;dlistener=null;
+        com.veloster.vehicle.DayNight.oemDim=com.veloster.vehicle.DayNight.UNKNOWN;com.veloster.vehicle.DayNight.oemIllum=com.veloster.vehicle.DayNight.UNKNOWN;
+        try{if(m!=null&&l!=null)m.removeListener(l);}catch(RuntimeException e){log("video setup stop",e);}catch(LinkageError e){log("video setup stop",e);}}
     private static final java.util.Set<String> LOGGED=new java.util.HashSet<String>();
     /** Full trace once per source; repeats of a missing service log one line. */
     private static void log(String source,Throwable error){

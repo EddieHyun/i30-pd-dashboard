@@ -46,6 +46,7 @@ public final class FloatService extends Service implements Runnable {
         if(now-mLastTick>=TICK_MS)run();
         else if(panel!=null&&now-mGlideAt>=GLIDE_FRAME_MS&&FloatPanel.gliding(now)){mGlideAt=now;panel.invalidate();}   // a bar on its way: about 30 frames a second until it lands
         Choreographer.getInstance().postFrameCallback(this);}};
+    private String mDnSource;
     private final Handler handler=new Handler();
     private VehicleDataClient client;
     private WindowManager windows;
@@ -90,6 +91,7 @@ public final class FloatService extends Service implements Runnable {
         boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
         if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());
         boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
+        String ds=FloatPanel.dnSource;if(ds!=null&&!ds.equals(mDnSource)){mDnSource=ds;android.util.Log.i("NDashboard","Float day/night source: "+ds+" night="+com.veloster.vehicle.DayNight.HOLD.night);}
         VehicleDash.floatUp=panel!=null;VehicleDash.chimeTick();VehicleDash.shiftTick();VehicleDash.soundTick();
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
