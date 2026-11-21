@@ -8,7 +8,7 @@ import java.util.Arrays;
  * remap table. Semantic green / amber (ok / caution) are never remapped. No Android imports: host-tested.
  */
 public final class Theme {
-    public static final String[] IDS={"n","red","wine","copper","amber","champagne","lambo","green","emerald","sage","teal","ice","bmw","night","navy","purple","magenta","rose","graphite","mono"};   // the settings list order: N, then by hue, mono last
+    public static final String[] IDS={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","ice","graphite","bmw","night","purple","magenta","rose","mono"};   // the settings list order: N, then by the swatch's hue (navy's swatch is its gold accent), mono last
     public static final int SHAPE_CUT=0,SHAPE_HEX=1,SHAPE_ROUND=2;
 
     // N palette literals grouped by role (RGB only; alpha is kept from the caller).
