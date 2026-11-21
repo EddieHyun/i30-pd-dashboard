@@ -54,6 +54,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/GearRatios.java",
                ROOT / "shared/src/com/veloster/vehicle/ArcadeGame.java",
                ROOT / "shared/src/com/veloster/vehicle/SpeedCal.java",
+               ROOT / "shared/src/com/veloster/vehicle/SettingsBackup.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "shared/src/com/veloster/diagnostics/ErrorLog.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]

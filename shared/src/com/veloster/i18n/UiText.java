@@ -657,6 +657,7 @@ public final class UiText {
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
+        EN.put("새로 시작","Start fresh");
         EN.put("색","Colour");
         EN.put("색감","Look");
         EN.put("색감 고르기","Choose a look");
@@ -669,6 +670,7 @@ public final class UiText {
         EN.put("선택한 칸 · %d번","Chosen cell · %d");
         EN.put("설명 / Help","Help");
         EN.put("설정","Settings");
+        EN.put("설정 되돌리기","Restore settings");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
         EN.put("설정 상태 확인 불가","Setting unavailable");
         EN.put("설정: ","Setting: ");
@@ -1043,6 +1045,8 @@ public final class UiText {
         EN.put("저장공간","Storage");
         EN.put("저장된 고장코드가 없습니다.","No stored trouble codes.");
         EN.put("저장된 기록을 모두 지울까요?","Clear all kept records?");
+        EN.put("저장해 둔 설정을 읽지 못했습니다.","Could not read the saved settings.");
+        EN.put("저장해 둔 설정이 있습니다","Saved settings found");
         EN.put("저항 낮음","Resistance low");
         EN.put("저항 높음","Resistance high");
         EN.put("저항 범위 벗어남","Resistance out of range");
@@ -1168,6 +1172,7 @@ public final class UiText {
         EN.put("지령 위치 도달 불가","Commanded position not reachable");
         EN.put("지연 보정","Latency compensation");
         EN.put("지우기","Clear");
+        EN.put("지우기 전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다 (%s 저장). 되돌리면 계기판이 다시 열립니다.","The screens, theme and floating window you had before the app was removed (saved %s). Restoring reopens the dashboard.");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");

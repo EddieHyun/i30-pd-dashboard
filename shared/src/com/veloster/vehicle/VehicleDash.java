@@ -247,6 +247,56 @@ public final class VehicleDash extends View implements Runnable {
         VehicleDash dash=new VehicleDash(a);dash.standalone=true;dash.blocked=false;
         current=new WeakReference<VehicleDash>(dash);
         parent.addView(dash,new FrameLayout.LayoutParams(-1,-1));dash.setVisibility(VISIBLE);
+        dash.backupOffer();
+    }
+    // ---- 설정 백업 (SettingsBackup): a file on the head unit's storage, which 삭제 does not remove ----
+    private static volatile String backupWritten;
+    private static java.io.File backupFile(){return new java.io.File(new java.io.File(android.os.Environment.getExternalStorageDirectory(),SettingsBackup.DIR),SettingsBackup.FILE);}
+    /** Writes every preference file when something changed, off the main thread. Not before the restore question is
+     *  settled (ASKED): a fresh install would overwrite the backup with its defaults. */
+    static void backupSave(android.content.Context context){
+        final android.content.Context c=context.getApplicationContext();
+        if(!c.getSharedPreferences(SettingsBackup.PREFS,0).getBoolean(SettingsBackup.ASKED,false))return;
+        java.util.Map<String,java.util.Map<String,?>> all=new java.util.TreeMap<String,java.util.Map<String,?>>();
+        String[] files=new java.io.File(c.getApplicationInfo().dataDir,"shared_prefs").list();
+        if(files!=null)for(String n:files)if(n.endsWith(".xml")){String name=n.substring(0,n.length()-4);all.put(name,c.getSharedPreferences(name,0).getAll());}
+        final String text=SettingsBackup.text(all);if(text.equals(backupWritten))return;
+        new Thread(new Runnable(){public void run(){
+            try{SettingsBackup.write(backupFile(),text);backupWritten=text;}catch(Exception e){android.util.Log.w("VehicleDash","settings backup not written: "+e);}
+        }},"SettingsBackup").start();
+    }
+    private static boolean backupRestore(android.content.Context c){
+        try{java.util.Map<String,java.util.Map<String,Object>> all=SettingsBackup.values(SettingsBackup.read(backupFile()));if(all.isEmpty())return false;
+            for(java.util.Map.Entry<String,java.util.Map<String,Object>> f:all.entrySet()){
+                SharedPreferences.Editor ed=c.getSharedPreferences(f.getKey(),0).edit().clear();
+                for(java.util.Map.Entry<String,Object> v:f.getValue().entrySet()){Object o=v.getValue();
+                    if(o instanceof Integer)ed.putInt(v.getKey(),(Integer)o);else if(o instanceof Boolean)ed.putBoolean(v.getKey(),(Boolean)o);
+                    else if(o instanceof Float)ed.putFloat(v.getKey(),(Float)o);else if(o instanceof Long)ed.putLong(v.getKey(),(Long)o);else ed.putString(v.getKey(),(String)o);}
+                ed.commit();}
+            c.getSharedPreferences(SettingsBackup.PREFS,0).edit().putBoolean(SettingsBackup.ASKED,true).commit();return true;
+        }catch(Exception e){android.util.Log.w("VehicleDash","settings backup not restored: "+e);return false;}
+    }
+    /** A fresh install (ASKED not set) that finds a backup asks once whether to put it back; with none there is nothing
+     *  to ask. Closing the question without an answer leaves it for the next start. */
+    private void backupOffer(){
+        final SharedPreferences p=activity.getSharedPreferences(SettingsBackup.PREFS,0);
+        if(p.getBoolean(SettingsBackup.ASKED,false))return;
+        long at=0;try{java.io.File f=backupFile();if(f.isFile()&&f.length()>0)at=f.lastModified();}catch(RuntimeException e){/* no storage: nothing to ask */}
+        if(at==0){p.edit().putBoolean(SettingsBackup.ASKED,true).apply();return;}
+        String when=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm",java.util.Locale.US).format(new java.util.Date(at));
+        new android.app.AlertDialog.Builder(activity).setTitle(UiText.t("저장해 둔 설정이 있습니다"))
+            .setMessage(String.format(UiText.t("지우기 전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다 (%s 저장). 되돌리면 계기판이 다시 열립니다."),when))
+            .setPositiveButton(UiText.t("설정 되돌리기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
+                if(!backupRestore(activity)){Toast.makeText(activity,UiText.t("저장해 둔 설정을 읽지 못했습니다."),Toast.LENGTH_LONG).show();return;}
+                // everything read its settings at start: a new process reads the restored ones
+                android.content.Intent again=activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
+                ((android.app.AlarmManager)activity.getSystemService(android.content.Context.ALARM_SERVICE)).set(android.app.AlarmManager.ELAPSED_REALTIME,SystemClock.elapsedRealtime()+500,
+                    android.app.PendingIntent.getActivity(activity,0,again,android.app.PendingIntent.FLAG_CANCEL_CURRENT));
+                activity.finish();System.exit(0);
+            }})
+            .setNegativeButton(UiText.t("새로 시작"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
+                p.edit().putBoolean(SettingsBackup.ASKED,true).apply();
+            }}).show();
     }
     public static void resumeStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
@@ -269,7 +319,7 @@ public final class VehicleDash extends View implements Runnable {
     }}.start();}
     public static void pauseStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
-        d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);
+        d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);backupSave(a);
         d.floatEdit=-1;d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
     }
     /** Close the screen list and anything it opened (language chooser). */
