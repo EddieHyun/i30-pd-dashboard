@@ -41,7 +41,7 @@
 - 시험 인자: `--adb <경로>` `--apk-base <URL>` `--yes` `--uninstall` `--diag` (종료 코드는 Windows와 같다)
 - 진단 기록의 가림 처리는 macOS 기본 `perl`을 쓴다.
 - 줄바꿈은 LF여야 하고(`.gitattributes`), ZIP 안에서 실행 권한(755)이 있어야 더블클릭으로 열린다. Windows `Compress-Archive`는 권한을 못 넣으므로 RELEASE.md의 Python 명령으로 만든다.
-- 가짜 adb로 정상 설치 · 서명 충돌 재설치 · 삭제 · 폴더 APK 사용 · 공개 릴리스에서 APK 받기 · 404/비 APK 거르기 · 차 없음(종료 1)을 확인했다(Windows Git Bash에서. 실제 맥·실차로는 아직 안 해 봤다).
+- 가짜 adb로 정상 설치 · 서명 충돌 재설치 · 삭제 · 폴더 APK 사용 · 공개 릴리스에서 APK 받기 · 404/비 APK 거르기 · 차 없음(종료 1)을 확인했다(Windows Git Bash에서). 실제 맥으로는 2026-11-03에 차에 설치하는 것까지 확인했다.
 
 ## 리눅스 (`i30pd-installer-linux.zip`)
 

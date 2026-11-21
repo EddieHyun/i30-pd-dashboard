@@ -39,7 +39,7 @@ elif a[0]=='shell':
     elif c[:1]==['date']:print('Mon Nov  2 16:20:00 KST 2026\r')
     elif c[:2]==['dumpsys','package']:
         if os.path.exists(os.path.join(inst,c[2]+'.apk')):
-            print('Packages:\r\n  Package [%s] (41a0):\r\n    codePath=/data/app/%s-1.apk\r\n    versionCode=10 targetSdk=17\r\n    versionName=1.9\r\n    lastUpdateTime=2026-11-02 16:10:00\r'%(c[2],c[2]))
+            print('Packages:\r\n  Package [%s] (41a0):\r\n    codePath=/data/app/%s-1.apk\r\n    versionCode=10 targetSdk=17\r\n    versionName=%s\r\n    lastUpdateTime=2026-11-02 16:10:00\r'%(c[2],c[2],os.environ.get('FAKE_VER','1.9')))   # FAKE_VER: the version on the car
     elif c[:1]==['logcat']:
         print(('11-02 16:18:22.123 I/VehicleDash( 812): draw avg 9.1 ms\r\n'
                '11-02 16:18:23.000 I/VNCarPlayHub( 901): bt peer 00:1A:7D:DA:71:13 name Galaxy 010-1234-5678 kim@example.com\r\n')*2000,end='')

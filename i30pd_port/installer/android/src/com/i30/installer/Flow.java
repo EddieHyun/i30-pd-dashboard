@@ -44,7 +44,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-20.1";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-21";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -76,7 +76,16 @@ final class Flow {
     static String base(boolean test) { return test ? RELEASES + "/download/test" : RELEASES + "/latest/download"; }
 
     /** Returns the diagnostics file in DIAG mode, otherwise null. */
-    static File run(String base, Mode mode, File dir, Car car, Ui ui) throws Exception {
+    static File run(String base, Mode mode, File dir, Car car, Ui ui) throws Exception { return run(base, null, mode, dir, car, ui); }
+    /** The line under "차에 깔린 버전": what this run installs. title = the release line ("v1.16.2 · 2026-11-21"); a stable
+     *  release whose name the car's dashboard already has says so (a test build's name is not in the release data). */
+    static String wantLine(String onCar, String title, boolean test) {
+        if (test) return "받을 버전: 테스트 (" + title + ")";
+        String tag = title.split(" ")[0];
+        return "받을 버전: " + tag + ((" " + onCar + " ").contains(" " + tag + " ") ? " — 차에 이미 같은 버전이 있습니다. 그대로 다시 설치합니다." : "");
+    }
+    /** want: the chosen release's title for the "받을 버전" line, or null. */
+    static File run(String base, String want, Mode mode, File dir, Car car, Ui ui) throws Exception {
         File[] apk = new File[APPS.length];
         if (mode == Mode.INSTALL) {
             ui.say("■ 앱 파일 받기");
@@ -98,7 +107,9 @@ final class Flow {
             if (mode != Mode.UNINSTALL && !build.isEmpty() && !build.equals(VERIFIED_BUILD) && !build.equals(LOW_BUILD) && !build.equals(OLD_BUILD)
                     && !ui.ask("검증된 빌드(" + VERIFIED_BUILD + ")와 다릅니다. 값이 틀릴 수 있습니다. 그래도 계속할까요?"))
                 throw new Stop("사용자 취소.");
-            ui.say("차에 깔린 버전: " + versions(adb));
+            String onCar = versions(adb);
+            ui.say("차에 깔린 버전: " + onCar);
+            if (mode == Mode.INSTALL && want != null) ui.say(wantLine(onCar, want, base.endsWith("/download/test")));
 
             if (mode == Mode.UNINSTALL) {
                 ui.say("\n■ 앱 삭제");

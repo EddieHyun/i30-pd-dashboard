@@ -343,12 +343,13 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         log.setText("");
         boolean test = testSel;
         String base = Flow.base(test);
+        String want = rel[test ? 1 : 0] == null ? null : rel[test ? 1 : 0][0];
         if (mode == Flow.Mode.INSTALL) { String[] r = rel[test ? 1 : 0];
             say((test ? "버전: 테스트 (실차 검증 전)" : "버전: 안정화") + (r == null ? "" : " " + r[0])); }
         new Thread(() -> {
             try {
                 if (recording) extractDump();
-                File diag = Flow.run(base, mode, getFilesDir(), this, this);
+                File diag = Flow.run(base, want, mode, getFilesDir(), this, this);
                 if (diag != null) share(diag);
             } catch (Exception e) {
                 if (cancel.get()) say("\n취소했습니다. 설치 중이었다면 차에서는 그 단계가 끝날 수 있습니다. 다시 실행하면 이어서 맞춥니다.");
@@ -359,6 +360,10 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
             runOnUiThread(() -> enable(true));
         }).start();
     }
+
+    /** While a run is under way the back key only puts the app behind: finishing the screen left the run going with
+     *  nothing to show it (an empty screen on return, and its next question had no window to open in). */
+    @Override public void onBackPressed() { if (busy) moveTaskToBack(true); else super.onBackPressed(); }
 
     /** on: idle (everything but 취소); off: a run is under way (only 취소). */
     private void enable(boolean on) {
