@@ -942,7 +942,7 @@ public final class PitRenderer {
         int style=overviewLayout.style(i),color=samples[i].changed?0xffe9f7ff:BLUE;
         panel(c,x,y,w,h,PANEL,LINE);box(c,x+10,y,x+53,y+2,head&&i==0?RED:BLUE);
         fitted(c,title,x+10,y+(head?18:22),head?11:13,w-20,MUTED);
-        String number=ok?value(PREFIX[i]):"—";
+        String number=ok||i==8?value(PREFIX[i]):"—";   // the gear card: P / R / N come from the selector while the gear itself is not valid
         float lo=GaugeRenderer.min(i,Telemetry.UNITS[i]),hi=GaugeRenderer.max(i,Telemetry.UNITS[i]);
         // Unsupported gears keep the existing dash and have no gauge position.
         boolean position=ok&&(i!=8||(samples[i].value>=1&&samples[i].value<=7));
