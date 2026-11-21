@@ -264,6 +264,7 @@ public final class UiText {
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
         EN.put("구성(코딩) 안 됨","Not configured (coded)");
         EN.put("그대로 표시","shown as usual");
+        EN.put("그라파이트","Graphite");
         EN.put("그래프","Graphs");
         EN.put("그래프 ","Graph ");
         EN.put("그래프는 기본 스킨의 카드·띠에서만 고릅니다","Graphs only with the Default skin on a card or bar");
@@ -331,6 +332,7 @@ public final class UiText {
         EN.put("냉각수온 센서 범위·성능 이상","Coolant temperature sensor range/performance");
         EN.put("냉각수온 센서 회로 낮음","Coolant temperature sensor circuit low");
         EN.put("냉각수온 센서 회로 높음","Coolant temperature sensor circuit high");
+        EN.put("네이비","Navy");
         EN.put("네트워크 통신","Network communication");
         EN.put("노크 센서 감지 시스템(KSDS) 경고 — 엔진 베어링 손상 의심, 즉시 점검 권장","Knock sensor detection system (KSDS) warning — engine bearing damage suspected, immediate inspection recommended");
         EN.put("노크 센서 범위·성능 이상","Knock sensor range/performance");
@@ -661,6 +663,7 @@ public final class UiText {
         EN.put("색","Colour");
         EN.put("색감","Look");
         EN.put("색감 고르기","Choose a look");
+        EN.put("샴페인","Champagne");
         EN.put("섀시 (제동 · 조향 · 서스펜션)","Chassis (brakes · steering · suspension)");
         EN.put("서울","Seoul");
         EN.put("서킷","Circuit");
@@ -685,6 +688,7 @@ public final class UiText {
         EN.put("세로 막대","Column bars");
         EN.put("세로 캡슐","Tall capsule");
         EN.put("세션 최대","Session peaks");
+        EN.put("세이지","Sage");
         EN.put("세종","Sejong");
         EN.put("센서 기준 전압 A 회로 이상","Sensor reference voltage A circuit malfunction");
         EN.put("센서 기준 전압 B 회로 이상","Sensor reference voltage B circuit malfunction");

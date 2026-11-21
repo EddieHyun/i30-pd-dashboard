@@ -107,6 +107,8 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.F_PRESETS.length==4,"four presets");
         for(int i=0;i<4;i++){float[] b=SettingsLayout.floatBox(SettingsLayout.F_PRESET+i);check(b!=null&&SettingsLayout.floatHit((b[0]+b[2])/2,(b[1]+b[3])/2,2,2,124,64)==SettingsLayout.F_PRESET+i,"preset "+i+" hits");}
         check(SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[0]>=SettingsLayout.FC_L&&SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[1]>=SettingsLayout.F_HIDE_BOX[3],"음악 띠 in the right column, under the button hiding");
+        check(SettingsLayout.cols(SettingsLayout.THEME)==3,"themes in three columns");
+        check(SettingsLayout.top(SettingsLayout.THEME,Theme.IDS.length-1)+SettingsLayout.itemH(SettingsLayout.THEME)<=SettingsLayout.BOTTOM&&SettingsLayout.itemH(SettingsLayout.THEME)>=44,"20 themes fit without scrolling, rows still tappable");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }
