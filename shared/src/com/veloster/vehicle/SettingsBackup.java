@@ -61,9 +61,11 @@ public final class SettingsBackup {
     // ---- the file ------------------------------------------------------------------------------------------------
     /** Writes text to f through a temporary file: the old backup stays whole until the new one is complete. */
     public static void write(java.io.File f,String text) throws java.io.IOException {
-        java.io.File tmp=new java.io.File(f.getPath()+".tmp");f.getParentFile().mkdirs();
+        java.io.File tmp=new java.io.File(f.getPath()+".tmp"),dir=f.getParentFile();
+        if(dir.mkdirs()){dir.setReadable(true,false);dir.setWritable(true,false);dir.setExecutable(true,false);}   // open to every app id: a reinstalled app may get another id (storage that keeps owners)
         java.io.FileOutputStream out=new java.io.FileOutputStream(tmp);
         try{out.write(text.getBytes("UTF-8"));out.getFD().sync();}finally{out.close();}
+        tmp.setReadable(true,false);
         if(!tmp.renameTo(f)){f.delete();if(!tmp.renameTo(f))throw new java.io.IOException("rename "+tmp);}   // a file system that does not rename over a file
     }
     public static String read(java.io.File f) throws java.io.IOException {

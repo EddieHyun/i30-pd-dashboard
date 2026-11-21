@@ -1407,7 +1407,7 @@
   "OBD 응답 없음": "No OBD answer",
   "내비 빌드": "Head unit build",
   "저장해 둔 설정이 있습니다": "Saved settings found",
-  "지우기 전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다 (%s 저장). 되돌리면 계기판이 다시 열립니다.": "The screens, theme and floating window you had before the app was removed (saved %s). Restoring reopens the dashboard.",
+  "전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다. %s 저장": "Earlier screens, theme, floating window. Saved %s",
   "설정 되돌리기": "Restore settings",
   "새로 시작": "Start fresh",
   "저장해 둔 설정을 읽지 못했습니다.": "Could not read the saved settings."

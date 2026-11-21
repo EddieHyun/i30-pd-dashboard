@@ -285,7 +285,7 @@ public final class VehicleDash extends View implements Runnable {
         if(at==0){p.edit().putBoolean(SettingsBackup.ASKED,true).apply();return;}
         String when=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm",java.util.Locale.US).format(new java.util.Date(at));
         new android.app.AlertDialog.Builder(activity).setTitle(UiText.t("저장해 둔 설정이 있습니다"))
-            .setMessage(String.format(UiText.t("지우기 전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다 (%s 저장). 되돌리면 계기판이 다시 열립니다."),when))
+            .setMessage(String.format(UiText.t("전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다. %s 저장"),when))
             .setPositiveButton(UiText.t("설정 되돌리기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
                 if(!backupRestore(activity)){Toast.makeText(activity,UiText.t("저장해 둔 설정을 읽지 못했습니다."),Toast.LENGTH_LONG).show();return;}
                 // everything read its settings at start: a new process reads the restored ones

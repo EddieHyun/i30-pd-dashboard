@@ -1066,6 +1066,7 @@ public final class UiText {
         EN.put("전압 낮음","Voltage low");
         EN.put("전압 높음","Voltage high");
         EN.put("전압 범위 벗어남","Voltage out of range");
+        EN.put("전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다. %s 저장","Earlier screens, theme, floating window. Saved %s");
         EN.put("전원 단락 또는 단선","Short to power or open circuit");
         EN.put("전원(배터리) 단락","Short to power (battery)");
         EN.put("전자 부저","Electronic buzzer");
@@ -1172,7 +1173,6 @@ public final class UiText {
         EN.put("지령 위치 도달 불가","Commanded position not reachable");
         EN.put("지연 보정","Latency compensation");
         EN.put("지우기","Clear");
-        EN.put("지우기 전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다 (%s 저장). 되돌리면 계기판이 다시 열립니다.","The screens, theme and floating window you had before the app was removed (saved %s). Restoring reopens the dashboard.");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
