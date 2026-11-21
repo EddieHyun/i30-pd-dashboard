@@ -7,6 +7,10 @@ public final class DtcTest {
     static void check(boolean ok,String m){checks++;if(!ok)throw new AssertionError(m);}
     static byte[] b(int... v){byte[] r=new byte[v.length];for(int i=0;i<v.length;i++)r[i]=(byte)v[i];return r;}
     public static void main(String[] a){
+        com.veloster.i18n.UiText.configure("en",null);   // the texts go through UiText: English first, then Korean for the rest
+        check(new Dtc("P0301",0x13,0x09).description().equals("Cylinder 1 misfire detected")&&new Dtc("P0301",0x13,0x09).failureText().equals("Open circuit")
+            &&!new Dtc("P0301",0x13,0x09).statusText().matches(".*[가-힣].*")&&!new Dtc("P1A23",-1,-1).description().matches(".*[가-힣].*"),"English: "+new Dtc("P0301",0x13,0x09).description()+" / "+new Dtc("P1A23",-1,-1).description());
+        com.veloster.i18n.UiText.configure("ko",null);
         check(Dtc.code(0x03,0x01).equals("P0301"),"P0301");
         check(Dtc.code(0x24,0x2f).equals("P242F"),"hex digits upper case");
         check(Dtc.code(0x41,0x23).equals("C0123"),"C");

@@ -167,6 +167,7 @@ public final class VehicleDash extends View implements Runnable {
         {final SharedPreferences rp=a.getApplicationContext().getSharedPreferences("pit_vehicle_records",0);   // 기록실
          Records.store(new Records.Store(){public String get(String k){return rp.getString(k,"");}
              public void put(String k,String l){rp.edit().putString(k,l).apply();}public void clear(){rp.edit().clear().apply();}});}
+        try{renderer.appVersion=a.getPackageManager().getPackageInfo(a.getPackageName(),0).versionName;}catch(Exception e){/* the status row shows no name */}
         {SharedPreferences tp=a.getSharedPreferences("pit_vehicle_ui",0);   // the tiles' picks (Tiles), -1 = default
          for(int l=0;l<Tiles.KEYS.length;l++)for(int i=0;i<Tiles.picked[l].length;i++)
              try{Tiles.picked[l][i]=tp.getInt(Tiles.key(l,i),-1);}catch(ClassCastException e){Tiles.picked[l][i]=-1;}}
@@ -420,7 +421,7 @@ public final class VehicleDash extends View implements Runnable {
     public static Telemetry.Sample[] floatSamples(int n){long now=SystemClock.elapsedRealtime();VehicleProfile prof=DATA.profile();
         for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,prof);if(FloatPanel.quad(sig))for(int w=0;w<4;w++){int s=FloatPanel.quadSig(sig,w);FLOAT_Q[s]=DATA.sample(s,now);}else if(sig==FloatPanel.DCT2){FLOAT_Q[Telemetry.CLUTCH_ODD]=DATA.sample(Telemetry.CLUTCH_ODD,now);FLOAT_Q[Telemetry.CLUTCH_EVEN]=DATA.sample(Telemetry.CLUTCH_EVEN,now);}   // both clutches in one cell
             else if(sig>=0&&sig<FLOAT_Q.length)FLOAT_Q[sig]=DATA.sample(sig,now);}
-        FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
+        FLOAT_Q[0]=DATA.sample(0,now);FLOAT_Q[8]=DATA.sample(8,now);FLOAT_Q[Telemetry.GEAR_SELECTOR]=DATA.sample(Telemetry.GEAR_SELECTOR,now);return FLOAT_Q;}   // rpm and gear: the pill, 단수 중심 and 변속등 머리 show them
     /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
      *  been opened once since boot: the sound path belongs to its view. */
     /** '내 앱' 계기판에서 숨김: while the dashboard is on screen it asks 내 앱 to hide its edge button (again every 20 s; 내 앱 brings
@@ -715,6 +716,7 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}
+                    if(i==4)break;   // the status row: nothing to tap
                     if(i==3){   // the hub app ('내 앱'); a plain launch, nothing is changed
                         android.content.Intent hub=activity.getPackageManager().getLaunchIntentForPackage("com.veloster.carplayhub");
                         if(hub==null)Toast.makeText(activity,UiText.t("'내 앱'이 설치돼 있지 않습니다."),Toast.LENGTH_SHORT).show();

@@ -208,7 +208,8 @@ public final class FloatPanel {
         int s=shape==OFF?lastShape:shape;
         h=h*31+shiftStep(q,prof,now);   // the shift light on the window's edge
         if(s==PILL||s==GEARBOX||s==SHIFT||s==WEDGE||s==TOWER||s==VRPM||s==VCAP){Telemetry.Sample rm=q[0],gm=q[8];float rf=rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN;
-            h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);}
+            h=h*31+(Float.isNaN(rf)?-1:Math.round(Math.max(0,Math.min(1,rf))*120));h=h*31+(gm!=null&&gm.valid?key(8,gm.value):0);
+            Telemetry.Sample sm=q.length>Telemetry.GEAR_SELECTOR?q[Telemetry.GEAR_SELECTOR]:null;h=h*31+(sm!=null&&sm.valid?(int)sm.value+1:0);}   // P / R / N come from the selector
         if(s==MUSIC||strip(s))h=h*31+FloatMusic.key(strip(s)?now:-1);   // a scrolling 음악 띠 line moves every tick
         if((s==VRPM||s==VCAP)&&musicStrip)h=h*31+(vrMusic(s)?FloatMusic.key(now):7);
         h=h*31+s;boolean changed=h!=lastLook;lastLook=h;return changed;
@@ -365,8 +366,15 @@ public final class FloatPanel {
         d.first=first;d.bar=g!=NUM;d.quad=null;
         if(quad(sig)){quadTexts(LAST_Q,sig);System.arraycopy(QV,0,d.q4,0,4);System.arraycopy(QL,0,d.l4,0,4);System.arraycopy(QT,0,d.t4,0,4);d.quad=d.q4;d.val=QV[0]+" "+QV[1]+" · "+QV[2]+" "+QV[3];d.f=Float.NaN;d.lv=0;}}
     /** Draws the window (shape, n cells, size) at 0,0 from the samples (index = signal). */
+    private static VehicleProfile gearProf;
+    /** The gear as the dashboard pages show it (P / R / N from the selector, M4 in the manual gate), "-" for none. */
+    static String gear(Telemetry.Sample[] q){
+        Telemetry.Sample g=q[8],s=q.length>Telemetry.GEAR_SELECTOR?q[Telemetry.GEAR_SELECTOR]:null;float gv=g!=null&&g.valid?g.value:Float.NaN;
+        if(gearProf==null)return Float.isNaN(gv)?"-":Tiles.text(8,gv);
+        String t=Telemetry.gearText(gv,s!=null&&s.valid?s.value:Float.NaN,gearProf);return "—".equals(t)?"-":t;}
     public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
+        gearProf=prof;
         draw(c,shape,n,size,q,SIG,G,0,true,now);
         float sl=shape>OFF?shiftLevel(q,prof):Float.NaN;
         if(!Float.isNaN(sl))shiftEdge(c,shape,width(shape,n,size),bodyH(shape,n,size),SIZES[clampSize(size)],sl,now);
@@ -428,7 +436,7 @@ public final class FloatPanel {
         if(layout(shape)){   // a layout: its own inside, the skin's colours
             int u=FloatLayouts.used(shape,n);
             for(int j=0;j<u;j++){int i=first+j,sig=sigs[j];float v=value(q,sig);if(rec)record(i,sig,v,now);fillCell(LCELLS[j],i,sig,v,gs[j],j==0&&n>1);}
-            Telemetry.Sample rm=q[0],gm=q[8];float rpm=glide(GLIDES-1,rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN);String gear=gm!=null&&gm.valid?Tiles.text(8,gm.value):"-";
+            Telemetry.Sample rm=q[0],gm=q[8];float rpm=glide(GLIDES-1,rm!=null&&rm.valid?Tiles.fraction(0,rm.value):Float.NaN);String gear=gear(q);
             float af=ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;
             FloatLayouts.draw(c,shape,n,k,sk,af,LCELLS,rpm,gear,PASS);
             return;}

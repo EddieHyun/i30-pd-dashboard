@@ -89,7 +89,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_FAST+1:1;case FX:return FX_CHIME_SOUND+1;case LANG:return LANGS.length;case DIAG:return 4;case FLOAT:return FLOAT_CELL+4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_FAST+1:1;case FX:return FX_CHIME_SOUND+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}
