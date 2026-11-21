@@ -28,7 +28,7 @@ public final class PitRenderer {
     private static final int BG=0xff040506,PANEL=0xff101315,LINE=0xff303638,BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff91a5ae,RED=0xffff4059,AMBER=0xffffb84d;
     private Telemetry.Sample[] samples;
     private int shiftTarget;
-    private long frameTime;
+    private long frameTime,floatPaneAt=-100000;
     private ShiftGuide.Cue cue;
     private VehicleProfile profile=VehicleProfile.PETROL_DCT;
     private boolean mediaPage,raceMedia;
@@ -383,6 +383,7 @@ public final class PitRenderer {
         String u=Telemetry.UNITS[sig];return Tiles.text(sig,samples[sig].value)+(u==null||u.isEmpty()?"":" "+u);
     }
     private void drawFloatPane(Canvas c){
+        if(frameTime-floatPaneAt>1500||frameTime<floatPaneAt)FloatPanel.dayNightReset();floatPaneAt=frameTime;FloatPanel.dayNight(samples,frameTime);   // FloatService is stopped here: judge the side in use ourselves (frameTime = elapsedRealtime); the pane redraws at 1 Hz, a longer gap = it just opened
         boolean off=FloatPanel.shape==FloatPanel.OFF;int shape=off?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count,size=FloatPanel.size;
         float w=FloatPanel.width(shape,n,size),h=FloatPanel.height(shape,n,size);float[][] cells=FloatPanel.cellRects(shape,n,size);
         box(c,SettingsLayout.PANE_L-6,SettingsLayout.TOP,800,480,0xff040506);   // opaque: the dashboard behind must not show between the buttons
@@ -477,12 +478,13 @@ public final class PitRenderer {
         String title=UiText.t(day?"낮 색감 고르기":"밤 색감 고르기");text(c,title,SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
         float tx=SettingsLayout.K_X+Math.max(120,paint.measureText(title)+12);fitted(c,UiText.t("지금 모양에 입힌 모습 · 누르면 바로 적용"),tx,SettingsLayout.SH_T+30,11,SettingsLayout.SH_R-16-tx,MUTED);   // the hint after the title, however long
         int keep=FloatPanel.skin,keepDn=FloatPanel.dn,cur=day?FloatPanel.skinDay:FloatPanel.skinNight,f=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count;
+        try{
         for(int i=0;i<FloatPanel.skinCount();i++){float[] b=SettingsLayout.tile4(i);boolean on=i==cur;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,UiText.t(FloatPanel.SKIN_NAMES[i]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){FloatPanel.skin=0;FloatPanel.dn=day?DayNight.DAY:DayNight.NIGHT;if(day)FloatPanel.skinDay=i;else FloatPanel.skinNight=i;float fw=FloatPanel.width(f,n,1),fh=FloatPanel.height(f,n,1),sc=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));
                 c.save();c.translate((b[0]+b[2])/2-fw*sc/2,b[1]+28+(b[3]-b[1]-34-fh*sc)/2);c.scale(sc,sc);FloatPanel.drawStill(c,f,n,1,FloatPanel.example(),profile,frameTime);c.restore();}}
-        FloatPanel.skin=keep;FloatPanel.dn=keepDn;if(day)FloatPanel.skinDay=cur;else FloatPanel.skinNight=cur;
+        }finally{FloatPanel.skin=keep;FloatPanel.dn=keepDn;if(day)FloatPanel.skinDay=cur;else FloatPanel.skinNight=cur;}
     }
     /** The chooser for one cell: this car's values with their live readings, the graph buttons, 취소 / 완료. */
     private void drawFloatSheet(Canvas c){

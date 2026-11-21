@@ -96,8 +96,8 @@ final class VehicleDataClient implements Runnable {
         if(video==null)try{   // the stock screen mode and illumination: FloatPanel reads the two ints (events only, no polling)
             video=new VideoSetupManager(context);
             dlistener=new VideoSetupListener(){
-                public void onDimChanged(int dim){if(dlistener==this&&accepts(token))com.veloster.vehicle.DayNight.oemDim=dim;}
-                public void onIlluminateStatusChanged(boolean on){if(dlistener==this&&accepts(token))com.veloster.vehicle.DayNight.oemIllum=on?1:0;}
+                public void onDimChanged(int dim){if(dlistener==this&&active&&token==generation)com.veloster.vehicle.DayNight.oemDim=dim;}
+                public void onIlluminateStatusChanged(boolean on){if(dlistener==this&&active&&token==generation)com.veloster.vehicle.DayNight.oemIllum=on?1:0;}
             };
             video.addListener(dlistener);
             com.veloster.vehicle.DayNight.oemDim=video.getDim();com.veloster.vehicle.DayNight.oemIllum=video.getIlluminateStatus()?1:0;
