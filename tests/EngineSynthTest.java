@@ -24,6 +24,12 @@ public final class EngineSynthTest {
     }
     /** Power in lo..hi Hz (Goertzel every 2 Hz). */
     private static double band(float[] x,double lo,double hi){double p=0;for(double hz=lo;hz<=hi;hz+=2)p+=power(x,hz);return p;}
+    /** Kurtosis of what is left above about 700 Hz (two one-pole high-passes): 3 for steady noise, far above for a train of clicks. */
+    private static double clatter(float[] x){
+        double k=1-Math.exp(-2*Math.PI*700/EngineSynth.RATE),a=0,b=0,m2=0,m4=0;
+        for(float v:x){a+=(v-a)*k;double h=v-a;b+=(h-b)*k;h-=b;m2+=h*h;m4+=h*h*h*h;}
+        return m4/x.length/(m2/x.length*m2/x.length);
+    }
     private static float[] tuned(double tone,double rough,double body,double intake,double uneven,double low,double rpm,double pedal){
         EngineSynth s=new EngineSynth();s.tune(tone,rough,body,intake,uneven,low);return run(s,rpm,pedal,0,2);
     }
@@ -91,6 +97,8 @@ public final class EngineSynthTest {
         check(power(tuned(1,0,1,1,3,.3,3000,1),2987)>power(tuned(1,0,1,1,0,.3,3000,1),2987)*4,"불규칙함 smears the high orders into noise");
         float[] dry=tuned(1,1,0,1,1,.3,3000,1),wet=tuned(1,1,2,1,1,.3,3000,1);double differ=0;for(int i=0;i<dry.length;i++)differ+=Math.abs(dry[i]-wet[i]);
         check(differ/dry.length>.01&&peak(wet)<=1,"울림 changes the wavelets, bounded");
+        // A firing's mids and highs are spread over the firing interval: one click per firing, heard apart at idle, is a diesel (14 before).
+        check(clatter(tuned(1,1,1,1,1,.3,750,0))<8&&clatter(tuned(1,1,0,1,1,.3,750,0))>11,"idle does not clatter; 울림 0 is the dry click");
         float[] boosted=run(new EngineSynth(),4000,1,1.2,2);
         EngineSynth quiet=new EngineSynth();quiet.turboVol=0;EngineSynth loud=new EngineSynth();loud.turboVol=2;
         double w0=band(run(quiet,4000,1,1.2,2),4450,4750),w1=band(boosted,4450,4750),w2=band(run(loud,4000,1,1.2,2),4450,4750);

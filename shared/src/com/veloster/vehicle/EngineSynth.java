@@ -11,8 +11,10 @@ package com.veloster.vehicle;
  * added sixteen sine orders instead: next to a recording of this engine it had one order and little above 800 Hz
  * (an organ), which the alarm channel of the car, with no bass, thinned further.
  * - Wavelet: d/dt of a Friedlander blow-down flow pulse (what a tailpipe radiates), through the exhaust's formants
- *   and two fixed block / manifold bands, an all-pass chain (the pipe's dispersion), reflections every cylinder shares
- *   and reflections of its own (so half orders reach the mids). 4x oversampled: a firing lands within 1/8 sample.
+ *   and two fixed block / manifold bands, an all-pass chain (the pipe's dispersion) and reflections every cylinder
+ *   shares. 4x oversampled: a firing lands within 1/8 sample.
+ * - Above OWN_HP the pulse is spread over the firing interval (spread()): a petrol engine's mids and highs are near
+ *   steady noise, and the click each firing used to keep there, heard one by one below 3000 rpm, is how a diesel sounds.
  * - Load blends a soft pulse (closed throttle: long, round, quiet) into a hard one (short, steep, loud); boost adds
  *   to the load the pedal gives.
  * - Every firing differs a little in strength and timing, and the crank speed wanders (Jagla et al.).
@@ -43,7 +45,15 @@ public final class EngineSynth {
     static final double[][] RIDGES={{820,3,.28},{1900,2.2,.3}},   // block and manifold bands that stay put while the orders sweep through
         INTAKE_FORMANTS={{340,3,1},{700,3,.6},{1500,2.5,.35}},NOISE_BANDS={{850,.8,1},{2000,1.1,.5}};
     static final double[] ALLPASS={180,420,760,1200,1900,2800},
-        SHARED={6,.0025,.026,.5,.014},OWN={7,.0006,.014,.62,.008},INTAKE_TAPS={4,.0005,.006,.5,.004};   // reflections: count, first and last delay (s), gain, decay (s)
+        SHARED={6,.0025,.026,.5,.014},INTAKE_TAPS={4,.0005,.006,.5,.004};   // reflections: count, first and last delay (s), gain, decay (s)
+    // The spread of a firing above OWN_HP. Measured in 0.3 s windows of 500-1000 / 1000-2000 / 2000-4000 Hz, kurtosis
+    // (steady noise = 3): recordings of this engine family 3.4 / 3.9 / 5.2; seven sparse reflections and the whole click
+    // gave 8 / 7 / 9 at 1500 rpm and 16 / 13 / 13 at idle (a diesel's clatter); this gives 3 / 5 / 3 and 4 / 9 / 4.
+    static final int OWN_N=64;             // reflections, evenly over OWN_D0..OWN_D1 s
+    static final double OWN_D0=.0003,OWN_D1=.038,OWN_GAIN=.5,OWN_TAU=.015,OWN_RISE=.001,   // they swell in OWN_RISE and die away over OWN_TAU
+        OWN_DIRECT=.2,                     // what is left of the click itself at 울림 100 % (울림 0 = all of it, the dry sound)
+        OWN_VARY=.85,                      // how far a cylinder's reflections differ from the shared ones: about a fifth of the mids on half orders, as before
+        OWN_SOFT=.7;                       // the soft pulse is spread less: with this the balance of lows to highs, on and off the pedal, stays where it was (within 1.5 dB)
 
     /**
      * Fast tanh-like soft clip, |out| < 1. The audio thread runs this twice per sample; on this head unit Math.tanh
@@ -195,6 +205,15 @@ public final class EngineSynth {
         }
         return a;
     }
+    /** The reflections that spread a firing's mids and highs (OWN_*), before a cylinder varies them. */
+    private double[][] spread(double r4){
+        double[][] a=new double[OWN_N][];
+        for(int j=0;j<OWN_N;j++){
+            double d=(OWN_D0+(OWN_D1-OWN_D0)*rnd())/Math.sqrt(p.fScale),sign=rnd()<.5?-1:1;
+            a[j]=new double[]{Math.round(d*r4),sign*OWN_GAIN*Math.exp(-d/OWN_TAU)*(1-Math.exp(-d/OWN_RISE))*body};
+        }
+        return a;
+    }
     private void reflect(double[] y,double[] src,double[][] tp){for(double[] t:tp){int d=(int)t[0];double g=t[1];for(int i=d;i<len;i++)y[i]+=src[i-d]*g;}}
     /** Brightness (one-pole low-pass) and the band limit of the output rate: the tables are read every OS-th sample. */
     private double[] shape(double[] x,double[] aa,double r4){
@@ -218,9 +237,9 @@ public final class EngineSynth {
         double g=Math.sqrt(energy*OS/e);float[] o=new float[len];for(int i=0;i<len;i++)o[i]=(float)(y[i]*g);
         return o;
     }
-    private float[] cylinder(double[] base,double energy,double[][] shared,double[][] own,double r4){
-        double[] y=base.clone(),lp=onePole(base,SHARED_LP,r4),lo=onePole(base,OWN_HP,r4),hi=new double[len];
-        for(int i=0;i<len;i++)hi[i]=base[i]-lo[i];
+    private float[] cylinder(double[] base,double energy,double[][] shared,double[][] own,double r4,double spread){
+        double[] y=new double[len],lp=onePole(base,SHARED_LP,r4),lo=onePole(base,OWN_HP,r4),hi=new double[len];double direct=1-(1-OWN_DIRECT)*Math.min(1,body);
+        for(int i=0;i<len;i++){double h=base[i]-lo[i];y[i]=lo[i]+direct*h;hi[i]=h*spread;}
         reflect(y,lp,shared);reflect(y,hi,own);return finish(y,energy);
     }
 
@@ -239,11 +258,12 @@ public final class EngineSynth {
         int AA=24;double[] aa=new double[2*AA+1];double sum=0;   // windowed sinc at 0.42 of the output rate
         for(int i=-AA;i<=AA;i++){double x=i*2*.42/OS;sum+=aa[i+AA]=(i!=0?Math.sin(Math.PI*x)/(Math.PI*x):1)*(.5+.5*Math.cos(Math.PI*i/(AA+1)));}
         for(int i=0;i<=2*AA;i++)aa[i]/=sum;
-        double[][] shared=taps(SHARED,r4);
+        double[][] shared=taps(SHARED,r4),dense=spread(r4);
         double[] baseH=disperse(shape(through(pulse(HARD_T/root,HARD_RISE/v.high,r4),v.formants,RIDGES,1,root,v.dry*v.high,r4),aa,r4),r4),
             baseS=disperse(shape(through(pulse(SOFT_T/root,SOFT_RISE,r4),v.formants,RIDGES,1,root,v.dry,r4),aa,r4),r4);
         float[][] h=new float[v.nc][],s=new float[v.nc][];
-        for(int c=0;c<v.nc;c++){double[][] own=taps(OWN,r4);h[c]=cylinder(baseH,1,shared,own,r4);s[c]=cylinder(baseS,SOFT_LEVEL*SOFT_LEVEL,shared,own,r4);
+        for(int c=0;c<v.nc;c++){double[][] own=new double[OWN_N][];for(int j=0;j<OWN_N;j++)own[j]=new double[]{dense[j][0],dense[j][1]*(1-OWN_VARY+2*OWN_VARY*rnd())};
+            h[c]=cylinder(baseH,1,shared,own,r4,1);s[c]=cylinder(baseS,SOFT_LEVEL*SOFT_LEVEL,shared,own,r4,OWN_SOFT);
             int e=Math.max(end(h[c]),end(s[c]));h[c]=java.util.Arrays.copyOf(h[c],e);s[c]=java.util.Arrays.copyOf(s[c],e);}   // spawn() adds the pair over one length
         // intake: one suction pulse per induction stroke through the intake tract
         double[] a=new double[len];int n=Math.min(len,(int)Math.round(INTAKE_T/root*r4));
