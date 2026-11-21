@@ -69,7 +69,7 @@ public final class FloatService extends Service implements Runnable {
 
     public IBinder onBind(Intent intent){return null;}
     public void onCreate(){
-        super.onCreate();
+        super.onCreate();FloatPanel.dayNightReset();
         windows=(WindowManager)getSystemService(Context.WINDOW_SERVICE);
         com.veloster.i18n.LanguageSettings.init(this);VehicleDash.fonts(this);wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
         alive=true;Choreographer.getInstance().postFrameCallback(frame);
@@ -90,7 +90,8 @@ public final class FloatService extends Service implements Runnable {
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
         if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());
-        boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime());
+        int lookBefore=FloatPanel.skinNow();FloatPanel.dayNight(VehicleDash.floatSamples(FloatPanel.count),android.os.SystemClock.elapsedRealtime());boolean flipped=FloatPanel.skinNow()!=lookBefore;   // dusk, headlamps or the stock screen mode: redraw only when the look in use differs
+        boolean changed=flipped|(FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime()));
         String ds=FloatPanel.dnSource;if(ds!=null&&!ds.equals(mDnSource)){mDnSource=ds;android.util.Log.i("NDashboard","Float day/night source: "+ds+" night="+com.veloster.vehicle.DayNight.HOLD.night);}
         VehicleDash.floatUp=panel!=null;VehicleDash.chimeTick();VehicleDash.shiftTick();VehicleDash.soundTick();
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading

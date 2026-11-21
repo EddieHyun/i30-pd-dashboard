@@ -378,10 +378,12 @@ public final class FloatPanel {
         Telemetry.Sample g=q[8],s=q.length>Telemetry.GEAR_SELECTOR?q[Telemetry.GEAR_SELECTOR]:null;float gv=g!=null&&g.valid?g.value:Float.NaN;
         if(gearProf==null)return Float.isNaN(gv)?"-":Tiles.text(8,gv);
         String t=Telemetry.gearText(gv,s!=null&&s.valid?s.value:Float.NaN,gearProf);return "—".equals(t)?"-":t;}
-    /** Day/night: the last source ("oem", "lamp", "clock", "none"; null before the first look), when it was last judged, whether the first look is done. Main thread only. */
-    public static String dnSource;private static long dnAt;private static boolean dnPrimed;
+    /** Day/night: the last source ("oem", "lamp", "clock", "none"; null before the first look), when it was last judged, whether the first look is done. Main thread only: FloatService.run() (before tick) and draw (the settings preview) both call dayNight, whichever comes first in a second does the work. */
+    public static String dnSource;
+    /** A new service adopts the current state at once. */
+    public static void dayNightReset(){dnPrimed=false;}private static long dnAt;private static boolean dnPrimed;
     /** Judged once a second from the stock screen mode / illumination, the headlamps, then the clock; the first look is adopted at once (no night colours for 3 s after start). */
-    private static void dayNight(Telemetry.Sample[] q,long now){
+    public static void dayNight(Telemetry.Sample[] q,long now){
         if(dnPrimed&&now-dnAt<1000&&now>=dnAt)return;dnAt=now;
         Telemetry.Sample l=q!=null&&q.length>Telemetry.HEAD_LAMP?q[Telemetry.HEAD_LAMP]:null;int lamp=l!=null&&l.valid?(l.value>0?1:0):DayNight.UNKNOWN;
         java.util.Calendar cal=java.util.Calendar.getInstance();int phase=DayPhase.of(cal.get(java.util.Calendar.MONTH)+1,cal.get(java.util.Calendar.HOUR_OF_DAY)*60+cal.get(java.util.Calendar.MINUTE));
