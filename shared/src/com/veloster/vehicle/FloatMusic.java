@@ -124,7 +124,7 @@ final class FloatMusic {
         bar(c,x,50*k,right,3*k,progress(t));
         p.setColor(sTrack);c.drawRect(x,62*k,right,62*k+1,p);
         // the right column first (the gear, and the small value under it), so the large value knows the room it has left of it
-        Telemetry.Sample g=q[8];String gear=g!=null&&g.valid?Tiles.text(8,g.value):"-";   // the gear, in the accent, above the small value
+        String gear=FloatPanel.gear(q);   // the gear, in the accent, above the small value
         say(c,gear,right,(n<2?h-12*k:h-30*k),18*k,sAcc,Paint.Align.RIGHT,sFace);
         float side=width(gear,18*k,sFace);
         for(int j=Math.min(n,2)-1;j>=0;j--){int sig=sigs[j];float v=FloatPanel.value(q,sig);if(rec)FloatPanel.record(first+j,sig,v,now);

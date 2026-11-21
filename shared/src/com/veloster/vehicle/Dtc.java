@@ -1,12 +1,13 @@
 package com.veloster.vehicle;
 
+import com.veloster.i18n.UiText;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Trouble codes: parse the ECU's reply (UDS 59 02, KWP 58, OBD mode 43) and describe each code in Korean. No Android:
+ * Trouble codes: parse the ECU's reply (UDS 59 02, KWP 58, OBD mode 43) and describe each code (Korean; UiText gives the English). No Android:
  * host-tested. Descriptions cover the SAE J2012 generic codes this car can raise; any other code still gets its system
  * and subsystem from the code's structure, plus the UDS failure type byte when the ECU sends one.
  */
@@ -58,22 +59,22 @@ public final class Dtc {
     }
 
     /** What the code means: the generic description when known, else system + subsystem from its digits. */
-    public String description(){String d=table().get(code);return d!=null?d:category(code);}
+    public String description(){String d=table().get(code);return d!=null?UiText.t(d):category(code);}
     /** UDS failure type in words, or null (no FTB or 0x00 = no subtype). */
     public String failureText(){
         if(failureType<=0)return null;
         String d=FTB.get(failureType);
-        return d!=null?d:String.format("유형 %02X",failureType);
+        return d!=null?UiText.t(d):String.format(UiText.t("유형 %02X"),failureType);
     }
     /** Status in words: current, confirmed, pending, warning lamp. Empty when the protocol sends no status. */
     public String statusText(){
         if(status<0)return "";
         StringBuilder s=new StringBuilder();
-        if((status&0x01)!=0)s.append("현재 고장");
-        if((status&0x08)!=0)s.append(s.length()>0?" · ":"").append("확정");
-        else if((status&0x04)!=0)s.append(s.length()>0?" · ":"").append("대기(1회 감지)");
-        if((status&0x80)!=0)s.append(s.length()>0?" · ":"").append("경고등 요청");
-        if(s.length()==0)s.append("과거 기록");
+        if((status&0x01)!=0)s.append(UiText.t("현재 고장"));
+        if((status&0x08)!=0)s.append(s.length()>0?" · ":"").append(UiText.t("확정"));
+        else if((status&0x04)!=0)s.append(s.length()>0?" · ":"").append(UiText.t("대기(1회 감지)"));
+        if((status&0x80)!=0)s.append(s.length()>0?" · ":"").append(UiText.t("경고등 요청"));
+        if(s.length()==0)s.append(UiText.t("과거 기록"));
         return s.toString();
     }
     /** Lit/active codes first: warning lamp, then current, then confirmed. */
@@ -105,7 +106,7 @@ public final class Dtc {
             case 'B':area="바디 (에어백 · 공조 · 편의장치)";break;
             default:area="네트워크 통신";
         }
-        return area+" ("+owner+", 상세 설명 없음)";
+        return UiText.t(area)+" ("+UiText.t(owner)+UiText.t(", 상세 설명 없음)");
     }
 
     private static Map<String,String> table;

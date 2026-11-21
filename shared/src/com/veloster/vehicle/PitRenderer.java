@@ -64,6 +64,8 @@ public final class PitRenderer {
     public void setModeOptions(boolean color,boolean screen){modeColor=color;modeScreen=screen;}
     private boolean speedCalOn;private float speedCalRatio=Float.NaN;private int speedCalSamples;
     public void setSpeedCal(boolean on,float ratio,int samples){speedCalOn=on;speedCalRatio=ratio;speedCalSamples=samples;}
+    /** The installed build's name (v1.16.3, test-1121-abc1234) for the 진단 status row. */
+    public String appVersion="";
     /** Settings category open on the left (SettingsLayout) and the saved language choice, for the gear's settings. */
     private int settingsCat,pickSlot=-1;
     private String langSel="auto";
@@ -125,8 +127,9 @@ public final class PitRenderer {
     public void setOverviewLayout(OverviewLayout value){if(value!=null)overviewLayout=value;}
     private static final String[] PREFIX={"엔진 RPM","오일 온도","냉각수 온도","앞 왼쪽 휠","앞 오른쪽 휠","뒤 왼쪽 휠","뒤 오른쪽 휠","속도 km/h","현재 기어","스로틀 %","브레이크 압력 bar","횡가속","종가속","조향각","외기 온도","출력 (계산)","토크 (계산)","부스트 (계산)","앞 왼쪽 공기압","앞 오른쪽 공기압","뒤 왼쪽 공기압","뒤 오른쪽 공기압","TCS","ESC","ABS","배터리 SOC","배터리 전압","조향 속도","e-LSD 수치","흡기 온도"};
     private int index(String prefix){for(int i=0;i<PREFIX.length;i++)if(PREFIX[i].equals(prefix))return i;return -1;}
-    private String value(String prefix){int i=index(prefix);if(i<0||i>=samples.length||!samples[i].valid)return "—";
-        if(i==8)return Telemetry.gearLabel((int)samples[i].value);
+    private String value(String prefix){int i=index(prefix);
+        if(i==8){Telemetry.Sample sel=samples[Telemetry.GEAR_SELECTOR];return Telemetry.gearText(samples[8].valid?samples[8].value:Float.NaN,sel.valid?sel.value:Float.NaN,profile);}   // P / R / N like the other pages: a DCT's gear is not valid there
+        if(i<0||i>=samples.length||!samples[i].valid)return "—";
         return Telemetry.format(i==0||i==7||(i>=Telemetry.TPMS_FL&&i<=Telemetry.BAT_SOC)||i==Telemetry.STEERING_SPEED?"%.0f":i==11||i==12?"%+.2f":i==13?"%+.1f":i==17||i==Telemetry.BAT_VOLTAGE?"%.2f":"%.1f",Telemetry.displayValue(i,samples[i].value));}
     private float numeric(String prefix){int i=index(prefix);return i>=0&&i<samples.length&&samples[i].valid?Telemetry.displayValue(i,samples[i].value):0;}
     private boolean changed(String prefix){int i=index(prefix);return i>=0&&i<samples.length&&samples[i].changed;}
@@ -333,6 +336,10 @@ public final class PitRenderer {
                                 +UiText.t(speedCalOn?" · 실제 속도로 표시 중":" · 켜면 실제 속도로 표시");}}
                     else if(i==2){name="속도 GPS 보정 값 초기화";sub="잰 값을 지우고 처음부터";dim=speedCalSamples==0;}
                     else if(i==3){name="'내 앱' 열기";sub="버튼 숨김: 내 앱 → 계기판에서 숨김";}
+                    else if(i==4){   // what a "no values" report needs, on one row (not a button): app, detected car, CAN, OBD, the head unit's build
+                        boolean can=samples[0].valid||samples[7].valid,obd=samples[Telemetry.FUEL_LEVEL].valid||samples[Telemetry.ABS_LOAD].valid||samples[Telemetry.CAT_TEMP].valid;
+                        name=appVersion+" · "+UiText.t(profile.fuel==VehicleProfile.Fuel.DIESEL?"디젤":"가솔린")+" · "+UiText.t(profile.trans==VehicleProfile.Trans.MT?"수동 6단":"DCT");
+                        sub=UiText.t(can?"CAN 수신 중":"CAN 수신 없음")+" · "+UiText.t(obd?"OBD 응답 있음":"OBD 응답 없음")+" · "+UiText.t("내비 빌드")+" "+android.os.Build.VERSION.INCREMENTAL;dim=!can;}
                     else{name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";}
             }
             box(c,l,t,l+w,t+h,sel?0xff1c303b:dim?0xff08090a:0xff101315);
