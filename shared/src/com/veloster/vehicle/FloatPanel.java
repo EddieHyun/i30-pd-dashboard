@@ -87,11 +87,17 @@ public final class FloatPanel {
     static float alphaF(){return ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;}
     public static volatile int alpha=1;
     /** 스킨: the cells drawn like a dashboard layout (FloatSkin.NAMES); 0 = the plain window with its corners and colours;
-     *  AUTO (계기판 따라, the default) = the skin of the dashboard screen last shown (screen, a ClusterPicker index). */
+     *  AUTO (계기판 따라, the default) = the skin of the dashboard screen last shown (screen, a ClusterPicker index); 0 = picked here:
+     *  the day look or the night look (skinDay / skinNight) as dn (DayNight.AUTO / DAY / NIGHT) says. */
     public static final int AUTO=-1;
     public static volatile int screen=0;
+    public static volatile int dn=DayNight.NIGHT,skinDay=FloatSkin.WHITE,skinNight=0;
+    /** The day look is in use now (DayNight.HOLD: the car's day / night, held). */
+    public static boolean dayNow(){return DayNight.pick(dn,DayNight.HOLD.night);}
     /** The skin drawn now. */
-    public static int skinNow(){int s=skin;return s<0?FloatSkin.forScreen(screen):Math.min(s,FloatSkin.NAMES.length-1);}
+    public static int skinNow(){if(skin<0)return FloatSkin.forScreen(screen);int s=dayNow()?skinDay:skinNight;return s<0||s>=FloatSkin.NAMES.length?0:s;}
+    /** Picks look s for the side in use now (day or night) and stops following the screen. */
+    public static void setActiveSkin(int s){if(dayNow())skinDay=s;else skinNight=s;skin=0;}
     public static final String[] SKIN_NAMES=FloatSkin.NAMES;
     public static volatile int skin=AUTO;
     public static int skinCount(){return FloatSkin.NAMES.length;}
@@ -100,10 +106,10 @@ public final class FloatPanel {
     private static final int[][] PRESETS={{CARD,4,0,1,1},{SHIFT,2,1,2,0},{PILL,1,0,0,2},{MUSIC,2,0,1,1}};
     /** Sets preset i and turns the window on; each cell keeps the reading picked for it. */
     public static void applyPreset(int i){if(i<0||i>=PRESETS.length)return;int[] p=PRESETS[i];
-        shape=p[0];count=fitCount(p[0],p[1]);skin=p[2];size=p[3];alpha=p[4];}
-    /** Whether the window is on and set exactly as preset i. */
+        shape=p[0];count=fitCount(p[0],p[1]);setActiveSkin(p[2]);size=p[3];alpha=p[4];}
+    /** Whether the window is on and set exactly as preset i (the look: the one seen now). */
     public static boolean presetMatch(int i){if(i<0||i>=PRESETS.length||shape==OFF)return false;int[] p=PRESETS[i];
-        return shape==p[0]&&count==fitCount(p[0],p[1])&&skin==p[2]&&size==p[3]&&alpha==p[4];}
+        return shape==p[0]&&count==fitCount(p[0],p[1])&&skin>=0&&skinNow()==p[2]&&size==p[3]&&alpha==p[4];}
     /** The round gauge shape is on: square cells, a disc each, no window body. */
     public static boolean round(){return round(shape==OFF?lastShape:shape);}
     public static boolean round(int s){return s==ROUND;}

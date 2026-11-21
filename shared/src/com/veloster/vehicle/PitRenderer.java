@@ -424,10 +424,14 @@ public final class PitRenderer {
             chip(c,SettingsLayout.floatBox(t),UiText.t(label),null,on,off||g==SettingsLayout.F_COUNT&&!FloatPanel.fits(shape,FloatPanel.COUNTS[i]));}   // a count the shape would leave a hole in is dim
         boolean rnd=FloatPanel.round(shape),auto=FloatPanel.skin<0;   // round gauges take the theme's colours; following the screen, the look is not picked here
         chip(c,SettingsLayout.F_AUTO_BOX,UiText.t("계기판 따라")+"  "+UiText.t(auto&&!rnd?"켬":"끔"),null,auto&&!rnd,rnd||off);
-        chip(c,SettingsLayout.F_SKIN_BOX,rnd?UiText.t("원형 게이지는 테마 색"):UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNow()])+"  ›",null,false,rnd||auto||off);
+        boolean dimL=rnd||auto||off,pick=!rnd&&!auto,day=FloatPanel.dayNow();   // 자동 / 낮 / 밤 and the two looks: the side in use now is lit
+        for(int i=0;i<SettingsLayout.F_DN_NAMES.length;i++)chip(c,SettingsLayout.floatBox(SettingsLayout.F_DN+i),UiText.t(SettingsLayout.F_DN_NAMES[i]),null,pick&&FloatPanel.dn==i,dimL);
+        if(rnd)chip(c,new float[]{SettingsLayout.F_SKIN_DAY_BOX[0],SettingsLayout.F_SKIN_BOX[1],SettingsLayout.F_SKIN_BOX[2],SettingsLayout.F_SKIN_BOX[3]},UiText.t("원형 게이지는 테마 색"),null,false,true);
+        else{chip(c,SettingsLayout.F_SKIN_DAY_BOX,UiText.t("낮")+" "+UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinDay])+" ›",null,pick&&day,dimL);
+            chip(c,SettingsLayout.F_SKIN_BOX,UiText.t("밤")+" "+UiText.t(FloatPanel.SKIN_NAMES[FloatPanel.skinNight])+" ›",null,pick&&!day,dimL);}
         text(c,UiText.t("손을 떼면 적용 · 끌면 취소"),SettingsLayout.PANE_L+6,SettingsLayout.BOTTOM-4,11,MUTED,false);
         chip(c,SettingsLayout.F_FORM_BOX,UiText.t(FloatPanel.SHAPE_NAMES[shape])+"  ›",null,false,off);
-        if(floatEdit==SettingsLayout.SKIN_SHEET||floatEdit==SettingsLayout.FORM_SHEET)cachedSheet(c,floatEdit);
+        if(floatEdit==SettingsLayout.SKIN_SHEET||floatEdit==SettingsLayout.SKIN_SHEET_DAY||floatEdit==SettingsLayout.FORM_SHEET)cachedSheet(c,floatEdit);
         else{sheetBmp=null;if(floatEdit>=0)drawFloatSheet(c);}
     }
     /** A bar that snaps to names.length stops: a track with a dot per stop, the knob a chip with the current name. */
@@ -444,12 +448,13 @@ public final class PitRenderer {
     private void cachedSheet(Canvas c,int which){
         int key=which;key=key*31+FloatPanel.shape;key=key*31+FloatPanel.lastShape;key=key*31+FloatPanel.count;key=key*31+FloatPanel.size;
         key=key*31+FloatPanel.skin;key=key*31+FloatPanel.skinNow();key=key*31+FloatPanel.corner;key=key*31+FloatPanel.color;key=key*31+FloatPanel.alpha;
+        key=key*31+FloatPanel.dn;key=key*31+FloatPanel.skinDay;key=key*31+FloatPanel.skinNight;
         key=key*31+(FloatPanel.musicStrip?1:0);key=key*31+java.util.Arrays.hashCode(FloatPanel.cells);key=key*31+java.util.Arrays.hashCode(FloatPanel.graphs);
         key=key*31+Theme.current().id.hashCode();key=key*31+UiText.language().hashCode();key=key*31+(profile==null?0:profile.hashCode());key=key*31+(samples==null?0:1);
         key=key*31+FloatMusic.sheetKey();   // not the position: the progress bars in the sheet stay where they were drawn
         if(sheetBmp==null||sheetKey!=key){
             if(sheetBmp==null)sheetBmp=Bitmap.createBitmap(800,480,Bitmap.Config.ARGB_8888);else sheetBmp.eraseColor(0);
-            Canvas sc=new Canvas(sheetBmp);if(which==SettingsLayout.SKIN_SHEET)drawSkinSheet(sc);else drawFormSheet(sc);sheetKey=key;}
+            Canvas sc=new Canvas(sheetBmp);if(which==SettingsLayout.FORM_SHEET)drawFormSheet(sc);else drawSkinSheet(sc,which==SettingsLayout.SKIN_SHEET_DAY);sheetKey=key;}
         c.drawBitmap(sheetBmp,0,0,null);
     }
     /** 모양 고르기: every shape drawn small with the cells' readings and the skin now; a tap picks it. */
@@ -465,19 +470,19 @@ public final class PitRenderer {
             if(samples!=null){float fw=FloatPanel.width(f,fn,1),fh=FloatPanel.height(f,fn,1),s=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));
                 c.save();c.translate((b[0]+b[2])/2-fw*s/2,b[1]+28+(b[3]-b[1]-34-fh*s)/2);c.scale(s,s);FloatPanel.drawStill(c,f,fn,1,FloatPanel.example(),profile,frameTime);c.restore();}}
     }
-    /** 스킨 고르기: every skin as a tile with the chosen cell drawn in it; a tap picks it. */
-    private void drawSkinSheet(Canvas c){
+    /** 낮 / 밤 색감 고르기: every skin as a tile with the chosen cell drawn in it; a tap picks it for that side. */
+    private void drawSkinSheet(Canvas c,boolean day){
         box(c,0,0,800,480,0xc0000000);
         panel(c,SettingsLayout.SH_L,SettingsLayout.SH_T,SettingsLayout.SH_R-SettingsLayout.SH_L,SettingsLayout.SH_B-SettingsLayout.SH_T,0xff101315,LINE);
-        text(c,UiText.t("색감 고르기"),SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
-        text(c,UiText.t("지금 모양에 입힌 모습 · 누르면 바로 적용"),SettingsLayout.K_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
-        int keep=FloatPanel.skin,f=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count;
-        for(int i=0;i<FloatPanel.skinCount();i++){float[] b=SettingsLayout.tile4(i);boolean on=i==keep;
+        String title=UiText.t(day?"낮 색감 고르기":"밤 색감 고르기");text(c,title,SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
+        float tx=SettingsLayout.K_X+Math.max(120,paint.measureText(title)+12);fitted(c,UiText.t("지금 모양에 입힌 모습 · 누르면 바로 적용"),tx,SettingsLayout.SH_T+30,11,SettingsLayout.SH_R-16-tx,MUTED);   // the hint after the title, however long
+        int keep=FloatPanel.skin,keepDn=FloatPanel.dn,cur=day?FloatPanel.skinDay:FloatPanel.skinNight,f=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count;
+        for(int i=0;i<FloatPanel.skinCount();i++){float[] b=SettingsLayout.tile4(i);boolean on=i==cur;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,UiText.t(FloatPanel.SKIN_NAMES[i]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
-            if(samples!=null){FloatPanel.skin=i;float fw=FloatPanel.width(f,n,1),fh=FloatPanel.height(f,n,1),sc=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));
+            if(samples!=null){FloatPanel.skin=0;FloatPanel.dn=day?DayNight.DAY:DayNight.NIGHT;if(day)FloatPanel.skinDay=i;else FloatPanel.skinNight=i;float fw=FloatPanel.width(f,n,1),fh=FloatPanel.height(f,n,1),sc=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));
                 c.save();c.translate((b[0]+b[2])/2-fw*sc/2,b[1]+28+(b[3]-b[1]-34-fh*sc)/2);c.scale(sc,sc);FloatPanel.drawStill(c,f,n,1,FloatPanel.example(),profile,frameTime);c.restore();}}
-        FloatPanel.skin=keep;
+        FloatPanel.skin=keep;FloatPanel.dn=keepDn;if(day)FloatPanel.skinDay=cur;else FloatPanel.skinNight=cur;
     }
     /** The chooser for one cell: this car's values with their live readings, the graph buttons, 취소 / 완료. */
     private void drawFloatSheet(Canvas c){

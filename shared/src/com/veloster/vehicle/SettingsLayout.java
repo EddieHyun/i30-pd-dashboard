@@ -145,7 +145,7 @@ public final class SettingsLayout {
     public static final float[] F_ROW_Y={262,306,350,394};
     public static final String[] F_ROW_LABELS={"모양","색감","크기","추천"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
-    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_MUSIC=7,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,SKIN_SHEET=100,F_FORM=5,FORM_SHEET=101,F_AUTO=6,F_PRESET=80;
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_MUSIC=7,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,F_SKIN_DAY=8,F_DN=90,SKIN_SHEET=100,SKIN_SHEET_DAY=102,F_FORM=5,FORM_SHEET=101,F_AUTO=6,F_PRESET=80;
     /** 크기 and 투명도 as two bars on one row, each snapping to its stops; the knob is a chip with the value's name. */
     public static final float[] F_SIZE_BAR={248,F_ROW_Y[2],500,F_ROW_Y[2]+F_ROW_H},F_ALPHA_BAR={566,F_ROW_Y[2],788,F_ROW_Y[2]+F_ROW_H};
     public static final float F_SIZE_KNOB=78,F_ALPHA_KNOB=66,F_ALPHA_LABEL_X=512;
@@ -159,8 +159,10 @@ public final class SettingsLayout {
     public static final float F_PRESET_X=248,F_PRESET_W=129;
     /** 모양 at the start of the first row: opens the shape sheet (FloatPanel.FORMS). */
     public static final float[] F_FORM_BOX={248,262,470,298};
-    /** The 색감 row: the 계기판 따라 switch, then the chip that opens the look sheet (VehicleDash.floatEdit = SKIN_SHEET). */
-    public static final float[] F_AUTO_BOX={248,306,418,342},F_SKIN_BOX={426,306,788,342};
+    /** The 색감 row: the 계기판 따라 switch, 자동 / 낮 / 밤 (F_DN + DayNight value), then the day and the night look chips that open
+     *  their look sheet (VehicleDash.floatEdit = SKIN_SHEET_DAY / SKIN_SHEET). */
+    public static final float[] F_AUTO_BOX={248,306,380,342},F_SKIN_DAY_BOX={556,306,668,342},F_SKIN_BOX={676,306,788,342};
+    public static final String[] F_DN_NAMES={"자동","낮","밤"};
     /** 칸 수 sits on the 모양 row, right of the shape chip: the shape decides which counts there are. */
     public static final float F_COUNT_X=540;
     public static final String[] F_SHAPES={"카드","가로 띠","세로 띠"},F_COUNTS={"1","2","4"},
@@ -170,6 +172,7 @@ public final class SettingsLayout {
     public static float[] floatBox(int t){
         if(t==F_SIZE)return F_SIZE_BAR;if(t==F_ALPHA)return F_ALPHA_BAR;
         if(t>=F_PRESET&&t<F_PRESET+F_PRESETS.length){float x=F_PRESET_X+(t-F_PRESET)*(F_PRESET_W+F_GAP);return new float[]{x,F_ROW_Y[3],x+F_PRESET_W,F_ROW_Y[3]+F_ROW_H};}
+        if(t>=F_DN&&t<F_DN+F_DN_NAMES.length){float x=388+(t-F_DN)*56;return new float[]{x,306,x+52,342};}if(t==F_SKIN_DAY)return F_SKIN_DAY_BOX;   // 자동 / 낮 / 밤 52 wide: the car tap minimum
         if(t==F_FORM)return F_FORM_BOX;if(t==F_MUSIC)return F_MUSIC_BOX;if(t==F_SKIN)return F_SKIN_BOX;if(t==F_AUTO)return F_AUTO_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
         int g=t/10*10,i=t-g;float[] w;float x,y;
         switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_COUNT_X;y=F_ROW_Y[0];break;
@@ -180,7 +183,7 @@ public final class SettingsLayout {
         return new float[]{x,y,x+w[i],y+F_ROW_H};
     }
     /** Every button target in drawing order. */
-    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_MUSIC,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_ALPHA,
+    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_DN,F_DN+1,F_DN+2,F_SKIN_DAY,F_MUSIC,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_ALPHA,
         F_PRESET,F_PRESET+1,F_PRESET+2,F_PRESET+3};
     /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
     public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}

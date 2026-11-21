@@ -307,6 +307,8 @@ public final class UiText {
         EN.put("끄기","Disable");
         EN.put("끔","Off");
         EN.put("나이트","Night");
+        EN.put("낮","Day");
+        EN.put("낮 색감 고르기","Choose the day look");
         EN.put("낮은 차임","Low chime");
         EN.put("낮은 톤","Low tone");
         EN.put("낮추면 둥글게 · 높이면 날카롭게","Lower is rounder · higher is sharper");
@@ -508,6 +510,8 @@ public final class UiText {
         EN.put("반응 시간","Reaction");
         EN.put("밝기","Brightness");
         EN.put("밟을 때 앞에서 빨아들이는 소리","Induction sound from the front on throttle");
+        EN.put("밤","Night");
+        EN.put("밤 색감 고르기","Choose the night look");
         EN.put("배기","Exhaust");
         EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
         EN.put("배기 캠 위상(CVVT) 작동기 회로 이상","Exhaust cam phaser (CVVT) actuator circuit malfunction");

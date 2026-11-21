@@ -410,8 +410,8 @@ public final class VehicleDash extends View implements Runnable {
             if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;FloatPanel.count=FloatPanel.fitCount(f,FloatPanel.count);   // never a count the shape leaves a hole in
                 floatSel=Math.min(floatSel,FloatPanel.used(f,FloatPanel.count)-1);}floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
-        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.hit4(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.hit4(downX,downY,FloatPanel.skinCount()))return;
-            if(i==-1)return;if(i>=0)FloatPanel.skin=i;floatEdit=-1;   // a tile picks it, outside the sheet closes it
+        if(floatEdit==SettingsLayout.SKIN_SHEET||floatEdit==SettingsLayout.SKIN_SHEET_DAY){int i=SettingsLayout.hit4(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.hit4(downX,downY,FloatPanel.skinCount()))return;
+            if(i==-1)return;if(i>=0){if(floatEdit==SettingsLayout.SKIN_SHEET_DAY)FloatPanel.skinDay=i;else FloatPanel.skinNight=i;}floatEdit=-1;   // a tile picks that side's look, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;
             int a=SettingsLayout.sheetHit(x,y,gs.length+1,ch.length,g);if(a!=SettingsLayout.sheetHit(downX,downY,gs.length+1,ch.length,g))return;
@@ -430,8 +430,9 @@ public final class VehicleDash extends View implements Runnable {
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
         else if(t==SettingsLayout.F_MUSIC){if(shape==FloatPanel.MUSIC)return;FloatPanel.musicStrip=!FloatPanel.musicStrip;}
-        else if(t==SettingsLayout.F_SKIN){if(FloatPanel.skin>=0&&!FloatPanel.round(shape))floatEdit=SettingsLayout.SKIN_SHEET;return;}   // dim while 계기판 따라 is on, and for round gauges
-        else if(t==SettingsLayout.F_AUTO){if(FloatPanel.round(shape))return;FloatPanel.skin=FloatPanel.skin<0?FloatPanel.skinNow():FloatPanel.AUTO;}   // off keeps the look it was following
+        else if(t==SettingsLayout.F_SKIN||t==SettingsLayout.F_SKIN_DAY){if(FloatPanel.skin>=0&&!FloatPanel.round(shape))floatEdit=t==SettingsLayout.F_SKIN?SettingsLayout.SKIN_SHEET:SettingsLayout.SKIN_SHEET_DAY;return;}   // dim while 계기판 따라 is on, and for round gauges
+        else if(t>=SettingsLayout.F_DN&&t<SettingsLayout.F_DN+SettingsLayout.F_DN_NAMES.length){if(FloatPanel.skin<0||FloatPanel.round(shape))return;FloatPanel.dn=t-SettingsLayout.F_DN;}   // 자동 / 낮 / 밤, dim like the looks
+        else if(t==SettingsLayout.F_AUTO){if(FloatPanel.round(shape))return;if(FloatPanel.skin<0)FloatPanel.setActiveSkin(FloatPanel.skinNow());else FloatPanel.skin=FloatPanel.AUTO;}   // off keeps the look it was following, in the side in use now
         else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
         else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
             int u=FloatPanel.used(shape,FloatPanel.count),k=t==SettingsLayout.F_EDIT?Math.min(floatSel,u-1):t-SettingsLayout.F_CELL;if(k>=u)return;
@@ -456,9 +457,13 @@ public final class VehicleDash extends View implements Runnable {
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.LAST_SHAPE?last:FloatPanel.CARD;
             {int ef=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape;if(!FloatPanel.fits(ef,FloatPanel.count))FloatPanel.count=FloatPanel.fitCount(ef,FloatPanel.count);}   // a count the shape takes (세로 띠 + RPM: 7)
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);
-            if(skn==9){skn=0;   // the round gauge was a skin for a while: on a grid shape it is the 원형 게이지 shape now
+            int[] dn=p.contains("float_dn")?new int[]{p.getInt("float_dn",DayNight.NIGHT),p.getInt("float_skin_day",FloatSkin.WHITE),p.getInt("float_skin_night",0),0}
+                :DayNight.firstRead(skn);   // first read after the update: 밤, the night look = the look in use (an update changes nothing)
+            if(dn[3]==1){   // only then: the round gauge was skin 9 for a while; on a grid shape it is the 원형 게이지 shape now (9 is 카드 since)
                 if(FloatPanel.shape>=FloatPanel.CARD&&FloatPanel.shape<=FloatPanel.SIDE)FloatPanel.shape=FloatPanel.ROUND;if(FloatPanel.lastShape<=FloatPanel.SIDE)FloatPanel.lastShape=FloatPanel.ROUND;}
-            FloatPanel.skin=skn>=FloatPanel.AUTO&&skn<FloatPanel.skinCount()?skn:FloatPanel.AUTO;
+            FloatPanel.dn=dn[0]>=DayNight.AUTO&&dn[0]<=DayNight.NIGHT?dn[0]:DayNight.NIGHT;
+            FloatPanel.skinDay=dn[1]>=0&&dn[1]<FloatPanel.skinCount()?dn[1]:FloatSkin.WHITE;FloatPanel.skinNight=dn[2]>=0&&dn[2]<FloatPanel.skinCount()?dn[2]:0;
+            FloatPanel.skin=skn<0||skn>=FloatPanel.skinCount()?FloatPanel.AUTO:0;   // -1 = 계기판 따라, 0 = the day / night looks
             FloatPanel.count=FloatPanel.fitCount(FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,FloatPanel.count);
             int scr=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);FloatPanel.screen=scr>=0&&scr<ClusterPicker.COUNT?scr:ClusterPicker.OVERVIEW;FloatPanel.alpha=al>=0&&al<FloatPanel.ALPHA_NAMES.length?al:1;
             FloatPanel.shiftTarget=p.getInt("shift_target",0);   // the edge flashes at 설정 → RPM's shift point
@@ -469,7 +474,8 @@ public final class VehicleDash extends View implements Runnable {
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
         e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).putBoolean("float_music_strip",FloatPanel.musicStrip).remove("float_style")
-         .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin);
+         .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin)
+         .putInt("float_dn",FloatPanel.dn).putInt("float_skin_day",FloatPanel.skinDay).putInt("float_skin_night",FloatPanel.skinNight);
         for(int k=0;k<FloatPanel.MAX_CELLS;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
     public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}

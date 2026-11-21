@@ -77,6 +77,13 @@ public final class SettingsLayoutTest {
         for(int i=0;i<12;i++){float[] b=SettingsLayout.tile4(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=130&&b[3]-b[1]>=100,"look tile "+i+" big and on the sheet");
             check(SettingsLayout.hit4((b[0]+b[2])/2,(b[1]+b[3])/2,12)==i,"look tile "+i+" hits");}
         check(SettingsLayout.hit4(30,30,12)==-2&&SettingsLayout.hit4(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,12)==-1,"outside closes, the sheet's edge does nothing");
+        // the 색감 row: 계기판 따라, 자동 / 낮 / 밤, the day look, the night look
+        int[] row={SettingsLayout.F_AUTO,SettingsLayout.F_DN,SettingsLayout.F_DN+1,SettingsLayout.F_DN+2,SettingsLayout.F_SKIN_DAY,SettingsLayout.F_SKIN};
+        for(int a=0;a<row.length;a++){float[] b=SettingsLayout.floatBox(row[a]);
+            check(b!=null&&b[0]>=248&&b[2]<=788&&b[2]-b[0]>=48,"색감 row button "+a+" on the row, wide enough");
+            if(a>0){float[] p=SettingsLayout.floatBox(row[a-1]);check(p[2]<b[0],"색감 row button "+a+" clear of the one before");}
+            check(SettingsLayout.floatHit((b[0]+b[2])/2,(b[1]+b[3])/2,1,1,124,64)==row[a],"색감 row button "+a+" hits");}
+        check(SettingsLayout.F_DN_NAMES.length==3&&SettingsLayout.SKIN_SHEET_DAY!=SettingsLayout.SKIN_SHEET&&SettingsLayout.SKIN_SHEET_DAY!=SettingsLayout.FORM_SHEET,"three choices, a day sheet of its own");
         // groups: 화면 · 주행 모드 · 플로팅 | 테마 · 차량 색 · 언어 | RPM · 엔진 사운드 · 효과음 | 진단 | 완료, a gap between groups
         check(SettingsLayout.CATS[SettingsLayout.SCREENS].equals("화면")&&SettingsLayout.CATS[SettingsLayout.MODE].equals("주행 모드")&&SettingsLayout.CATS[SettingsLayout.FLOAT].equals("플로팅")
             &&SettingsLayout.CATS[SettingsLayout.THEME].equals("테마")&&SettingsLayout.CATS[SettingsLayout.PAINT].equals("차량 색")&&SettingsLayout.CATS[SettingsLayout.LANG].equals("언어")
