@@ -128,6 +128,17 @@ public final class TabsPreview {
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
                 FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,gq,VehicleProfile.PETROL_DCT,now);
                 ImageIO.write(img,"png",new File(out,"x_floatall_"+fs[i]+".png"));}
+            {   // the three quiet looks on all 19 shapes; coolant 112 degrees (signals 1 and 2) so the warning colours show, the white body's included
+                Telemetry.Sample[] wq=gq.clone();wq[1]=wq[2]=new Telemetry.Sample(112,true,false,true,false,0);
+                int[] sk={FloatSkin.CARD,FloatSkin.WHITE,FloatSkin.OEM};String[] skn={"card","white","oem"};int skin0=FloatPanel.skin;
+                for(int si=0;si<sk.length;si++){FloatPanel.skin=sk[si];
+                    for(int i=0;i<FG.length;i++){int sh=FG[i],n=FloatPanel.fitCount(sh,4);FloatPanel.shape=sh;
+                        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                        new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                        java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,1),FloatPanel.defaultY(sh,n,1));
+                        FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,1,wq,VehicleProfile.PETROL_DCT,now);
+                        ImageIO.write(img,"png",new File(out,"x_floatlook_"+skn[si]+"_"+fs[i]+".png"));}}
+                FloatPanel.skin=skin0;}
             {   // 세로 캡슐 with 음악 띠 on and a track playing: its last two rows give way to the track box
                 int sh=FloatPanel.VCAP,n=FloatPanel.fitCount(sh,4);FloatPanel.shape=sh;FloatPanel.musicStrip=true;
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);

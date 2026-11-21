@@ -11,8 +11,8 @@ import android.graphics.Typeface;
  * 5 x 7 font. Each skin has its own bar, so a cell's graph choice applies to the plain window only (숫자만 still hides it).
  */
 final class FloatSkin extends ClusterKit {
-    static final int PLAIN=0,RACE=1,F1=2,RETRO=3,VFD=4,HUD=5,PIXEL=6,VU=7,NIGHT=8;
-    static final String[] NAMES={"기본","레이스","F1","레트로","80년대","HUD","8비트","카세트","야간"};
+    static final int PLAIN=0,RACE=1,F1=2,RETRO=3,VFD=4,HUD=5,PIXEL=6,VU=7,NIGHT=8,CARD=9,WHITE=10,OEM=11;
+    static final String[] NAMES={"기본","레이스","F1","레트로","80년대","HUD","8비트","카세트","야간","카드","화이트","순정"};
     private static final FloatSkin K=new FloatSkin();
     /** The skin that goes with a dashboard screen (ClusterPicker index), PLAIN for screens without one of their own. */
     static int forScreen(int s){
@@ -47,6 +47,9 @@ final class FloatSkin extends ClusterKit {
                 frame(c,2*o,2*o,w-2*o,h-2*o,2*o,0xffffffff);frame(c,6*o,6*o,w-6*o,h-6*o,o,0xffffffff);break;}
             case VU:round(c,0,0,w,h,5*k,a(0xf2141210,af));break;
             case NIGHT:round(c,0,0,w,h,10*k,a(0xcc000000,af));break;
+            case CARD:round(c,0,0,w,h,14*k,a(0xf01c1c1e,af));break;
+            case WHITE:round(c,0,0,w,h,14*k,a(0xf4f5f5f7,af));break;
+            case OEM:fill(c,0,0,w,h,a(0xf0000000,af));box(c,.5f,.5f,w-.5f,h-.5f,1,0xff3c4044);break;
             default:break;   // HUD: no body, the lines carry a shadow instead
         }
     }
@@ -56,6 +59,9 @@ final class FloatSkin extends ClusterKit {
     private void fit(Canvas c,String s,float x,float y,float size,float max,int col,Paint.Align al,Typeface tf){
         float w=width(s,size,tf);if(w>max&&w>0)size*=max/w;text(c,s,x,y,size,col,al,tf);}
     private static int warn(int lv,int normal){return lv==2?0xffff4b3c:lv==1?0xffffaa3c:normal;}
+    /** The white body is the one light look: its warnings are darker so they read on it. */
+    static boolean light(int skin){return skin==WHITE;}
+    static int warn(int lv,int normal,boolean light){return light?(lv==2?0xffd92d20:lv==1?0xffc76a00:normal):warn(lv,normal);}
     private static float clamp01(float f){return Math.max(0,Math.min(1,f));}
     /** Segment i of n is lit: it lies between the bar's start z (0, or .5 for a reading centred on 0) and the reading f. */
     static boolean lit(int i,int n,float f,float z,boolean has){if(!has)return false;int a=Math.round(Math.min(z,f)*n),b=Math.round(Math.max(z,f)*n);return i>=a&&i<b;}
@@ -71,7 +77,7 @@ final class FloatSkin extends ClusterKit {
     private void quadIn(Canvas c,int skin,float x,float y,float cw,float ch,float k,Cell d){
         int ink;Typeface tf=faceBold();
         switch(skin){case RACE:ink=d.first?0xff061015:0xfff2f6f8;break;case RETRO:ink=0xffffb347;tf=Typeface.MONOSPACE;break;case VFD:ink=0xff5ef2d2;break;
-            case HUD:ink=0xff62ff8a;tf=Typeface.MONOSPACE;break;case PIXEL:ink=0xffffffff;break;case VU:ink=0xff3a3226;break;case NIGHT:ink=0xffc5ccd0;tf=Typeface.DEFAULT;break;default:ink=0xffffffff;}
+            case HUD:ink=0xff62ff8a;tf=Typeface.MONOSPACE;break;case PIXEL:ink=0xffffffff;break;case VU:ink=0xff3a3226;break;case NIGHT:ink=0xffc5ccd0;tf=Typeface.DEFAULT;break;case CARD:case OEM:ink=0xffffffff;tf=Typeface.DEFAULT;break;case WHITE:ink=0xff1c1c1e;tf=Typeface.DEFAULT;break;default:ink=0xffffffff;}
         if(skin!=PIXEL){float t=y+(skin==VU?10:22)*k,b=y+ch-(skin==VU?12:3)*k;   // a car seen from above, the skin's ink (the 8-bit keeps its pixel numbers)
             FloatPanel.tyres(c,x+4*k,t,cw-8*k,b-t,k,d.quad,d.l4,d.t4,ink,(ink&0xffffff)|0x66000000,tf);return;}
         float cx=x+cw/2,t=y+(skin==VU?10:24)*k,b=y+ch-(skin==VU?14:6)*k,s=Math.min(15*k,(b-t)/2.1f);
@@ -170,6 +176,28 @@ final class FloatSkin extends ClusterKit {
             if(st())text(c,d.unit,x+cw-27*k,y+48*k,9*k,0xff8a959a,Paint.Align.LEFT,Typeface.DEFAULT);
             if(dy())fit(c,d.val,x+cw-30*k,y+48*k,28*k,cw-44*k,warn(d.lv,0xffc5ccd0),Paint.Align.RIGHT,Typeface.DEFAULT);
             if(d.bar){if(st())fill(c,x+12*k,y+55*k,x+cw-12*k,y+55*k+1,0xff2b3134);if(dy()&&has)fill(c,x+12*k+(cw-24*k)*Math.min(d.zero,f),y+55*k,x+12*k+(cw-24*k)*Math.max(d.zero,f),y+55*k+1,themeAcc());}
+            break;}
+        case CARD:case WHITE:{   // a widget card: a small grey name, a large light figure with its unit after it, one rounded bar in the accent
+            boolean wh=skin==WHITE;int ink=wh?0xff1c1c1e:0xffffffff,mut=wh?0xff6e6e73:0xff98989f,trk=wh?0xffdcdce0:0xff3a3a3c,acc=wh?0xff1677e5:themeAcc();
+            int vcol=warn(d.lv,ink,wh);
+            if(st()){fit(c,d.sn,x+12*k,y+19*k,9.5f*k,cw*(pk?.5f:.8f),mut,Paint.Align.LEFT,Typeface.DEFAULT);
+                if(x>.5f)fill(c,x,y+12*k,x+1,y+ch-12*k,wh?0x16000000:0x1cffffff);if(y>.5f)fill(c,x+12*k,y,x+cw-12*k,y+1,wh?0x16000000:0x1cffffff);}
+            if(dy()&&pk)text(c,"▲ "+d.pk,x+cw-12*k,y+19*k,8.5f*k,mut,Paint.Align.RIGHT,Typeface.DEFAULT);
+            if(dy()){float vs=27*k,vw=width(d.val,vs,Typeface.DEFAULT),uw=width(d.unit,10*k,Typeface.DEFAULT),mx=cw-24*k-uw-3*k;if(vw>mx&&vw>0){vs*=mx/vw;vw=mx;}
+                text(c,d.val,x+12*k,y+47*k,vs,vcol,Paint.Align.LEFT,Typeface.DEFAULT);text(c,d.unit,x+12*k+vw+3*k,y+47*k,10*k,mut,Paint.Align.LEFT,Typeface.DEFAULT);}
+            if(d.bar){float bl=x+12*k,br=x+cw-12*k,bt=y+54*k;if(st())round(c,bl,bt,br,bt+3*k,1.5f*k,trk);
+                if(dy()&&has){float lo=bl+(br-bl)*Math.min(d.zero,f),hi=bl+(br-bl)*Math.max(d.zero,f);round(c,lo,bt,Math.max(hi,lo+3*k),bt+3*k,1.5f*k,d.lv>0?vcol:acc);
+                    if(pk){float px=bl+(br-bl)*pf;fill(c,px-.5f*k,bt-2*k,px+.5f*k,bt+5*k,mut);}}}
+            break;}
+        case OEM:{   // the head unit's own screens: black, hairline grey rules, white text, its glossy blue as the bar
+            if(st()){if(x>.5f)fill(c,x,y+1,x+1,y+ch-1,0xff2c3034);if(y>.5f)fill(c,x+1,y,x+cw-1,y+1,0xff2c3034);
+                fit(c,d.sn,x+10*k,y+18*k,10*k,cw*(pk?.5f:.8f),0xffe6e9eb,Paint.Align.LEFT,Typeface.DEFAULT);
+                text(c,d.unit,x+cw-10*k,y+47*k,10*k,0xff8b9197,Paint.Align.RIGHT,Typeface.DEFAULT);}
+            if(dy()&&pk)text(c,"▲ "+d.pk,x+cw-10*k,y+18*k,8.5f*k,0xff8b9197,Paint.Align.RIGHT,Typeface.DEFAULT);
+            float uw=width(d.unit,10*k,Typeface.DEFAULT);
+            if(dy())fit(c,d.val,x+cw-13*k-uw,y+47*k,26*k,cw-26*k-uw,warn(d.lv,0xffffffff),Paint.Align.RIGHT,Typeface.DEFAULT);
+            if(d.bar){float bl=x+10*k,br=x+cw-10*k,bt=y+54*k;if(st())fill(c,bl,bt,br,bt+3*k,0xff23272b);
+                if(dy()&&has){float lo=bl+(br-bl)*Math.min(d.zero,f),hi=Math.max(bl+(br-bl)*Math.max(d.zero,f),lo+2*k);fill(c,lo,bt,hi,bt+3*k,warn(d.lv,0xff2f7fe0));fill(c,lo,bt,hi,bt+k,d.lv>0?0x55ffffff:0xff9fd2ff);}}
             break;}
         default:break;
         }

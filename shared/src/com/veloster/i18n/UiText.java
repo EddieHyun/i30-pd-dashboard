@@ -1398,6 +1398,7 @@ public final class UiText {
         EN.put("홀수단","Odd");
         EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");
+        EN.put("화이트","White");
         EN.put("확인","OK");
         EN.put("확인 불가","Unknown");
         EN.put("확정","Confirmed");

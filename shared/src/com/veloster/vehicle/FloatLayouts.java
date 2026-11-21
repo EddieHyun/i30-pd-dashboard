@@ -89,13 +89,16 @@ final class FloatLayouts extends ClusterKit {
             case FloatSkin.PIXEL:set(0xf0000000,0xffffffff,0xffffffff,0xffffd84a,0xff2a2a2a,0xff3ddc5a);face=Typeface.MONOSPACE;bold=Typeface.MONOSPACE;box=0xffffffff;boxInk=0xff000000;break;
             case FloatSkin.VU:set(0xf2ece0bc,0xff3a3226,0xff14110c,0xff5a4e3a,0xffd8c89c,0xffc8302a);box=0xff3a3226;boxInk=0xffece0bc;greenRed=false;break;
             case FloatSkin.NIGHT:set(0xcc000000,0xff2b3134,0xffc5ccd0,0xff8a959a,0xff2b3134,Theme.current().map(0xff5bc8f5));face=Typeface.DEFAULT;bold=Typeface.DEFAULT;box=0xffc5ccd0;boxInk=0xff000000;greenRed=false;break;
+            case FloatSkin.CARD:set(0xf01c1c1e,0xff3a3a3c,0xffffffff,0xff98989f,0xff3a3a3c,Theme.current().map(0xff5bc8f5));face=Typeface.DEFAULT;bold=Typeface.DEFAULT;box=0xffffffff;boxInk=0xff000000;greenRed=false;break;
+            case FloatSkin.WHITE:set(0xf4f5f5f7,0xffc7c7cc,0xff1c1c1e,0xff6e6e73,0xffdcdce0,0xff1677e5);face=Typeface.DEFAULT;bold=Typeface.DEFAULT;box=0xff1c1c1e;boxInk=0xffffffff;greenRed=false;break;
+            case FloatSkin.OEM:set(0xf0000000,0xff3c4044,0xffffffff,0xff8b9197,0xff23272b,0xff2f7fe0);face=Typeface.DEFAULT;bold=Typeface.DEFAULT;box=0xff2f7fe0;boxInk=0xffffffff;greenRed=false;break;
             default:plain=true;bg=FloatPanel.BG;edge=FloatPanel.EDGE;div=FloatPanel.DIV;txt=FloatPanel.TXT;mut=FloatPanel.MUT;track=FloatPanel.TRACK;acc=FloatPanel.ACC;box=FloatPanel.themed(0xffa4d9ef);boxInk=FloatPanel.themed(0xff061015);break;
         }
         if(!plain){div=(edge&0xffffff)|0x99000000;int al=Math.max(0,Math.min(255,Math.round((bg>>>24)*af)));bg=al<<24|bg&0xffffff;}
     }
     private void frame(Canvas c,float l,float t,float r2,float b,float th){fill(c,l,t,r2,t+th,edge);fill(c,l,b-th,r2,b,edge);fill(c,l,t,l+th,b,edge);fill(c,r2-th,t,r2,b,edge);}
     private void set(int b,int e,int t,int m,int tr,int a){bg=b;edge=e;txt=t;mut=m;track=tr;acc=a;}
-    private int warn(int lv,int normal){return lv==2?0xffff4b3c:lv==1?0xffffaa3c:normal;}
+    private int warn(int lv,int normal){return FloatSkin.warn(lv,normal,FloatSkin.light(FloatPanel.skinNow()));}
 
     private void body(Canvas c,float w,float h,float k,float rad){
         if(pix){fill(c,0,0,w,h,bg);int o=Math.max(1,Math.round(k));frame(c,2*o,2*o,w-2*o,h-2*o,2*o);frame(c,6*o,6*o,w-6*o,h-6*o,o);return;}   // the 8-bit dialog box
@@ -141,9 +144,9 @@ final class FloatLayouts extends ClusterKit {
         int segs=Math.max(8,Math.round((b-t)/(9*k)));float sh=(b-t)/segs;
         if(st)fill(c,l-4*k,t,l-4*k+1,b,div);
         for(int i=0;i<segs;i++){boolean on=rOk&&(i+.5f)/segs<rf;if(on&&!dy||!on&&!st)continue;
-            float f=(i+.5f)/segs,y1=b-(i+1)*sh+k,y2=b-i*sh-k;fill(c,l,y1,rr,y2,on?(f<.7f?acc:f<.85f?0xffffaa3c:0xffff4b3c):track);}
+            float f=(i+.5f)/segs,y1=b-(i+1)*sh+k,y2=b-i*sh-k;fill(c,l,y1,rr,y2,on?(f<.7f?acc:warn(f<.85f?1:2,0)):track);}
     }
-    private int led(int i,int n){float t=(i+.5f)/n;if(greenRed)return t<.45f?0xff2fe06a:t<.8f?0xffff3b3b:0xff4aa8ff;return t<.6f?acc:t<.85f?0xffffaa3c:0xffff4b3c;}
+    private int led(int i,int n){float t=(i+.5f)/n;if(greenRed)return t<.45f?0xff2fe06a:t<.8f?0xffff3b3b:0xff4aa8ff;return t<.6f?acc:warn(t<.85f?1:2,0);}
 
     /** Draws layout shape at 0,0 with cells d[0..], the rpm fraction and the gear's text. */
     static void draw(Canvas c,int shape,int n,float k,int skin,float af,FloatSkin.Cell[] d,float rpm,String gear){draw(c,shape,n,k,skin,af,d,rpm,gear,ALL);}

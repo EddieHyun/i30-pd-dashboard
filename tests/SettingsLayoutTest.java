@@ -74,9 +74,9 @@ public final class SettingsLayoutTest {
             for(float[] cc:cells){cc[0]*=1.5f;cc[1]*=1.5f;cc[2]*=1.5f;cc[3]*=1.5f;}
             check(SettingsLayout.floatHit(x+150*1.5f*k,y+20*1.5f*k,w,h,cells)==SettingsLayout.F_CELL+1&&SettingsLayout.floatHit(x+10*k,y+20*k,w,h,cells)==-1,"a layout's cells hit by their rectangles, the gear ring is no cell");}
         // the skin sheet: 9 tiles on the sheet, each big enough and hit by its middle; outside the sheet closes
-        for(int i=0;i<9;i++){float[] b=SettingsLayout.tile3(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=150&&b[3]-b[1]>=90,"look tile "+i+" big and on the sheet");
-            check(SettingsLayout.hit3((b[0]+b[2])/2,(b[1]+b[3])/2,9)==i,"look tile "+i+" hits");}
-        check(SettingsLayout.hit3(30,30,9)==-2&&SettingsLayout.hit3(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,9)==-1,"outside closes, the sheet's edge does nothing");
+        for(int i=0;i<12;i++){float[] b=SettingsLayout.tile4(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=130&&b[3]-b[1]>=100,"look tile "+i+" big and on the sheet");
+            check(SettingsLayout.hit4((b[0]+b[2])/2,(b[1]+b[3])/2,12)==i,"look tile "+i+" hits");}
+        check(SettingsLayout.hit4(30,30,12)==-2&&SettingsLayout.hit4(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,12)==-1,"outside closes, the sheet's edge does nothing");
         // groups: 화면 · 주행 모드 · 플로팅 | 테마 · 차량 색 · 언어 | RPM · 엔진 사운드 · 효과음 | 진단 | 완료, a gap between groups
         check(SettingsLayout.CATS[SettingsLayout.SCREENS].equals("화면")&&SettingsLayout.CATS[SettingsLayout.MODE].equals("주행 모드")&&SettingsLayout.CATS[SettingsLayout.FLOAT].equals("플로팅")
             &&SettingsLayout.CATS[SettingsLayout.THEME].equals("테마")&&SettingsLayout.CATS[SettingsLayout.PAINT].equals("차량 색")&&SettingsLayout.CATS[SettingsLayout.LANG].equals("언어")

@@ -472,7 +472,7 @@ public final class PitRenderer {
         text(c,UiText.t("색감 고르기"),SettingsLayout.K_X,SettingsLayout.SH_T+30,18,WHITE,true);
         text(c,UiText.t("지금 모양에 입힌 모습 · 누르면 바로 적용"),SettingsLayout.K_X+120,SettingsLayout.SH_T+30,11,MUTED,false);
         int keep=FloatPanel.skin,f=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape,n=FloatPanel.count;
-        for(int i=0;i<FloatPanel.skinCount();i++){float[] b=SettingsLayout.tile3(i);boolean on=i==keep;
+        for(int i=0;i<FloatPanel.skinCount();i++){float[] b=SettingsLayout.tile4(i);boolean on=i==keep;
             panel(c,b[0],b[1],b[2]-b[0],b[3]-b[1],on?0xff1c303b:0xff0b0f12,on?BLUE:LINE);
             text(c,UiText.t(FloatPanel.SKIN_NAMES[i]),b[0]+10,b[1]+20,13,on?WHITE:MUTED,true);
             if(samples!=null){FloatPanel.skin=i;float fw=FloatPanel.width(f,n,1),fh=FloatPanel.height(f,n,1),sc=Math.min(1,Math.min((b[2]-b[0]-16)/fw,(b[3]-b[1]-34)/fh));

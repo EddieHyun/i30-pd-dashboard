@@ -544,7 +544,7 @@ public final class FloatPanel {
     /** A car seen from above, an H on its side: the front axle on top, the rear below, a spine between, a tyre at each end; each
      *  wheel's pressure beside its tyre (amber / red when low) and, when known, its temperature under it, small. Fits the box x,y,w,h. */
     static void tyres(Canvas c,float x,float y,float w,float h,float k,String[] v,int[] lv,String[] t,int ink,int line,Typeface face){
-        boolean temps=t!=null&&(t[0].length()+t[1].length()+t[2].length()+t[3].length())>0;
+        boolean lt=FloatSkin.light(skinNow());boolean temps=t!=null&&(t[0].length()+t[1].length()+t[2].length()+t[3].length())>0;
         float s=Math.min(18*k,h/2.35f),aw=Math.min(w*.09f,8*k);
         // fit the width: the temperatures go first (a narrow column), then the numbers shrink
         float need=2*aw+2*(Math.max(width(v[0],s,face),width(v[1],s,face))+Math.max(3*k,s*.3f)+4*k);
@@ -554,11 +554,11 @@ public final class FloatPanel {
         float ts=s*.62f,cx=x+w/2,tw=Math.max(3*k,s*.3f),th=s*1.05f;
         float ty=y+h*.30f,by=y+h*.78f;   // the axles' heights; each wheel's numbers sit on its axle's line, the temperature on the outside
         float lw=Math.max(1,1.4f*k);fill(c,cx-aw,ty-lw/2,cx+aw,ty+lw/2,line);fill(c,cx-aw,by-lw/2,cx+aw,by+lw/2,line);fill(c,cx-lw/2,ty,cx+lw/2,by,line);   // the H on its side
-        for(int i=0;i<4;i++){boolean right=i%2==1;float ay=i<2?ty:by,tx=right?cx+aw:cx-aw;int col=lv[i]==2?HOT:lv[i]==1?WARM:ink;
+        for(int i=0;i<4;i++){boolean right=i%2==1;float ay=i<2?ty:by,tx=right?cx+aw:cx-aw;int col=lt?FloatSkin.warn(lv[i],ink,true):lv[i]==2?HOT:lv[i]==1?WARM:ink;
             r.set(tx-tw/2,ay-th/2,tx+tw/2,ay+th/2);p.setStyle(Paint.Style.FILL);p.setColor(lv[i]>0?col:line);c.drawRoundRect(r,tw/2,tw/2,p);
             float lx=right?tx+tw/2+3*k:tx-tw/2-3*k,base=ay+s*.36f,pw=width(v[i],s,face);Paint.Align al=right?Paint.Align.LEFT:Paint.Align.RIGHT;
             text(c,v[i],lx,base,s,col,al,face);
-            if(temps&&!t[i].isEmpty())text(c,t[i],right?lx+pw+2*k:lx-pw-2*k,base,ts,MUT,al,Typeface.DEFAULT);}
+            if(temps&&!t[i].isEmpty())text(c,t[i],right?lx+pw+2*k:lx-pw-2*k,base,ts,lt?0xff6e6e73:MUT,al,Typeface.DEFAULT);}
     }
     private static void fill(Canvas c,float l,float tp,float rr,float bt,int color){p.setStyle(Paint.Style.FILL);p.setColor(color);c.drawRect(l,tp,rr,bt,p);}
     private static void text(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){

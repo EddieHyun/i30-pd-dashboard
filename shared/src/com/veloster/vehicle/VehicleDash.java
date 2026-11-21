@@ -410,7 +410,7 @@ public final class VehicleDash extends View implements Runnable {
             if(i==-1)return;if(i>=0){int f=FloatPanel.FORMS[i];if(FloatPanel.shape==FloatPanel.OFF)FloatPanel.lastShape=f;else FloatPanel.shape=f;FloatPanel.count=FloatPanel.fitCount(f,FloatPanel.count);   // never a count the shape leaves a hole in
                 floatSel=Math.min(floatSel,FloatPanel.used(f,FloatPanel.count)-1);}floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
-        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.hit3(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.hit3(downX,downY,FloatPanel.skinCount()))return;
+        if(floatEdit==SettingsLayout.SKIN_SHEET){int i=SettingsLayout.hit4(x,y,FloatPanel.skinCount());if(i!=SettingsLayout.hit4(downX,downY,FloatPanel.skinCount()))return;
             if(i==-1)return;if(i>=0)FloatPanel.skin=i;floatEdit=-1;   // a tile picks it, outside the sheet closes it
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();return;}
         if(floatEdit>=0){int[] gs=FloatPanel.groups(prof);int tab=Math.max(0,Math.min(floatEditTab,gs.length-1));int[] ch=gs.length==0?new int[0]:FloatPanel.group(gs[tab],prof);int g=FloatPanel.GRAPH_NAMES.length;

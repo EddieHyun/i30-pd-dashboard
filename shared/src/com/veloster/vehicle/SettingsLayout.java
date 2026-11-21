@@ -223,12 +223,11 @@ public final class SettingsLayout {
     public static final float F4_Y=64,F4_H=(SH_B-F4_Y-10-3*K_GAP)/4;   // four rows: 16 shapes
     public static float[] tile5(int slot){float x=F5_X+(slot%5)*(F5_W+K_GAP),y=F4_Y+(slot/5)*(F4_H+K_GAP);return new float[]{x,y,x+F5_W,y+F4_H};}
     /** A skin tile, -1 elsewhere on the sheet, -2 outside it (closes). */
-    /** The 색감 sheet: 3 x 3 tiles, each look on the shape chosen now. */
-    public static final float M_W=(SH_R-SH_L-32-2*K_GAP)/3;
-    public static float[] tile3(int i){float x=K_X+(i%3)*(M_W+K_GAP),y=K_Y+(i/3)*(K_H+K_GAP);return new float[]{x,y,x+M_W,y+K_H};}
-    public static int hit3(float x,float y,int n){
+    /** The 색감 sheet: 4 x 3 tiles, each look on the shape chosen now. */
+    public static float[] tile4(int i){float x=K_X+(i%4)*(K_W+K_GAP),y=K_Y+(i/4)*(K_H+K_GAP);return new float[]{x,y,x+K_W,y+K_H};}
+    public static int hit4(float x,float y,int n){
         if(x<SH_L||x>SH_R||y<SH_T||y>SH_B)return -2;
-        for(int i=0;i<n;i++)if(in(tile3(i),x,y))return i;
+        for(int i=0;i<n;i++)if(in(tile4(i),x,y))return i;
         return -1;
     }
     /** The shape (index into slots) under x,y on the 모양 sheet, -1 elsewhere on it, -2 outside (closes). */
