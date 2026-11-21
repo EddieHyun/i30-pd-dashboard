@@ -80,6 +80,13 @@ public final class VehicleDash extends View implements Runnable {
     private long lastDiagnostic,lastFullDiagnostic;
     /** Frame cost since the last diagnostics line (logcat VehicleDash every 5 s), to judge the heavier layouts on the car. */
     private long drawNs,drawMaxNs;
+    /** A frame's drawing cost in ms, smoothed over about ten frames; 25 (the heaviest pages on the car) until measured. */
+    private float drawCost=25;
+    /** How long to wait for the next frame of a live page: up to FRAME_SHARE of the time goes into drawing, so a light
+     *  page gets up to 30 frames a second and a heavy one keeps the pace it had (`most`: 50 or 100 ms). The pages were
+     *  drawn 10 or 20 times a second whatever they cost, which shows as stutter on a needle. */
+    static final float FRAME_SHARE=.25f;
+    private long pace(long most){return Math.max(33,Math.min(most,(long)(drawCost/FRAME_SHARE)));}
     private int drawFrames;
     private String drawStats(){
         String s=drawFrames==0?"":String.format(java.util.Locale.US," draw avg %.1f max %.1f ms over %d frames (page %d%s)",drawNs/1e6/drawFrames,drawMaxNs/1e6,drawFrames,page,symmetric?"":", tab");
@@ -557,8 +564,9 @@ public final class VehicleDash extends View implements Runnable {
             else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lap.state()==LapTimer.RUNNING)delay=33;
             else if(symmetric&&page==PitRenderer.PAGE_ECO)delay=EcoCluster.animating||EcoCluster.holding?40:250;   // 25 frames a second while anything moves; still: 4
             else if(symmetric&&page==PitRenderer.PAGE_RECORDS)delay=100;   // the live run timer shows tenths; nothing else moves
-            else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
+            else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=pace(50);  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
+            else if(!picker)delay=pace(100);   // the tab pages: needles and bars (the screen list and the settings stand still)
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
             if(header.flinging())delay=16;   // a flicked tab strip coasts
             if(picker&&editing&&settingsCat==SettingsLayout.FLOAT)delay=1000;   // 플로팅 settings: example values, nothing moves (a tap redraws at once)
@@ -609,7 +617,7 @@ public final class VehicleDash extends View implements Runnable {
         int dn=downCue.fire(scoped?renderer.revMatchDowns():0,now);   // the blip landed on a gear's target: that gear's sound
         if(dn>0&&downSounds[dn-1]>=0&&shown)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dn-1],beepVol/100f);
         {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&shown&&beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f))chime.rang(now);}   // 과속 차임
-        long took=System.nanoTime()-drawStart;drawNs+=took;drawMaxNs=Math.max(drawMaxNs,took);drawFrames++;
+        long took=System.nanoTime()-drawStart;drawNs+=took;drawMaxNs=Math.max(drawMaxNs,took);drawFrames++;drawCost+=(took/1e6f-drawCost)*.1f;
         if(introStart==0)introStart=now;
         long introEl=now-introStart;
         if(introEl<1500)renderer.drawIntro(c,introEl/1500f);

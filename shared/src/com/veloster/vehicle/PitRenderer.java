@@ -158,6 +158,7 @@ public final class PitRenderer {
         frameTime=now;samples=model.snapshot(now);profile=model.profile();thModel=model;
         clusterRenderer.tick(samples,now);   // trip totals of the layouts count on every page
         eco.prof=profile;eco.background(samples,now);   // the 에코 trip too
+        Glide.rpm(samples,now);   // what is drawn from here on: the trip counts above take the samples as they came
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
         cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.dct=profile.trans==VehicleProfile.Trans.DCT&&profile.fuel==VehicleProfile.Fuel.PETROL;stats.update(samples,now);
