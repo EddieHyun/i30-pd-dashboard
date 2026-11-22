@@ -44,6 +44,11 @@ final class EngineSound implements Runnable {
     private volatile EngineSynth.Voice voice=EngineSynth.voice(0,0);
     private volatile double popRate=1,turboVol=1,bovVol=1,lead=.08;
     void voice(int engine,int exhaust){voice=EngineSynth.voice(engine,exhaust);}
+    /** The sound's own tuning in percent (SettingsLayout.SOUND_TONE..SOUND_LOW): brightness, flow noise, pipe reflections,
+     *  intake, firing scatter (100 = as designed) and the off-load loudness (of full load). */
+    private volatile double tone=1,rough=1,body=1,intake=1,uneven=1,low=EngineSynth.LOW;
+    void tune(int tonePercent,int roughPercent,int bodyPercent,int intakePercent,int unevenPercent,int lowPercent){
+        tone=tonePercent/100.0;rough=roughPercent/100.0;body=bodyPercent/100.0;intake=intakePercent/100.0;uneven=unevenPercent/100.0;low=lowPercent/100.0;}
     void trims(int popPercent,int turboPercent,int bovPercent,int leadMs){popRate=popPercent/100.0;turboVol=turboPercent/100.0;bovVol=bovPercent/100.0;lead=leadMs/1000.0;}
 
     /** Idempotent. route -1 stops. A new route stops the old thread first, so its endAudio never closes the new path. */
@@ -72,6 +77,7 @@ final class EngineSound implements Runnable {
             track.play();
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min+" block "+blk+" buffer "+bytes+" B ahead "+aheadMs+" ms");
             EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[blk];short[] pcm=new short[blk];int flames=0;
+            long cost=0;int made=0;   // the synth's own CPU time (this thread's, not the wait behind the drawing), logged every 30 s of sound: the head unit's figure, which a PC cannot give
             while(thread==Thread.currentThread()){
                 long now=SystemClock.elapsedRealtime();EngineSynth.voiced=volume>0;
                 Telemetry.Sample rpm=data.sample(0,now),pedal=data.sample(9,now),boost=data.sample(Telemetry.BOOST,now),
@@ -80,8 +86,10 @@ final class EngineSound implements Runnable {
                 boolean reverse=selector.valid&&(int)selector.value==1||gear.valid&&(int)gear.value==14;   // DCT lever R, or 6MT reverse
                 synth.set(rpm.valid&&rpm.ageMs<=1000&&!reverse?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
                 if(voice!=playing){playing=voice;synth.use(playing);}
+                synth.tune(tone,rough,body,intake,uneven,low);   // rebuilds the wavelets only when brightness or reflections changed
                 synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
-                synth.render(f,0,blk,volume);
+                long t0=android.os.Debug.threadCpuTimeNanos();synth.render(f,0,blk,volume);cost+=android.os.Debug.threadCpuTimeNanos()-t0;
+                if((made+=blk)>=30*EngineSynth.RATE){android.util.Log.i("VehicleDash","Engine sound: "+cost/1000000*EngineSynth.RATE/made+" ms of CPU per s of sound, rpm "+(rpm.valid?(int)rpm.value:-1));cost=0;made=0;}
                 if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
                 short[] bm=beepMix;
                 if(bm!=null){int bp=beepPos;float bg=beepGain;

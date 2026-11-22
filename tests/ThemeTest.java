@@ -27,7 +27,14 @@ public final class ThemeTest {
         Theme.select("n");check(Theme.current().shape==Theme.SHAPE_CUT&&!Theme.current().mStripe,"N keeps today's cut corner");
         // Red and green: true black; red warns in yellow with the ring (its accent is red), green's lime stays apart from
         // the shared semantic green and the ECO accent.
-        String[] order={"n","red","wine","copper","amber","lambo","green","emerald","teal","ice","bmw","night","purple","magenta","rose","mono"};check(java.util.Arrays.equals(Theme.IDS,order),"themes in colour order: N, then by hue, mono last");
+        String[] order={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","ice","graphite","bmw","night","purple","magenta","rose","mono"};check(java.util.Arrays.equals(Theme.IDS,order),"themes in colour order: N, then by hue, mono last");
+        for(String id:new String[]{"graphite","champagne","sage"}){Theme.select(id);
+            check(Theme.current().map(0xff040506)==0xff000000,id+": true black background");}
+        Theme.select("navy");check(Theme.current().map(0xff040506)==0xff03060c,"navy: navy background");
+        Theme.select("graphite");check(Theme.current().label.equals("GP")&&Theme.current().shape==Theme.SHAPE_CUT,"graphite label and cut cells");
+        Theme.select("champagne");check(Theme.current().label.equals("CH")&&Theme.current().shape==Theme.SHAPE_ROUND&&Theme.current().digitWeight==0,"champagne round, light digits");
+        Theme.select("navy");check(Theme.current().label.equals("NV")&&Theme.current().shape==Theme.SHAPE_ROUND,"navy round");
+        Theme.select("sage");check(Theme.current().label.equals("SG")&&Theme.current().accent==0xff9dbfa6,"sage accent");
         for(int i=0;i<order.length;i++)check(Theme.next(order[i]).equals(order[(i+1)%order.length])&&Theme.of(order[i]).id.equals(order[i]),order[i]+": next follows the list and the id resolves");
         Theme.select("red");Theme red=Theme.current();
         check(red.label.equals("RD")&&red.map(0xff040506)==0xff000000&&red.dangerRing,"red: label, true black, danger ring");

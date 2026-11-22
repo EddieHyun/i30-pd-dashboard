@@ -46,7 +46,7 @@ public final class GaugeRenderer {
         text(c,UiText.t("게이지를 길게 눌러 항목 · 모양 · 위치 편집"),300,71,13,MUTED);
         p.setColor(T(0xff233b46));c.drawRoundRect(new RectF(650,54,788,78),5,5,p);
         text(c,layout.dense()?UiText.t("3 × 2 보기"):UiText.t("4 × 3 보기"),719,71,14,BLUE);
-        Telemetry.Sample[] samples=data.snapshot(now);
+        Telemetry.Sample[] samples=data.snapshot(now);Glide.rpm(samples,now);
         for(int slot=0;slot<layout.count();slot++){
             int i=layout.signal(slot),style=layout.style(slot);Telemetry.Sample s=samples[i];
             String u=Telemetry.UNITS[i];float l=layout.left(slot),t=layout.top(slot),cx=l+layout.width()/2;

@@ -74,9 +74,16 @@ public final class SettingsLayoutTest {
             for(float[] cc:cells){cc[0]*=1.5f;cc[1]*=1.5f;cc[2]*=1.5f;cc[3]*=1.5f;}
             check(SettingsLayout.floatHit(x+150*1.5f*k,y+20*1.5f*k,w,h,cells)==SettingsLayout.F_CELL+1&&SettingsLayout.floatHit(x+10*k,y+20*k,w,h,cells)==-1,"a layout's cells hit by their rectangles, the gear ring is no cell");}
         // the skin sheet: 9 tiles on the sheet, each big enough and hit by its middle; outside the sheet closes
-        for(int i=0;i<9;i++){float[] b=SettingsLayout.tile3(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=150&&b[3]-b[1]>=90,"look tile "+i+" big and on the sheet");
-            check(SettingsLayout.hit3((b[0]+b[2])/2,(b[1]+b[3])/2,9)==i,"look tile "+i+" hits");}
-        check(SettingsLayout.hit3(30,30,9)==-2&&SettingsLayout.hit3(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,9)==-1,"outside closes, the sheet's edge does nothing");
+        for(int i=0;i<12;i++){float[] b=SettingsLayout.tile4(i);check(b[2]<=SettingsLayout.SH_R-10&&b[3]<=SettingsLayout.SH_B-10&&b[2]-b[0]>=130&&b[3]-b[1]>=100,"look tile "+i+" big and on the sheet");
+            check(SettingsLayout.hit4((b[0]+b[2])/2,(b[1]+b[3])/2,12)==i,"look tile "+i+" hits");}
+        check(SettingsLayout.hit4(30,30,12)==-2&&SettingsLayout.hit4(SettingsLayout.SH_L+4,SettingsLayout.SH_T+10,12)==-1,"outside closes, the sheet's edge does nothing");
+        // the 색감 row: 계기판 따라, 자동 / 낮 / 밤, the day look, the night look
+        int[] row={SettingsLayout.F_AUTO,SettingsLayout.F_DN,SettingsLayout.F_DN+1,SettingsLayout.F_DN+2,SettingsLayout.F_SKIN_DAY,SettingsLayout.F_SKIN};
+        for(int a=0;a<row.length;a++){float[] b=SettingsLayout.floatBox(row[a]);
+            check(b!=null&&b[0]>=248&&b[2]<=788&&b[2]-b[0]>=48,"색감 row button "+a+" on the row, wide enough");
+            if(a>0){float[] p=SettingsLayout.floatBox(row[a-1]);check(p[2]<b[0],"색감 row button "+a+" clear of the one before");}
+            check(SettingsLayout.floatHit((b[0]+b[2])/2,(b[1]+b[3])/2,1,1,124,64)==row[a],"색감 row button "+a+" hits");}
+        check(SettingsLayout.F_DN_NAMES.length==3&&SettingsLayout.SKIN_SHEET_DAY!=SettingsLayout.SKIN_SHEET&&SettingsLayout.SKIN_SHEET_DAY!=SettingsLayout.FORM_SHEET,"three choices, a day sheet of its own");
         // groups: 화면 · 주행 모드 · 플로팅 | 테마 · 차량 색 · 언어 | RPM · 엔진 사운드 · 효과음 | 진단 | 완료, a gap between groups
         check(SettingsLayout.CATS[SettingsLayout.SCREENS].equals("화면")&&SettingsLayout.CATS[SettingsLayout.MODE].equals("주행 모드")&&SettingsLayout.CATS[SettingsLayout.FLOAT].equals("플로팅")
             &&SettingsLayout.CATS[SettingsLayout.THEME].equals("테마")&&SettingsLayout.CATS[SettingsLayout.PAINT].equals("차량 색")&&SettingsLayout.CATS[SettingsLayout.LANG].equals("언어")
@@ -107,6 +114,8 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.F_PRESETS.length==4,"four presets");
         for(int i=0;i<4;i++){float[] b=SettingsLayout.floatBox(SettingsLayout.F_PRESET+i);check(b!=null&&SettingsLayout.floatHit((b[0]+b[2])/2,(b[1]+b[3])/2,2,2,124,64)==SettingsLayout.F_PRESET+i,"preset "+i+" hits");}
         check(SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[0]>=SettingsLayout.FC_L&&SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[1]>=SettingsLayout.F_HIDE_BOX[3],"음악 띠 in the right column, under the button hiding");
+        check(SettingsLayout.cols(SettingsLayout.THEME)==3,"themes in three columns");
+        check(SettingsLayout.top(SettingsLayout.THEME,Theme.IDS.length-1)+SettingsLayout.itemH(SettingsLayout.THEME)<=SettingsLayout.BOTTOM&&SettingsLayout.itemH(SettingsLayout.THEME)>=44,"20 themes fit without scrolling, rows still tappable");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

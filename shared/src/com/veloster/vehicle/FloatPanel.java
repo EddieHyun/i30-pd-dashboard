@@ -87,11 +87,17 @@ public final class FloatPanel {
     static float alphaF(){return ALPHAS[Math.max(0,Math.min(ALPHAS.length-1,alpha))]/(float)0xd8;}
     public static volatile int alpha=1;
     /** 스킨: the cells drawn like a dashboard layout (FloatSkin.NAMES); 0 = the plain window with its corners and colours;
-     *  AUTO (계기판 따라, the default) = the skin of the dashboard screen last shown (screen, a ClusterPicker index). */
+     *  AUTO (계기판 따라, the default) = the skin of the dashboard screen last shown (screen, a ClusterPicker index); 0 = picked here:
+     *  the day look or the night look (skinDay / skinNight) as dn (DayNight.AUTO / DAY / NIGHT) says. */
     public static final int AUTO=-1;
     public static volatile int screen=0;
+    public static volatile int dn=DayNight.NIGHT,skinDay=FloatSkin.WHITE,skinNight=0;
+    /** The day look is in use now (DayNight.HOLD: the car's day / night, held). */
+    public static boolean dayNow(){return DayNight.pick(dn,DayNight.HOLD.night);}
     /** The skin drawn now. */
-    public static int skinNow(){int s=skin;return s<0?FloatSkin.forScreen(screen):Math.min(s,FloatSkin.NAMES.length-1);}
+    public static int skinNow(){if(skin<0)return FloatSkin.forScreen(screen);int s=dayNow()?skinDay:skinNight;return s<0||s>=FloatSkin.NAMES.length?0:s;}
+    /** Picks look s for the side in use now (day or night) and stops following the screen. */
+    public static void setActiveSkin(int s){if(dayNow())skinDay=s;else skinNight=s;skin=0;}
     public static final String[] SKIN_NAMES=FloatSkin.NAMES;
     public static volatile int skin=AUTO;
     public static int skinCount(){return FloatSkin.NAMES.length;}
@@ -100,10 +106,10 @@ public final class FloatPanel {
     private static final int[][] PRESETS={{CARD,4,0,1,1},{SHIFT,2,1,2,0},{PILL,1,0,0,2},{MUSIC,2,0,1,1}};
     /** Sets preset i and turns the window on; each cell keeps the reading picked for it. */
     public static void applyPreset(int i){if(i<0||i>=PRESETS.length)return;int[] p=PRESETS[i];
-        shape=p[0];count=fitCount(p[0],p[1]);skin=p[2];size=p[3];alpha=p[4];}
-    /** Whether the window is on and set exactly as preset i. */
+        shape=p[0];count=fitCount(p[0],p[1]);setActiveSkin(p[2]);size=p[3];alpha=p[4];}
+    /** Whether the window is on and set exactly as preset i (the look: the one seen now). */
     public static boolean presetMatch(int i){if(i<0||i>=PRESETS.length||shape==OFF)return false;int[] p=PRESETS[i];
-        return shape==p[0]&&count==fitCount(p[0],p[1])&&skin==p[2]&&size==p[3]&&alpha==p[4];}
+        return shape==p[0]&&count==fitCount(p[0],p[1])&&skin>=0&&skinNow()==p[2]&&size==p[3]&&alpha==p[4];}
     /** The round gauge shape is on: square cells, a disc each, no window body. */
     public static boolean round(){return round(shape==OFF?lastShape:shape);}
     public static boolean round(int s){return s==ROUND;}
@@ -372,7 +378,20 @@ public final class FloatPanel {
         Telemetry.Sample g=q[8],s=q.length>Telemetry.GEAR_SELECTOR?q[Telemetry.GEAR_SELECTOR]:null;float gv=g!=null&&g.valid?g.value:Float.NaN;
         if(gearProf==null)return Float.isNaN(gv)?"-":Tiles.text(8,gv);
         String t=Telemetry.gearText(gv,s!=null&&s.valid?s.value:Float.NaN,gearProf);return "—".equals(t)?"-":t;}
+    /** Day/night: the last source ("oem", "lamp", "clock", "none"; null before the first look), when it was last judged, whether the first look is done. Main thread only: FloatService.run() (before tick), draw, and the dashboard settings pane (drawFloatPane, 1 Hz redraw) call dayNight; whichever comes first in a second does the work. */
+    public static String dnSource;
+    /** A new service adopts the current state at once. */
+    public static void dayNightReset(){dnPrimed=false;}private static long dnAt;private static boolean dnPrimed;
+    /** Judged once a second from the stock screen mode / illumination, the headlamps, then the clock; the first look is adopted at once (no night colours for 3 s after start). */
+    public static void dayNight(Telemetry.Sample[] q,long now){
+        if(dnPrimed&&now-dnAt<1000&&now>=dnAt)return;dnAt=now;
+        Telemetry.Sample l=q!=null&&q.length>Telemetry.HEAD_LAMP?q[Telemetry.HEAD_LAMP]:null;int lamp=l!=null&&l.valid?(l.value>0?1:0):DayNight.UNKNOWN;
+        java.util.Calendar cal=java.util.Calendar.getInstance();int phase=DayPhase.of(cal.get(java.util.Calendar.MONTH)+1,cal.get(java.util.Calendar.HOUR_OF_DAY)*60+cal.get(java.util.Calendar.MINUTE));
+        int dim=DayNight.oemDim,il=DayNight.oemIllum;boolean raw=DayNight.rawNight(dim,il,lamp,phase);
+        if(!dnPrimed){dnPrimed=true;DayNight.HOLD.night=raw;}else DayNight.HOLD.update(raw,now);
+        dnSource=DayNight.source(dim,il,lamp,phase);}
     public static void draw(Canvas c,int shape,int n,int size,Telemetry.Sample[] q,VehicleProfile prof,long now){
+        dayNight(q,now);
         for(int i=0;i<n;i++){SIG[i]=signal(i,prof);G[i]=graphs[i];}
         gearProf=prof;
         draw(c,shape,n,size,q,SIG,G,0,true,now);
@@ -544,7 +563,7 @@ public final class FloatPanel {
     /** A car seen from above, an H on its side: the front axle on top, the rear below, a spine between, a tyre at each end; each
      *  wheel's pressure beside its tyre (amber / red when low) and, when known, its temperature under it, small. Fits the box x,y,w,h. */
     static void tyres(Canvas c,float x,float y,float w,float h,float k,String[] v,int[] lv,String[] t,int ink,int line,Typeface face){
-        boolean temps=t!=null&&(t[0].length()+t[1].length()+t[2].length()+t[3].length())>0;
+        boolean lt=FloatSkin.light(skinNow());boolean temps=t!=null&&(t[0].length()+t[1].length()+t[2].length()+t[3].length())>0;
         float s=Math.min(18*k,h/2.35f),aw=Math.min(w*.09f,8*k);
         // fit the width: the temperatures go first (a narrow column), then the numbers shrink
         float need=2*aw+2*(Math.max(width(v[0],s,face),width(v[1],s,face))+Math.max(3*k,s*.3f)+4*k);
@@ -554,11 +573,11 @@ public final class FloatPanel {
         float ts=s*.62f,cx=x+w/2,tw=Math.max(3*k,s*.3f),th=s*1.05f;
         float ty=y+h*.30f,by=y+h*.78f;   // the axles' heights; each wheel's numbers sit on its axle's line, the temperature on the outside
         float lw=Math.max(1,1.4f*k);fill(c,cx-aw,ty-lw/2,cx+aw,ty+lw/2,line);fill(c,cx-aw,by-lw/2,cx+aw,by+lw/2,line);fill(c,cx-lw/2,ty,cx+lw/2,by,line);   // the H on its side
-        for(int i=0;i<4;i++){boolean right=i%2==1;float ay=i<2?ty:by,tx=right?cx+aw:cx-aw;int col=lv[i]==2?HOT:lv[i]==1?WARM:ink;
+        for(int i=0;i<4;i++){boolean right=i%2==1;float ay=i<2?ty:by,tx=right?cx+aw:cx-aw;int col=lt?FloatSkin.warn(lv[i],ink,true):lv[i]==2?HOT:lv[i]==1?WARM:ink;
             r.set(tx-tw/2,ay-th/2,tx+tw/2,ay+th/2);p.setStyle(Paint.Style.FILL);p.setColor(lv[i]>0?col:line);c.drawRoundRect(r,tw/2,tw/2,p);
             float lx=right?tx+tw/2+3*k:tx-tw/2-3*k,base=ay+s*.36f,pw=width(v[i],s,face);Paint.Align al=right?Paint.Align.LEFT:Paint.Align.RIGHT;
             text(c,v[i],lx,base,s,col,al,face);
-            if(temps&&!t[i].isEmpty())text(c,t[i],right?lx+pw+2*k:lx-pw-2*k,base,ts,MUT,al,Typeface.DEFAULT);}
+            if(temps&&!t[i].isEmpty())text(c,t[i],right?lx+pw+2*k:lx-pw-2*k,base,ts,lt?0xff6e6e73:MUT,al,Typeface.DEFAULT);}
     }
     private static void fill(Canvas c,float l,float tp,float rr,float bt,int color){p.setStyle(Paint.Style.FILL);p.setColor(color);c.drawRect(l,tp,rr,bt,p);}
     private static void text(Canvas c,String s,float x,float y,float size,int color,Paint.Align a,Typeface face){

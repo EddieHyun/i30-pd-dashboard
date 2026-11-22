@@ -128,6 +128,17 @@ public final class TabsPreview {
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
                 FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,gq,VehicleProfile.PETROL_DCT,now);
                 ImageIO.write(img,"png",new File(out,"x_floatall_"+fs[i]+".png"));}
+            {   // the three quiet looks on all 19 shapes; coolant 112 degrees (signals 1 and 2) so the warning colours show, the white body's included
+                Telemetry.Sample[] wq=gq.clone();wq[1]=wq[2]=new Telemetry.Sample(112,true,false,true,false,0);
+                int[] sk={FloatSkin.CARD,FloatSkin.WHITE,FloatSkin.OEM};String[] skn={"card","white","oem"};int skin0=FloatPanel.skin,night0=FloatPanel.skinNight;
+                for(int si=0;si<sk.length;si++){FloatPanel.setActiveSkin(sk[si]);
+                    for(int i=0;i<FG.length;i++){int sh=FG[i],n=FloatPanel.fitCount(sh,4);FloatPanel.shape=sh;
+                        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                        new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                        java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,1),FloatPanel.defaultY(sh,n,1));
+                        FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,1,wq,VehicleProfile.PETROL_DCT,now);
+                        ImageIO.write(img,"png",new File(out,"x_floatlook_"+skn[si]+"_"+fs[i]+".png"));}}
+                FloatPanel.skin=skin0;FloatPanel.skinNight=night0;}
             {   // 세로 캡슐 with 음악 띠 on and a track playing: its last two rows give way to the track box
                 int sh=FloatPanel.VCAP,n=FloatPanel.fitCount(sh,4);FloatPanel.shape=sh;FloatPanel.musicStrip=true;
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
@@ -164,6 +175,7 @@ public final class TabsPreview {
         for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
         com.veloster.i18n.UiText.configure("ko","ko");
         rec.setSettings(SettingsLayout.SOUND,"auto",-1,targets);rec.setOrder(null,80);save(out,"9_settings_sound_scrolled",rec,model,now,false,false);   // hints above and below
+        rec.setOrder(null,SettingsLayout.maxPaneScroll(SettingsLayout.SOUND));save(out,"9_settings_sound_end",rec,model,now,false,false);   // the last rows
         rec.setSettings(SettingsLayout.SCREENS,"auto",-1,targets);rec.setOrder(null,62);rec.setScreenDrag(2,250);save(out,"9_settings_screens_drag",rec,model,now,false,false);rec.setScreenDrag(-1,0);rec.setOrder(null,0);
         {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
             int[][] combos={{1,4,1},{1,4,3},{1,2,1},{1,1,2},{2,4,1},{2,2,0},{3,4,1},{3,2,2}};
@@ -188,17 +200,17 @@ public final class TabsPreview {
                  ImageIO.write(img,"png",new File(out,"x_float_music_shape2_vacuum.png"));FloatPanel.cells[0]=-1;FloatPanel.cells[1]=-1;}
                 {android.graphics.Bitmap cover=android.graphics.Bitmap.createBitmap(64,64,android.graphics.Bitmap.Config.ARGB_8888);{android.graphics.Canvas cc=new android.graphics.Canvas(cover);android.graphics.Paint cp=new android.graphics.Paint(1);
                     cp.setColor(0xff7a3cc8);cc.drawRect(0,0,64,64,cp);cp.setColor(0xffffc04a);cc.drawCircle(40,26,18,cp);cp.setColor(0xff1b1030);cc.drawRect(0,46,64,64,cp);}   // a stand-in album cover
-                 FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int sk0=FloatPanel.skin;   // the 음악 띠 in every 색감, still and scrolled 2.5 s on
-                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++)for(long dt:new long[]{0,2500}){FloatPanel.skin=sk;int w=FloatPanel.width(FloatPanel.CARD,4,1),h=FloatPanel.height(FloatPanel.CARD,4,1);
+                 FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int sk0=FloatPanel.skin,night0=FloatPanel.skinNight;   // the 음악 띠 in every 색감, still and scrolled 2.5 s on
+                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++)for(long dt:new long[]{0,2500}){FloatPanel.setActiveSkin(sk);int w=FloatPanel.width(FloatPanel.CARD,4,1),h=FloatPanel.height(FloatPanel.CARD,4,1);
                      BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
                      long t0=(now/100000)*100000;FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,t0+dt);ImageIO.write(img,"png",new File(out,"x_float_music_strip_skin"+sk+"_"+dt+".png"));}
-                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++){FloatPanel.skin=sk;FloatPanel.musicStrip=false;int w=FloatPanel.width(FloatPanel.MUSIC,2,1),h=FloatPanel.height(FloatPanel.MUSIC,2,1);   // the 음악 shape in every 색감
+                 for(int sk=0;sk<FloatSkin.NAMES.length;sk++){FloatPanel.setActiveSkin(sk);FloatPanel.musicStrip=false;int w=FloatPanel.width(FloatPanel.MUSIC,2,1),h=FloatPanel.height(FloatPanel.MUSIC,2,1);   // the 음악 shape in every 색감
                      BufferedImage img=new BufferedImage(w+20,h+20,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+20,h+20);g2.translate(10,10);
                      FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.MUSIC,2,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_music_shape_skin"+sk+".png"));}
-                 for(int sh:new int[]{FloatPanel.SIDE,FloatPanel.TOWER}){FloatPanel.skin=0;FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int[] cs=FloatPanel.counts(sh);int n=cs[cs.length-1];   // narrow shapes: the strip is words only
+                 for(int sh:new int[]{FloatPanel.SIDE,FloatPanel.TOWER}){FloatPanel.setActiveSkin(0);FloatPanel.musicStrip=true;FloatPanel.music(mm.snapshot(now),cover);int[] cs=FloatPanel.counts(sh);int n=cs[cs.length-1];   // narrow shapes: the strip is words only
                      int w=FloatPanel.width(sh,n,1),h=FloatPanel.height(sh,n,1);BufferedImage img=new BufferedImage(w+16,h+16,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();g2.setColor(new java.awt.Color(0x6a7d8a));g2.fillRect(0,0,w+16,h+16);g2.translate(8,8);
                      FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,(now/100000)*100000);ImageIO.write(img,"png",new File(out,"x_float_music_narrow_"+sh+".png"));}
-                 FloatPanel.skin=sk0;}
+                 FloatPanel.skin=sk0;FloatPanel.skinNight=night0;}
                 FloatPanel.musicStrip=false;FloatPanel.music(null,null);}
             {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
                 Telemetry hm=new Telemetry();long t0=now-30000;int from=Math.max(0,last-(int)(31000/step));
@@ -233,13 +245,13 @@ public final class TabsPreview {
             rec.setSettings(SettingsLayout.FLOAT,"auto",-1,targets);rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_on",rec,model,now,false,false);
             rec.setFloatEdit(1,1,2,FloatPanel.LINE,1);save(out,"9_settings_float_sheet",rec,model,now,false,false);rec.setFloatEdit(1,1,7,FloatPanel.BAR,4);save(out,"9_settings_float_sheet_drive",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
             FloatPanel.shape=FloatPanel.STRIP;save(out,"9_settings_float_strip",rec,model,now,false,false);FloatPanel.shape=FloatPanel.CARD;
-            FloatPanel.skin=0;FloatPanel.shape=FloatPanel.ROUND;save(out,"9_settings_float_round",rec,model,now,false,false);
+            FloatPanel.setActiveSkin(0);FloatPanel.shape=FloatPanel.ROUND;save(out,"9_settings_float_round",rec,model,now,false,false);
             rec.setFloatEdit(0,0,-1,0,2);save(out,"9_settings_float_round_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
             for(int[] cb:new int[][]{{4,1},{2,2},{1,3}}){int n=cb[0],sz=cb[1];   // round gauges over the 개요 page
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(FloatPanel.ROUND,n,sz),FloatPanel.defaultY(FloatPanel.ROUND,n,sz));
                 FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.ROUND,n,sz,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_round"+n+"_"+sz+".png"));}
-            FloatPanel.shape=FloatPanel.CARD;FloatPanel.skin=0;
+            FloatPanel.shape=FloatPanel.CARD;FloatPanel.setActiveSkin(0);
             // corners x themes on the window itself
             String keepTheme=Theme.current().id;int keepCorner=FloatPanel.corner;
             for(String th:new String[]{"n","purple","amber","bmw"})for(int cn=0;cn<FloatPanel.CORNER_NAMES.length;cn++){Theme.select(th);FloatPanel.corner=cn;
@@ -252,7 +264,7 @@ public final class TabsPreview {
                 FloatPanel.draw(new android.graphics.Canvas(g2),FloatPanel.CARD,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);ImageIO.write(img,"png",new File(out,"x_float_alpha_"+al+".png"));}
             FloatPanel.alpha=1;
             // 스킨: every skin as a 4-cell card over a map-like ground (1 and 2 cells, strip, side, big size for two of them)
-            for(int sk=0;sk<FloatPanel.skinCount();sk++){FloatPanel.skin=sk;
+            for(int sk=0;sk<FloatPanel.skinCount();sk++){FloatPanel.setActiveSkin(sk);
                 for(int[] v:new int[][]{{FloatPanel.CARD,4,1},{FloatPanel.STRIP,4,1},{FloatPanel.SIDE,2,0},{FloatPanel.CARD,1,3}}){int sh=v[0],n=v[1],sz=v[2];
                     int w=FloatPanel.width(sh,n,sz),hh=FloatPanel.height(sh,n,sz);
                     BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
@@ -262,19 +274,19 @@ public final class TabsPreview {
                     ImageIO.write(img,"png",new File(out,"x_float_skin_"+sk+"_"+sh+n+sz+".png"));}}
             // the layouts: each with 4 (and the pill and the dial with 2 / 1) in the plain look and three skins
             for(int f:new int[]{FloatPanel.PILL,FloatPanel.HERO,FloatPanel.GEARBOX,FloatPanel.DIAG,FloatPanel.DIAL,FloatPanel.SHIFT,FloatPanel.TICK,FloatPanel.FILLS,FloatPanel.BARS,FloatPanel.TWIN,FloatPanel.WEDGE,FloatPanel.TOWER})for(int sk:new int[]{0,1,4,8,6,7})for(int n:new int[]{4,2,1}){
-                if(n!=4&&sk!=0||!FloatPanel.fits(f,n))continue;FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);
+                if(n!=4&&sk!=0||!FloatPanel.fits(f,n))continue;FloatPanel.setActiveSkin(sk);FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);
                 BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                 g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.setColor(new java.awt.Color(0xffffff));for(int sx=-hh;sx<w+24;sx+=46)g2.fillPolygon(new int[]{sx,sx+8,sx+8+hh+24,sx+hh+24},new int[]{0,0,hh+24,hh+24},4);
                 g2.setColor(new java.awt.Color(0x2f7df0));g2.fillRect(0,(hh+24)/2,w+24,7);g2.translate(12,12);
                 FloatPanel.draw(new android.graphics.Canvas(g2),f,n,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                 ImageIO.write(img,"png",new File(out,"x_float_form_"+f+"_"+sk+"_"+n+".png"));}
-            FloatPanel.count=4;FloatPanel.skin=0;
+            FloatPanel.count=4;FloatPanel.setActiveSkin(0);
             {   // partial redraw: the kept bitmap + the moving part must look like the whole drawing, every shape x look x count, two cell sets
                 int[] keepC=FloatPanel.cells.clone(),keepG=FloatPanel.graphs.clone();int bad=0,checked=0;StringBuilder why=new StringBuilder();
                 for(int variant=0;variant<2;variant++){
                     if(variant==1){FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.graphs[1]=FloatPanel.LED;FloatPanel.graphs[2]=FloatPanel.NUM;FloatPanel.graphs[3]=FloatPanel.LINE;}
                     for(int f:FloatPanel.FORMS)for(int sk=0;sk<FloatPanel.skinCount();sk++)for(int n:FloatPanel.counts(f)){
-                        FloatPanel.skin=sk;FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);BufferedImage[] im=new BufferedImage[2];
+                        FloatPanel.setActiveSkin(sk);FloatPanel.count=n;int w=FloatPanel.width(f,n,1),hh=FloatPanel.height(f,n,1);BufferedImage[] im=new BufferedImage[2];
                         for(int m=0;m<2;m++){FloatPanel.layerOn=m==1;
                             for(int rep=0;rep<2;rep++){BufferedImage img=new BufferedImage(w,hh,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();   // twice: the bitmap is built, the bars have landed
                                 for(int sx=0;sx<w;sx+=10){g2.setColor(new java.awt.Color(sx/10%2==0?0x6fa86a:0xd8d2b8));g2.fillRect(sx,0,10,hh);}
@@ -283,7 +295,7 @@ public final class TabsPreview {
                             int dd=Math.max(Math.abs((c0>>16&255)-(c1>>16&255)),Math.max(Math.abs((c0>>8&255)-(c1>>8&255)),Math.abs((c0&255)-(c1&255))));worst=Math.max(worst,dd);if(dd>3)diff++;}
                         checked++;if(diff>0){if(bad++<400)why.append(" shape="+f+" look="+sk+" n="+n+" v="+variant+": "+diff+" px (worst "+worst+")");
                             if(bad<=3){ImageIO.write(im[0],"png",new File(out,"x_layer_whole_"+f+"_"+sk+"_"+n+".png"));ImageIO.write(im[1],"png",new File(out,"x_layer_split_"+f+"_"+sk+"_"+n+".png"));}}}}
-                FloatPanel.layerOn=true;System.arraycopy(keepC,0,FloatPanel.cells,0,4);System.arraycopy(keepG,0,FloatPanel.graphs,0,4);FloatPanel.skin=0;FloatPanel.count=4;
+                FloatPanel.layerOn=true;System.arraycopy(keepC,0,FloatPanel.cells,0,4);System.arraycopy(keepG,0,FloatPanel.graphs,0,4);FloatPanel.setActiveSkin(0);FloatPanel.count=4;
                 System.out.println("partial redraw: "+checked+" windows, "+bad+" differ"+why);
                 if(bad>0)throw new AssertionError("partial redraw differs from the whole drawing:"+why);}
             {   // where bars start: boost from the left end (0 bar idle, then +0.8), lateral G and steering from the middle (left turn)
@@ -291,37 +303,46 @@ public final class TabsPreview {
                 Telemetry.Sample[] ex=FloatPanel.example().clone();ex[11]=new Telemetry.Sample(-.4f,true,false,true,false,0);ex[Telemetry.STEERING]=new Telemetry.Sample(-90,true,false,true,false,0);
                 for(float bv:new float[]{-.6f,0,.8f,1.8f}){ex[Telemetry.BOOST]=new Telemetry.Sample(bv,true,false,true,false,0);
                     for(int[] v:new int[][]{{FloatPanel.ROUND,0},{FloatPanel.DIAL,0},{FloatPanel.TWIN,0},{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,2},{FloatPanel.FILLS,0}}){
-                        int f=v[0];FloatPanel.skin=v[1];int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
+                        int f=v[0];FloatPanel.setActiveSkin(v[1]);int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
                         BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                         g2.setColor(new java.awt.Color(0x2a3036));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
                         FloatPanel.drawStill(new android.graphics.Canvas(g2),f,4,1,ex,VehicleProfile.PETROL_DCT,now);
                         ImageIO.write(img,"png",new File(out,"x_float_zero_"+f+"_"+v[1]+"_"+(bv<0?"a_idle":bv==0?"b_zero":bv<1?"c_08":"d_13")+".png"));}}
                 // text against needles and rings: every shape at idle after a +1.3 bar pull (so the peaks show), in the plain and 8-bit looks
-                for(int f:FloatPanel.FORMS)for(int sk:new int[]{0,6}){FloatPanel.skin=sk;int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
+                for(int f:FloatPanel.FORMS)for(int sk:new int[]{0,6}){FloatPanel.setActiveSkin(sk);int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
                     BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                     g2.setColor(new java.awt.Color(0x2a3036));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
                     ex[Telemetry.BOOST]=new Telemetry.Sample(1.3f,true,false,true,false,0);FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(w,hh,BufferedImage.TYPE_INT_RGB).createGraphics()),f,4,1,ex,VehicleProfile.PETROL_DCT,now);
                     ex[Telemetry.BOOST]=new Telemetry.Sample(-.6f,true,false,true,false,0);FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(w,hh,BufferedImage.TYPE_INT_RGB).createGraphics()),f,4,1,ex,VehicleProfile.PETROL_DCT,now+1000);
                     FloatPanel.draw(new android.graphics.Canvas(g2),f,4,1,ex,VehicleProfile.PETROL_DCT,now+1200);   // the needles have glided to idle
                     ImageIO.write(img,"png",new File(out,"x_float_occl_"+f+"_"+sk+".png"));}
-                System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.skin=0;}
+                System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.setActiveSkin(0);}
             {   // 타이어 4개: pressure and temperature cells in the plain card, three skins, the round gauge and two layouts
                 int[] keepC=FloatPanel.cells.clone();FloatPanel.cells[0]=FloatPanel.QUAD_P;FloatPanel.cells[1]=FloatPanel.QUAD_T;
                 for(int[] v:new int[][]{{FloatPanel.CARD,0},{FloatPanel.CARD,1},{FloatPanel.CARD,6},{FloatPanel.CARD,4},{FloatPanel.ROUND,0},{FloatPanel.HERO,0},{FloatPanel.GEARBOX,1}}){
-                    int f=v[0];FloatPanel.skin=v[1];int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
+                    int f=v[0];FloatPanel.setActiveSkin(v[1]);int w=FloatPanel.width(f,4,1),hh=FloatPanel.height(f,4,1);
                     BufferedImage img=new BufferedImage(w+24,hh+24,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g2=img.createGraphics();
                     g2.setColor(new java.awt.Color(0xe2ded2));g2.fillRect(0,0,w+24,hh+24);g2.translate(12,12);
                     FloatPanel.drawStill(new android.graphics.Canvas(g2),f,4,1,model.snapshot(now),VehicleProfile.PETROL_DCT,now);
                     ImageIO.write(img,"png",new File(out,"x_float_quad_"+f+"_"+v[1]+".png"));}
-                System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.skin=0;}
+                System.arraycopy(keepC,0,FloatPanel.cells,0,4);FloatPanel.setActiveSkin(0);}
             FloatPanel.shape=FloatPanel.HERO;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_form",rec,model,now,false,false);
             rec.setFloatEdit(SettingsLayout.FORM_SHEET,0,-1,0,0);save(out,"9_settings_float_form_sheet",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
-            FloatPanel.shape=FloatPanel.GEARBOX;FloatPanel.count=2;FloatPanel.skin=1;save(out,"9_settings_float_gear2",rec,model,now,false,false);   // 단수 중심: 2 or 4, the 1 dim
+            FloatPanel.shape=FloatPanel.GEARBOX;FloatPanel.count=2;FloatPanel.setActiveSkin(1);save(out,"9_settings_float_gear2",rec,model,now,false,false);   // 단수 중심: 2 or 4, the 1 dim
             rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_look_gear2",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.count=4;FloatPanel.shape=FloatPanel.CARD;
             FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;rec.setFloatEdit(-1,0,-1,0,0);save(out,"9_settings_float_skin",rec,model,now,false,false);   // 계기판 따라 on the 레이스 screen
-            FloatPanel.skin=1;rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);FloatPanel.skin=FloatPanel.AUTO;
-            rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.skin=0;FloatPanel.screen=0;
-            FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;int fs5=FloatPanel.skinNow();FloatPanel.screen=0;int fs0=FloatPanel.skinNow();FloatPanel.skin=0;if(fs5!=1||fs0!=0)throw new AssertionError("계기판 따라: 레이스 → 레이스 스킨, 전체 조망 → 기본");
+            FloatPanel.setActiveSkin(1);rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet",rec,model,now,false,false);FloatPanel.skin=FloatPanel.AUTO;
+            rec.setFloatEdit(0,0,-1,0,1);save(out,"9_settings_float_skin_cell",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);FloatPanel.setActiveSkin(0);FloatPanel.screen=0;
+            {   // 색감 row: 자동 / 낮 / 밤 with a day look and a night look (night now: the night chip lit), 계기판 따라, round gauges, English
+                FloatPanel.skin=0;FloatPanel.skinDay=FloatSkin.WHITE;FloatPanel.skinNight=FloatSkin.CARD;String[] dns={"auto","day","night"};
+                for(int d=0;d<3;d++){FloatPanel.dn=d;save(out,"9_settings_float_dn_"+dns[d],rec,model,now,false,false);}
+                FloatPanel.dn=DayNight.AUTO;FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;save(out,"9_settings_float_dn_follow",rec,model,now,false,false);FloatPanel.skin=0;FloatPanel.screen=0;
+                FloatPanel.shape=FloatPanel.ROUND;save(out,"9_settings_float_dn_round",rec,model,now,false,false);FloatPanel.shape=FloatPanel.CARD;
+                FloatPanel.skinNight=7;com.veloster.i18n.UiText.configure("en","ko");save(out,"9_settings_float_dn_en",rec,model,now,false,false);
+                rec.setFloatEdit(SettingsLayout.SKIN_SHEET,0,-1,0,0);save(out,"9_settings_float_skin_sheet_en",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);com.veloster.i18n.UiText.configure("ko","ko");   // the longest English look: Cassette
+                FloatPanel.skinNight=FloatSkin.CARD;rec.setFloatEdit(SettingsLayout.SKIN_SHEET_DAY,0,-1,0,0);save(out,"9_settings_float_skin_sheet_day",rec,model,now,false,false);rec.setFloatEdit(-1,0,-1,0,0);
+                FloatPanel.dn=DayNight.NIGHT;FloatPanel.skinDay=FloatSkin.WHITE;FloatPanel.setActiveSkin(0);}
+            FloatPanel.skin=FloatPanel.AUTO;FloatPanel.screen=5;int fs5=FloatPanel.skinNow();FloatPanel.screen=0;int fs0=FloatPanel.skinNow();FloatPanel.setActiveSkin(0);if(fs5!=1||fs0!=0)throw new AssertionError("계기판 따라: 레이스 → 레이스 스킨, 전체 조망 → 기본");
             // this car's values only: a petrol DCT drops the DPF pair, a 6MT the DCT clutches, a diesel keeps all
             for(int gg:FloatPanel.groups(VehicleProfile.PETROL_DCT)){int[] vs=FloatPanel.group(gg,VehicleProfile.PETROL_DCT);
                 if(vs.length>SettingsLayout.S_MAX_VALUES)throw new AssertionError("float chooser: group "+gg+" has more readings than the sheet shows");

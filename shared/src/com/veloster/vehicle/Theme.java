@@ -8,7 +8,7 @@ import java.util.Arrays;
  * remap table. Semantic green / amber (ok / caution) are never remapped. No Android imports: host-tested.
  */
 public final class Theme {
-    public static final String[] IDS={"n","red","wine","copper","amber","lambo","green","emerald","teal","ice","bmw","night","purple","magenta","rose","mono"};   // the settings list order: N, then by hue, mono last
+    public static final String[] IDS={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","ice","graphite","bmw","night","purple","magenta","rose","mono"};   // the settings list order: N, then by the swatch's hue (navy's swatch is its gold accent), mono last
     public static final int SHAPE_CUT=0,SHAPE_HEX=1,SHAPE_ROUND=2;
 
     // N palette literals grouped by role (RGB only; alpha is kept from the caller).
@@ -70,6 +70,10 @@ public final class Theme {
         new Theme("emerald","EM",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x020705,0x07100c,0x1a3a2c,0x10241b,0xeafff5,0x80a596,0x12c48a,0x073322,0xf2c94c}),
         new Theme("magenta","MG",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x080308,0x110811,0x3c1a3a,0x261124,0xfff0fc,0xa98aa6,0xff4fd8,0x3a0f36,0xff7a59}),
         new Theme("purple","PU",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x060409,0x0d0912,0x2e2340,0x1c1528,0xf4eeff,0x968aa8,0xb072ff,0x26143f,0xe04fd8}),
+        new Theme("graphite","GP",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x060607,0x0d0e10,0x2c2f33,0x1b1d20,0xf2f3f5,0x8a8f96,0x9fb4c8,0x1a222b,0xd98a5a}),
+        new Theme("champagne","CH",SHAPE_ROUND,0,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x070605,0x0e0c0a,0x38322a,0x221e19,0xfaf4ea,0xa39a8a,0xd9c08f,0x2e2616,0xc98a5a}),
+        new Theme("navy","NV",SHAPE_ROUND,0,false,false,0xffff3b30,0xff000000,new int[]{0x03060c,0x060a12,0x0b111c,0x25324a,0x162033,0xeef2f8,0x8793a8,0xd4b56a,0x16233c,0x6f9be8}),
+        new Theme("sage","SG",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x040605,0x0a0d0b,0x2a332d,0x18201b,0xf0f5f1,0x8b978f,0x9dbfa6,0x18281e,0xd9b36a}),
     };
     private static volatile Theme current=ALL[0];
     /** Drive-mode accent (option): ECO green, SPORT red-orange over any theme's accent; 0 = the theme's own. */

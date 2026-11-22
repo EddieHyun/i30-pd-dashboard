@@ -59,6 +59,9 @@ final class FloatMusic {
             case FloatSkin.PIXEL:sInk=0xffffffff;sMut=0xffffd84a;sAcc=0xff3ddc5a;sTrack=0xff2a2a2a;return;
             case FloatSkin.VU:sInk=0xff3a3226;sMut=0xff6b5f4a;sAcc=0xffc8302a;sTrack=0x403a3226;sBar=0;return;   // dark ink on the ivory plate
             case FloatSkin.NIGHT:sInk=0xffc5ccd0;sMut=0xff8a959a;sAcc=acc;sTrack=0xff2b3134;sFace=Typeface.DEFAULT;sPad=false;sBar=2;return;
+            case FloatSkin.CARD:sInk=0xffffffff;sMut=0xff98989f;sAcc=acc;sTrack=0xff3a3a3c;sFace=Typeface.DEFAULT;sPad=false;sBar=0;return;
+            case FloatSkin.WHITE:sInk=0xff1c1c1e;sMut=0xff6e6e73;sAcc=0xff1677e5;sTrack=0xffdcdce0;sFace=Typeface.DEFAULT;sPad=false;sBar=0;return;
+            case FloatSkin.OEM:sInk=0xffffffff;sMut=0xff8b9197;sAcc=0xff2f7fe0;sTrack=0xff23272b;sFace=Typeface.DEFAULT;sBar=1;return;
             default:sInk=FloatPanel.TXT;sMut=FloatPanel.MUT;sAcc=FloatPanel.ACC;sTrack=FloatPanel.TRACK;sPad=false;sBar=0;
         }
     }
@@ -128,7 +131,7 @@ final class FloatMusic {
         say(c,gear,right,(n<2?h-12*k:h-30*k),18*k,sAcc,Paint.Align.RIGHT,sFace);
         float side=width(gear,18*k,sFace);
         for(int j=Math.min(n,2)-1;j>=0;j--){int sig=sigs[j];float v=FloatPanel.value(q,sig);if(rec)FloatPanel.record(first+j,sig,v,now);
-            int f=FloatPanel.fmt(sig),lv=Tiles.level(f,v),col=lv==2?0xffff4b3c:lv==1?0xffffaa3c:sInk;
+            int f=FloatPanel.fmt(sig),lv=Tiles.level(f,v),col=FloatSkin.warn(lv,sInk,FloatSkin.light(FloatPanel.skinNow()));
             String val=FloatPanel.valText(q,sig,v),unit=Telemetry.UNITS[f]==null?"":Telemetry.UNITS[f];
             if(j==0){say(c,FloatPanel.label(sig),x,76*k,10*k,sMut,Paint.Align.LEFT,sFace);
                 // 26 down to 14 until value and unit end 8 short of the right column: -0.65 bar beside 1561 rpm ran into it
