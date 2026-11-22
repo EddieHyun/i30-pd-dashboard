@@ -105,8 +105,10 @@
 
 MIT. 원작의 저작권 표시를 함께 담았습니다. 출처, 상표, 이 레포에 넣지 않은 것은 [`NOTICE.md`](NOTICE.md)를 보세요.
 
+**출처 표기 부탁**: 이 레포를 포크하거나 코드 · 화면을 가져다 쓸 때는 원작 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)와 i30 PD 포팅 [sung9155/i30-pd-dashboard](https://github.com/sung9155/i30-pd-dashboard)를 함께 밝혀 주세요(README, 배포 노트, 앱 정보 화면처럼 보이는 곳에). [`LICENSE`](LICENSE)의 두 저작권 표시는 MIT 조건이라 지우면 안 됩니다.
+
 ---
 
 ## English
 
-A live vehicle-data dashboard for the Hyundai i30 PD factory head unit (D-Audio Plus), ported from [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard); this repository is a fork of it with the port as commits on top. It only reads the data the head unit already receives and never writes to the car. Not an official Hyundai app; install at your own risk. Install steps (Korean): [`INSTALL.md`](INSTALL.md). Signal decoding notes: [`i30pd_port/HSCAN_DECODE.md`](i30pd_port/HSCAN_DECODE.md). License: MIT, see [`NOTICE.md`](NOTICE.md).
+A live vehicle-data dashboard for the Hyundai i30 PD factory head unit (D-Audio Plus), ported from [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard); this repository is a fork of it with the port as commits on top. It only reads the data the head unit already receives and never writes to the car. Not an official Hyundai app; install at your own risk. Install steps (Korean): [`INSTALL.md`](INSTALL.md). Signal decoding notes: [`i30pd_port/HSCAN_DECODE.md`](i30pd_port/HSCAN_DECODE.md). License: MIT, see [`NOTICE.md`](NOTICE.md). If you fork or reuse it, please credit both [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard) and [sung9155/i30-pd-dashboard](https://github.com/sung9155/i30-pd-dashboard) where people can see it, and keep both copyright lines in [`LICENSE`](LICENSE) (an MIT condition).

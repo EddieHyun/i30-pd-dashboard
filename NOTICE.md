@@ -2,7 +2,11 @@
 
 ## 원작
 
-이 프로젝트는 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)(`2be141b`, MIT, Copyright (c) 2026 Veloster N Dashboard contributors)의 포크이고, 그 위에 i30 PD 포팅을 커밋으로 쌓았습니다. 원작 코드와 원작의 권리 고지([`NOTICE_veloster.md`](NOTICE_veloster.md))는 그대로 두었습니다. Releases의 APK는 이 레포의 소스를 빌드한 것입니다. 두 저작권 표시는 [`LICENSE`](LICENSE)에 있습니다.
+이 프로젝트는 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)(`2be141b`, MIT, Copyright (c) 2026 Veloster N Dashboard contributors)의 포크이고, 그 위에 i30 PD 포팅을 커밋으로 쌓았습니다. 원작 코드와 원작의 권리 고지([`NOTICE_veloster.md`](NOTICE_veloster.md))는 그대로 두었습니다. Releases의 APK는 이 레포의 소스를 빌드한 것입니다. 두 저작권 표시(원작, i30 PD 포팅 sung9155)는 [`LICENSE`](LICENSE)에 있습니다.
+
+## 출처 표기 부탁
+
+이 레포를 포크하거나 코드 · 화면 · 문서를 가져다 쓸 때는 원작 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)와 i30 PD 포팅 [sung9155/i30-pd-dashboard](https://github.com/sung9155/i30-pd-dashboard)를 함께 밝혀 주세요. README, 배포 노트, 앱의 정보 화면처럼 사람들이 보는 곳이면 됩니다. [`LICENSE`](LICENSE)의 두 저작권 표시와 허가 문구는 MIT의 조건이라 사본에 그대로 두어야 합니다.
 
 ## 신호 정의
 
