@@ -1419,5 +1419,7 @@
   "전에 쓰던 화면 배치 · 테마 · 플로팅 창 설정입니다. %s 저장": "Earlier screens, theme, floating window. Saved %s",
   "설정 되돌리기": "Restore settings",
   "새로 시작": "Start fresh",
-  "저장해 둔 설정을 읽지 못했습니다.": "Could not read the saved settings."
+  "저장해 둔 설정을 읽지 못했습니다.": "Could not read the saved settings.",
+  "i30 PD 포팅": "i30 PD port",
+  "원작": "Original"
 }

@@ -166,6 +166,7 @@ public final class UiText {
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
         EN.put("e-LSD 수치","e-LSD value");
+        EN.put("i30 PD 포팅","i30 PD port");
         EN.put("Λ RPM·속도계","Λ rpm and speed");
         EN.put("− / + 로 조절 · 한 번 들려줌","Adjust with − / + · plays it once");
         EN.put("−1분","-1 min");
@@ -969,6 +970,7 @@ public final class UiText {
         EN.put("원 / 분"," won/min");
         EN.put("원/L"," won/L");
         EN.put("원래 화면","Previous screen");
+        EN.put("원작","Original");
         EN.put("원형","Dial");
         EN.put("원형 RPM·다운시프트","Round rpm · downshift");
         EN.put("원형 게이지","Round gauges");

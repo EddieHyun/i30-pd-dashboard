@@ -363,6 +363,9 @@ public final class PitRenderer {
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.FX||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
         }
         if(paneScroll){c.restore();drawScrollHint(c,settingsScroll,SettingsLayout.maxPaneScroll(cat));}
+        if(cat==SettingsLayout.DIAG){   // who made it, under the rows: an APK passed on alone carries no README or LICENSE
+            float y=SettingsLayout.top(cat,SettingsLayout.count(cat)-1)+SettingsLayout.itemH(cat)+20;
+            fitted(c,UiText.t("i30 PD 포팅")+" · sung9155 · github.com/sung9155/i30-pd-dashboard   "+UiText.t("원작")+" · reikop/veloster-n-dashboard",SettingsLayout.PANE_L+6,y,11,SettingsLayout.PANE_R-SettingsLayout.PANE_L-12,MUTED);}
     }
     // --- 플로팅 pane: preview, switches, button rows, and the cell chooser sheet ---
     private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph,floatEditTab;
