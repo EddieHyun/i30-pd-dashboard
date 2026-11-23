@@ -443,6 +443,10 @@ public final class Telemetry {
         // A clear event alone cannot resurrect a previously received gear.
     }
     public synchronized void additional(byte[] b,long now) {
+        // On a PD, hscan gives gear, pedal, brake and steering. The NAdd reply only comes when an N-mode app asks
+        // (the stock one does every 2 s) and is 41 bytes, which the code below takes as "no data": it blanked the gear
+        // each time, so the gear flipped between 1 and D.
+        if(now-pdCoolantAt<3000)return;
         pressures(b,now);
         if(b==null || (b.length!=19 && b.length!=40)) {
             for(int i=8;i<=10;i++)put(i,0,false,now);
@@ -576,7 +580,7 @@ public final class Telemetry {
             // 63.8 -> 85.5 C over 15 min, 80-85 C driving (this byte was earlier misread as door lock).
             // PV_AV_CAN @48|8 *0.3906 % accelerator pedal: 0-58 % driving, r=0.90 with EMS11 TQI.
             int coolant=b[1]&255,pedal=b[6]&255;
-            put(2,coolant*0.75f-48,coolant>0&&coolant<255,now);
+            put(2,coolant*0.75f-48,coolant>0&&coolant<255,now);pdCoolantAt=now;
             // BRAKE_ACT @32|2: 1 released, 2 pressed. The engine ECU's brake-light switch, on every PD: our car 99.7 % with
             // TCS13 DriverBraking over a 10-min drive; a diesel DCT (three drives 2026-11-05, DriverBraking always 0)
             // 100 % of samples over 5 bar and 96-97 % of those under 2 bar.
@@ -765,7 +769,12 @@ public final class Telemetry {
         }
         if(!ptValid)invalidateComputed(now);
     }
+    /** When EMS12 last gave the coolant (a PD): the stock N-mode oil / coolant and NAdd replies are then left out. */
+    private long pdCoolantAt=Long.MIN_VALUE/2;
     public synchronized void temperatures(byte[] b, long now) {
+        // On a PD it is no reading: oil byte 00 (no sensor) would show -40 °C and its coolant byte does not match EMS12
+        // (0xA2 = 74 °C by the formula below while EMS12 read ~98). It only arrives when an N-mode app asks for it.
+        if(now-pdCoolantAt<3000)return;
         for(int i=0;i<2;i++) {
             int raw=b!=null && b.length>=2 ? b[i]&255 : 255;
             // OEM onOilCoolantTemperatureBitMasking explicitly rejects 0xff.
