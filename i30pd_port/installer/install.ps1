@@ -17,10 +17,13 @@
               @@STEP <제목>  @@WAIT <초> <안내>  @@ASK <질문>(표준 입력에서 y/n 한 줄을 읽음)  @@FILE <경로>  @@DONE ok|fail <내용>
               새 설치기는 창의 [업데이트]가 맡는다: -CheckUpdate(더 새것이면 '@@UPDATE <버전>' 한 줄) · -Gui -Update(묻지 않고 바꾼 뒤
               '@@OPEN <새 창 설치기.cmd>'). -Gui일 때 시작할 때의 새 설치기 확인은 건너뛴다.
+  로컬 빌드: -LocalBuild(이 저장소의 build\apk — docker\build.ps1이 만든 APK를 설치)  -ApkDir <폴더>(그 폴더의 APK를 설치)
+              둘 다 인터넷을 쓰지 않는다: 릴리스 정보·새 설치기 확인·APK 내려받기를 하지 않고, 폴더에 있는 APK만 설치한다.
 #>
 param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag,
       [switch]$BootFast, [switch]$BootFastRemove, [string]$JavaPath, [string]$ToolDir,
-      [switch]$Gui, [switch]$CheckUpdate, [switch]$Update)
+      [switch]$Gui, [switch]$CheckUpdate, [switch]$Update,
+      [switch]$LocalBuild, [string]$ApkDir)
 
 # 'Continue' (not 'Stop'): adb writes its progress to stderr, and under 'Stop' a native
 # command's stderr turns into a terminating error (NativeCommandError) that aborts the
@@ -103,6 +106,10 @@ $BootTools = @(
 $JreUrl = 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.21.1%2B2/OpenJDK17U-jre_x64_windows_hotspot_17.0.21.1_2.zip'
 $JreSha = '739d8f2fd286dc2736d55cc8c9260980baefd275ad48cda242335bb0f08e0795'
 $BuilderJar = 'i30pd-consent-fast.jar'
+# 로컬 빌드 설치(-LocalBuild / -ApkDir): APK는 그 폴더에서만 가져오고 인터넷은 쓰지 않는다. -LocalBuild의 폴더는 저장소의 build\apk
+# (이 파일은 <저장소>\i30pd_port\installer 에 있다). 릴리스 ZIP처럼 저장소 밖에서 실행하면 그 폴더가 없어 안내하고 끝낸다.
+# (스위치 이름이 -Local이면 안 된다: 아래 APK 준비의 $local 변수와 같은 이름이 되어 대입이 실패한다.)
+if($LocalBuild -and -not $ApkDir){ $ApkDir = Join-Path (Split-Path -Parent (Split-Path -Parent $ROOT)) 'build\apk' }
 # 차에 깔린 두 앱의 버전 한 줄. 1.5-i18n = 릴리스 이름을 넣기 전(v1.16.0까지)의 대시보드.
 function Versions {
   ($Apps | ForEach-Object {
@@ -197,6 +204,7 @@ Note "기록: $Log" DarkGray
 # 다시 시작한다. 인터넷이 없거나 무엇이든 틀리면 지금 설치기로 계속한다(platform-tools·APK 등 다른 파일은 건드리지 않는다).
 function SelfUpdate(){
   if($env:I30PD_UPDATED){ return }   # 방금 바꿔 다시 시작한 것
+  if($ApkDir -and -not $Update -and -not $CheckUpdate){ return }   # 로컬 빌드: 인터넷을 쓰지 않는다
   if($Gui -and -not $Update){ return }   # 창 설치기: 창의 [업데이트] 단추가 맡는다
   # 창의 [업데이트](-Update): 무엇이든 틀리면 멈춰 창에 알린다. 창이 뜰 때의 확인(-CheckUpdate): 조용히 끝낸다.
   function Skip($m){ if($Update){ Die $m 2 }; if($CheckUpdate){ exit 0 } }
@@ -268,6 +276,7 @@ if(-not $script:adbExe){
 }
 if(-not $script:adbExe){
   Note 'adb(platform-tools)가 없습니다.' Gray
+  if($ApkDir){ Note "  인터넷 없이 쓰려면 미리 받아 둔 platform-tools 폴더를 설치.cmd 옆($ROOT)에 두세요. 지금 받으려면 인터넷이 필요합니다." Yellow }
   if(-not (Ask 'Google 공식 주소에서 받을까요?')){ Die 'adb가 없어 중단합니다.' 2 }
   $zip = Join-Path $LogDir 'platform-tools.zip'
   Note '내려받는 중...' Gray
@@ -319,7 +328,8 @@ function ShowNotes($rel,[string]$url){
 }
 
 # --- 버전 고르기 (-ApkBase 를 주면 그 주소를 그대로 쓴다) ---------------------
-if(-not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove -and -not $ApkBase){
+if($ApkDir -and -not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove){ Note "버전: 로컬 빌드 — $ApkDir 의 APK를 설치합니다 (인터넷을 쓰지 않습니다)" Green }
+if(-not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove -and -not $ApkBase -and -not $ApkDir){
   $Rel = @{ stable = (ReleaseInfo 'latest' $false); test = (ReleaseInfo 'tags/test' $true) }
   if($Channel -ne 'stable' -and $Channel -ne 'test'){
     if($Yes -or $Gui){ $Channel = 'stable' } else {
@@ -344,7 +354,23 @@ if(-not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
 $NoApps = $Uninstall -or $Diag -or $BootFast -or $BootFastRemove   # these modes install no app
 if(-not $NoApps){ Head '0) 앱 파일 준비' }
-foreach($app in $(if($NoApps){ @() } else { $Apps })){
+# 로컬 빌드: 폴더에 있는 APK만 설치한다(대시보드만 빌드했으면 대시보드만). 내려받지 않는다. 파일마다 빌드 시각을 보여 준다:
+# build\apk에는 지난 빌드의 파일이 남아 있을 수 있다.
+if($ApkDir -and -not $NoApps){
+  foreach($app in $Apps){
+    $local = Join-Path $ApkDir $app.apk
+    $ok=$false; if(Test-Path -LiteralPath $local -PathType Leaf){ $fs=[IO.File]::OpenRead($local); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
+    if(-not $ok){ Note "$($app.apk): $(if(Test-Path -LiteralPath $local){ 'APK가 아닌 파일' } else { '폴더에 없음' }) — 이 앱은 설치하지 않습니다." Yellow; continue }
+    $f = Get-Item -LiteralPath $local
+    $app | Add-Member -NotePropertyName path -NotePropertyValue $local -Force
+    Note ("{0}: 이 PC에서 빌드한 파일을 씁니다 ({1} KB, {2:yyyy-MM-dd HH:mm} 빌드)" -f $app.apk, [math]::Round($f.Length/1KB), $f.LastWriteTime) Yellow
+  }
+  if(-not @($Apps | Where-Object { $_.path }).Count){
+    Die ("설치할 APK가 없습니다: $ApkDir`n" +
+         "먼저 저장소 폴더에서  .\docker\build.ps1  로 빌드하세요(build\apk 에 APK 두 개가 생깁니다). 다른 폴더의 APK는  -ApkDir <폴더>  로 지정합니다.") 2
+  }
+}
+foreach($app in $(if($NoApps -or $ApkDir){ @() } else { $Apps })){
   $local = Join-Path $ROOT $app.apk
   # 브라우저로 받은 GitHub 페이지(HTML)가 .apk 이름으로 저장된 경우가 있어, 'PK'로 시작할 때만 폴더 것을 쓴다.
   $ok=$false; if(Test-Path $local){ $fs=[IO.File]::OpenRead($local); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
@@ -691,7 +717,7 @@ Head '4) 앱 설치'
 # adb install 대신 ① 전송(push) ② 설치(pm install) 두 단계로 나눠, 멈추면 USB 쪽인지 내비 쪽인지 바로 갈린다.
 $pushHint = 'USB로 파일을 보내다 멈췄습니다. 케이블·노트북 포트(USB 2.0 권장)를 바꾸고 Factory Test부터 다시 한 뒤 실행하세요.'
 $pmHint = '내비가 설치를 끝내지 않았습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
-foreach($app in $Apps){
+foreach($app in @($Apps | Where-Object { $_.path })){   # 로컬 빌드는 폴더에 있던 APK만
   $apk = $app.path; $remote = "/data/local/tmp/$($app.apk)"
   # 내비는 설치한 APK를 바이트 그대로 보관한다: 받아 와서 같으면 같은 버전이니 건너뛴다.
   $pp = ((Adb '-s' $serial 'shell' 'pm' 'path' $app.pkg) -replace '\s','') -replace '^package:',''

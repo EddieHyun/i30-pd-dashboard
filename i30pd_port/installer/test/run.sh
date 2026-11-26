@@ -142,4 +142,16 @@ if [ $WHO = win ] && command -v powershell.exe >/dev/null; then   # the window's
 fi
 echo "OK[$WHO]: window update (tampered refused, check, quiet when current, replace + open, already current)"
 SCRIPT=; rm -rf "$F/kit" "$R" "$F/gui.txt"
+# a local build (docker/build.ps1 -> build/apk; here -ApkDir): only the APKs in that folder are installed, nothing is fetched
+# (no -ApkBase, and the fake release folder is gone by now: a download or a release lookup would show in the output);
+# an empty folder ends with the build hint
+if [ $WHO = win ]; then
+  reset; apks; L="$F/local"; rm -rf "$L"; mkdir -p "$L"; cp "$SRV/dashboard-i30pd-platform.apk" "$L/"
+  run -ApkDir "$(cygpath -w "$L")"
+  [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)" = 1 ] && grep -q 'dashboard-i30pd-platform.apk: 이 PC에서 빌드한 파일' $F/out.txt     && grep -q 'myapps-i30pd-platform.apk: 폴더에 없음' $F/out.txt && ! grep -qE '내려받|새 설치기|버전 정보를 받지' $F/out.txt || fail "L1 local build"
+  rm -f "$L"/*.apk; run -ApkDir "$(cygpath -w "$L")"
+  [ "$(cat $F/rc)" != 0 ] && ! grep -qE 'pm install|push' $F/calls.log && grep -q 'build.ps1' $F/out.txt || fail "L2 local build with no APK"
+  rm -rf "$L"
+  echo "OK[$WHO]: local build (the folder's APKs only, nothing fetched; empty folder stops)"
+fi
 echo "OK[$WHO]: install, skip identical, new release, diag (masked, read only), uninstall + ☆, self-update (same, offline, other channel, tampered, newer)"
