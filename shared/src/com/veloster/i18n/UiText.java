@@ -347,6 +347,7 @@ public final class UiText {
         EN.put("냉각수온 센서 범위·성능 이상","Coolant temperature sensor range/performance");
         EN.put("냉각수온 센서 회로 낮음","Coolant temperature sensor circuit low");
         EN.put("냉각수온 센서 회로 높음","Coolant temperature sensor circuit high");
+        EN.put("네온","Neon");
         EN.put("네이비","Navy");
         EN.put("네트워크 통신","Network communication");
         EN.put("노크 센서 감지 시스템(KSDS) 경고 — 엔진 베어링 손상 의심, 즉시 점검 권장","Knock sensor detection system (KSDS) warning — engine bearing damage suspected, immediate inspection recommended");
@@ -379,6 +380,7 @@ public final class UiText {
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
         EN.put("다이아 커팅","Diamond cut");
+        EN.put("다이얼","Dial");
         EN.put("단","gear");
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("단선","Open circuit");
@@ -457,6 +459,7 @@ public final class UiText {
         EN.put("디자인","Design");
         EN.put("디젤","Diesel");
         EN.put("디젤 DPF","Diesel DPF");
+        EN.put("디지털","Digital");
         EN.put("디지털 3틱","Digital 3 ticks");
         EN.put("딩","Ding");
         EN.put("라바 오렌지","Lava Orange");
@@ -501,6 +504,7 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
+        EN.put("미니멀","Minimal");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
@@ -643,6 +647,7 @@ public final class UiText {
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
         EN.put("사운드","Sound");
+        EN.put("사이버펑크 네온","Cyberpunk neon");
         EN.put("삭제하는 중","Removing");
         EN.put("산소센서 신호 농후 쪽 고착 (촉매 앞)","Oxygen sensor signal stuck rich (before catalyst)");
         EN.put("산소센서 신호 없음 (촉매 뒤)","Oxygen sensor no signal (after catalyst)");
@@ -752,6 +757,7 @@ public final class UiText {
         EN.put("시스템","System");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
+        EN.put("신스웨이브","Synthwave");
         EN.put("신호 계산 오류","Signal calculation error");
         EN.put("신호 낮게 고착","Signal stuck low");
         EN.put("신호 높게 고착","Signal stuck high");
@@ -777,11 +783,13 @@ public final class UiText {
         EN.put("실행 실패: ","Launch failed: ");
         EN.put("심야 %s시 최대 %d%%","Night %s h up to %d%%");
         EN.put("심야 할증 ","Night surcharge ");
+        EN.put("아날로그","Analog");
         EN.put("아래 띠","Bottom strip");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아주 크게","Extra large");
         EN.put("아케이드","Arcade");
+        EN.put("아크","Arc");
         EN.put("안내 때 멈추기","Stop for prompts");
         EN.put("안내 때 줄이기","Lower for prompts");
         EN.put("안내·통화 양보","Give way to prompts and calls");
@@ -1291,6 +1299,7 @@ public final class UiText {
         EN.put("크랭크 위치 센서 회로 이상","Crankshaft position sensor circuit malfunction");
         EN.put("크랭크-배기 캠 위치 상관관계 이상","Crankshaft / exhaust camshaft position correlation fault");
         EN.put("크랭크-흡기 캠 위치 상관관계 이상","Crankshaft / intake camshaft position correlation fault");
+        EN.put("크롬 원형 바늘","Chrome round needles");
         EN.put("큰 값 + 목록","Big + list");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
