@@ -518,6 +518,24 @@ public final class TabsPreview {
              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),pf,now+i*1000,null);
              ImageIO.write(img,"png",new File(out,tcn[i]+".png"));}
         }
+        {   // 아날로그, 신스웨이브 (the screens after RPM): the replay, no data, every dial look, the shift-point glitch
+         String[] mn={"9t_cluster_analog","9u_cluster_neon"};
+         for(int i=0;i<2;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}
+         for(int i=0;i<2;i++){PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(PitRenderer.PAGE_TACHO+1+i);save(out,mn[i]+"_nodata",e,new Telemetry(),now,false,false);}
+         int[] ix={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU};
+         for(int s=0;s<AnalogCluster.STYLE_NAMES.length;s++){AnalogCluster.style=s;AnalogCluster k=new AnalogCluster();BufferedImage img=null;
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{96,4300,4,55,0,0,0,0,90,0.8f,98});
+              for(int f=0;f<40;f++){img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+                  new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+f*50L,null);}
+              ImageIO.write(img,"png",new File(out,"9t_analog_style"+s+".png"));}
+         AnalogCluster.style=0;
+         for(int n=0;n<2;n++){NeonCluster k=new NeonCluster();k.shiftTarget=6000;
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{118,n==0?5700:6050,3,100,0,0.1f,0.4f,4,n==0?96:116,1.3f,104});
+              BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+n*70,null);
+              ImageIO.write(img,"png",new File(out,n==0?"9u_neon_glitch.png":"9u_neon_hot.png"));}
+         rec.setPage(PitRenderer.PAGE_CLASSIC);
+        }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
         float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};
         for(int k=0;k<ds.length;k++){Telemetry.Sample[] q=model.snapshot(now);float[] d=ds[k];
@@ -615,4 +633,5 @@ public final class TabsPreview {
         q[9]=new Telemetry.Sample(r[2],true,false,true,false,0);q[0]=new Telemetry.Sample(r[0]<3?780:900+r[0]*28,true,false,true,false,0);
         q[8]=new Telemetry.Sample(r[0]<3?0:r[0]<18?1:r[0]<30?2:r[0]<45?3:r[0]<60?4:5,true,false,true,false,0);
         q[Telemetry.DPF_REGEN]=new Telemetry.Sample(regen?1:0,true,false,true,false,0);return q;}
+    private static Telemetry.Sample[] with(Telemetry m,long now,int[] idx,float[] val){Telemetry.Sample[] q=m.snapshot(now);for(int i=0;i<idx.length;i++)q[idx[i]]=new Telemetry.Sample(val[i],true,false,true,false,0);return q;}
 }
