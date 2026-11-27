@@ -6,15 +6,15 @@ package com.veloster.vehicle;
  */
 public final class SettingsLayout {
     /** Category order = the column top to bottom, in groups (a GROUP_GAP before each of GROUP_STARTS): 화면 · 주행 모드 · 플로팅 |
-     *  테마 · 차량 색 · 언어 | RPM · 엔진 사운드 · 효과음 | 진단 | 완료. */
-    public static final int SCREENS=0,MODE=1,FLOAT=2,THEME=3,PAINT=4,LANG=5,RPM=6,SOUND=7,FX=8,DIAG=9,DONE=10;
+     *  테마 · 차량 색 · 언어 · 글꼴 | RPM · 엔진 사운드 · 효과음 | 진단 | 완료. */
+    public static final int SCREENS=0,MODE=1,FLOAT=2,THEME=3,PAINT=4,LANG=5,FONT=6,RPM=7,SOUND=8,FX=9,DIAG=10,DONE=11;
     public static final int[] GROUP_STARTS={THEME,RPM,DIAG,DONE};
     /** 플로팅 pane (its own layout, see the float* methods below): a preview of the window top left (a tap on a cell
      *  opens that cell's chooser), the on switch, 내 앱 button hiding and the chosen cell top right, then one row of
      *  buttons each for the shape, cell count and size, corners and colours. Every button sets its value directly. */
     public static final int FLOAT_STYLE=0,FLOAT_COUNT=1,FLOAT_SIZE=2,FLOAT_HIDE=3,FLOAT_CELL=4;
     /** Not a category: the screen chooser a mode row opens (every screen, then 원래 화면), under a title line. */
-    public static final int PICK=11;
+    public static final int PICK=12;
     /** RPM pane rows: RPM_SHIFT/RPM_RED and RPM_BEEP_VOL have − and + at the right (screenZone 1 and 2), the rest of the
      *  row resets it; RPM_BEEP is an on/off switch (the optional shift beep, ShiftBeep), RPM_BEEP_SOUND cycles its sound,
      *  RPM_BEEP_VOL is the beep volume in percent (the downshift sounds too). RPM_DOWN_SCOPE cycles DOWN_SCOPES, the
@@ -69,15 +69,17 @@ public final class SettingsLayout {
     /** Mode pane rows: the two switches, then one row per ClusterPicker.MODES. */
     public static final int MODE_COLOR=0,MODE_SCREEN=1,MODE_FIRST=2;
     public static final float TITLE_H=30;
-    public static final String[] CATS={"화면","주행 모드","플로팅","테마","차량 색","언어","RPM","엔진 사운드","효과음","진단","완료"};
+    public static final String[] CATS={"화면","주행 모드","플로팅","테마","차량 색","언어","글꼴","RPM","엔진 사운드","효과음","진단","완료"};
     /** 차량 색 tiles by colour family, four to a family (two rows of the 2-column grid): white, silver, grey, black | the blues |
      *  red, orange, copper, brown | khaki, purple. Values are CarPaint indexes (its order stays: saved ids and the Arcade cars use it). */
+    /** 차량 색 tiles after the paints: the 8-bit sky, 넓은 번호판 (3D), 좁은 번호판 (pixel cars). */
+    public static final int PAINT_SKY=CarPaint.IDS.length,PAINT_WIDE_PLATE=PAINT_SKY+1,PAINT_NARROW_PLATE=PAINT_SKY+2;
     public static final int[] PAINT_ORDER={1,10,4,3, 0,9,7,5, 2,8,11,6, 13,12};
     /** Display names for Theme.IDS, in that order. */
     public static final String[] THEME_NAMES={"N","레드","와인","코퍼","앰버","샴페인","네이비","람보","그린","세이지","에메랄드","틸","네온","아이스","그라파이트","BMW","나이트","퍼플","마젠타","로즈","모노"};
     /** Language choices (LanguageSettings ids) and their names. */
     public static final String[] LANGS={"auto","ko","en"},LANG_NAMES={"시스템","한국어","English"};
-    public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=33,CAT_GAP=2,GROUP_GAP=6,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;
+    public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=31,CAT_GAP=2,GROUP_GAP=4,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;
     private SettingsLayout(){}
 
     public static float catTop(int i){int g=0;for(int s:GROUP_STARTS)if(i>=s)g++;return TOP+i*(CAT_H+CAT_GAP)+g*GROUP_GAP;}
@@ -90,18 +92,19 @@ public final class SettingsLayout {
 
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
-        switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
+        switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return PAINT_NARROW_PLATE+1;   // after the paints: the 8-bit sky (Weather), then the two plates
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 7;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
-    public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME?3:cat==PAINT?2:1;}
+    public static int cols(int cat){return cat==SCREENS?4:cat==PICK?5:cat==THEME?3:cat==PAINT?2:1;}   // PICK: 33 choices since 내 차 / 네온 드라이브
     private static float paneTop(int cat){return cat==PICK?TOP+TITLE_H:TOP;}
     private static int rows(int cat){return (count(cat)+cols(cat)-1)/cols(cat);}
     public static float itemW(int cat){int n=cols(cat);return (PANE_R-PANE_L-GAP*(n-1))/n;}
     /** The 사운드 and RPM panes (the − / + rows) keep a fixed, comfortably tappable row and scroll when the rows overflow; every other pane fits its rows to the height. */
     public static final float SOUND_ROW_H=56;
     public static boolean rowScroll(int cat){return cat==SOUND||cat==RPM;}
-    public static float itemH(int cat){if(rowScroll(cat))return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
+    public static float itemH(int cat){if(rowScroll(cat))return SOUND_ROW_H;int r=Math.max(1,rows(cat));float b=cat==DIAG?BOTTOM-22:BOTTOM;   // 진단 keeps a line under its rows for the credit
+        return Math.min(MAX_ITEM_H,(b-paneTop(cat)-GAP*(r-1))/r);}
     public static float left(int cat,int i){return PANE_L+(i%cols(cat))*(itemW(cat)+GAP);}
     public static float top(int cat,int i){return paneTop(cat)+(i/cols(cat))*(itemH(cat)+GAP);}
     /** How far a pane can scroll (0 = it fits). The 화면 list and the 사운드 pane overflow; the rest fit. */
@@ -148,6 +151,23 @@ public final class SettingsLayout {
         if(x>=upBtnL()&&x<upBtnL()+SBTN_W)return 1;
         if(x>=downBtnL()&&x<downBtnL()+SBTN_W)return 2;
         return 0;
+    }
+    // --- 글꼴 pane (FontManager, its own layout like 플로팅): the font list on the left, FONT_ROWS rows a page with ▲ ▼ and
+    //     새로고침 under it; the preview, the state box and 적용 / 재부팅 on the right ---
+    public static final int FONT_ROWS=6,FONT_UP=1,FONT_DOWN=2,FONT_SCAN=3,FONT_APPLY=4,FONT_REBOOT=5,FONT_PICK=10;
+    public static final float FL_R=470,FL_ROW_H=46,FL_STEP=50,FB_T=364,FB_H=44,FP_L=482,FP_B=296,FS_T=304,FS_B=404,FA_T=414,FA_H=50,FA_SPLIT=640;
+    public static float fontRow(int i){return TOP+2+i*FL_STEP;}
+    /** The box of a 글꼴 target ({l, t, r, b}): FONT_PICK + i is the i-th row shown. */
+    public static float[] fontBox(int t){
+        switch(t){case FONT_UP:return new float[]{PANE_L,FB_T,PANE_L+58,FB_T+FB_H};case FONT_DOWN:return new float[]{PANE_L+64,FB_T,PANE_L+122,FB_T+FB_H};
+            case FONT_SCAN:return new float[]{PANE_L+128,FB_T,FL_R,FB_T+FB_H};
+            case FONT_APPLY:return new float[]{FP_L,FA_T,FA_SPLIT-4,FA_T+FA_H};case FONT_REBOOT:return new float[]{FA_SPLIT+4,FA_T,PANE_R,FA_T+FA_H};}
+        int i=t-FONT_PICK;return i>=0&&i<FONT_ROWS?new float[]{PANE_L,fontRow(i),FL_R,fontRow(i)+FL_ROW_H}:null;
+    }
+    /** The 글꼴 target under x,y, or -1. */
+    public static int fontHit(float x,float y){
+        for(int t=FONT_UP;t<FONT_PICK+FONT_ROWS;t++){float[] b=fontBox(t);if(b!=null&&in(b,x,y))return t;}
+        return -1;
     }
     // --- 플로팅 pane ---
     /** The preview well (the window drawn as large as fits, up to twice its real size), its caption below it. */

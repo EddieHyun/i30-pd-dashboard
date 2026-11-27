@@ -47,7 +47,31 @@ public final class VehicleDash extends View implements Runnable {
     private int lastMode=-1,modeBack=-1;
     /** Settings category open on the left of the gear's settings (SettingsLayout). */
     private int settingsCat=SettingsLayout.SCREENS;
-    private int[] order=ClusterPicker.naturalOrder();   // display order of the screens (header tabs, swipe, settings list)
+    // ---- 진단 → USB 디버깅: '내 앱''s switch (UsbDebugControl) in the dashboard, and the start-up option (BootReceiver) ----
+    private long usbReadAt=Long.MIN_VALUE/2;private boolean usbBusy;
+    private void usbRefresh(){usbReadAt=SystemClock.elapsedRealtime();renderer.usbStatus=UsbDebugControl.status();
+        renderer.usbAtBoot=activity.getSharedPreferences("pit_vehicle_ui",0).getBoolean(com.veloster.dashboard.BootReceiver.USB_AT_BOOT,false);}
+    /** Asks first both ways: ON takes the USB port from the CarPlay dongle, OFF can cut a PC or Pi off. */
+    private void usbAsk(){
+        if(usbBusy)return;usbRefresh();
+        final boolean on=!renderer.usbStatus.equals(UiText.t("설정: ON"));
+        new android.app.AlertDialog.Builder(activity).setTitle(UiText.t("USB 디버깅")+" "+(on?"ON":"OFF"))
+            .setMessage(UiText.t(on?"PC·파이를 adb로 연결하는 모드로 바꿉니다. 켜 있는 동안 USB 카플레이 동글은 안 됩니다. 시동을 껐다 켜면 꺼집니다.":"일반 USB 모드로 돌아갑니다. 연결된 PC·파이는 끊깁니다."))
+            .setPositiveButton(on?"ON":"OFF",new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){usbSend(on);}})
+            .setNegativeButton(UiText.t("취소"),null).show();
+    }
+    private void usbSend(final boolean on){
+        usbBusy=true;
+        new Thread(new Runnable(){public void run(){String r;
+            try{r=UsbDebugControl.request(activity,on)?UiText.t("USB 디버깅 ")+(on?"ON":"OFF")+UiText.t(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."):UiText.t("USB 모드 전환 요청이 거부되었습니다.");}
+            catch(Exception ex){r=UiText.t("USB 모드 전환 실패: ")+ex.getClass().getSimpleName();}
+            catch(LinkageError ex){r=UiText.t("USB 모드 전환 실패: ")+ex.getClass().getSimpleName();}
+            final String answer=r;
+            activity.runOnUiThread(new Runnable(){public void run(){usbBusy=false;usbRefresh();invalidate();
+                if(!activity.isFinishing())Toast.makeText(activity,answer,Toast.LENGTH_LONG).show();}});
+        }},"usb-debug").start();
+    }
+    private int[] order=ClusterPicker.defaultOrder();   // display order of the screens (header tabs, swipe, settings list)
     private float settingsScroll,lastMoveY;             // vertical scroll of the SCREENS list, and the last touch y for dragging it
     private static String orderCsv(int[] o){StringBuilder s=new StringBuilder();for(int i=0;i<o.length;i++){if(i>0)s.append(',');s.append(o[i]);}return s.toString();}
     private static int[] parseOrder(String s){if(s==null||s.length()==0)return null;String[] p=s.split(",");int[] o=new int[p.length];try{for(int i=0;i<p.length;i++)o[i]=Integer.parseInt(p[i].trim());}catch(NumberFormatException e){return null;}return o;}
@@ -64,9 +88,135 @@ public final class VehicleDash extends View implements Runnable {
         float to=Math.max(0,Math.min(SettingsLayout.maxScreenScroll(),settingsScroll+d));if(to!=settingsScroll){settingsScroll=to;invalidate();}   // at either end: nothing to redraw
         postDelayed(this,30);}};
     /** Closes settings (완료, 돌아가기, the back key). Every choice is already saved. */
-    private void closeSettingsNow(){picker=false;editing=false;pickSlot=-1;floatEdit=-1;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);invalidate();}
-    /** The back key: true when it closed the open settings (the activity stays), false to let it go back as usual. */
-    public static boolean closeSettings(Activity a){VehicleDash d=current.get();if(d==null||d.activity!=a||!(d.picker&&d.editing))return false;d.closeSettingsNow();return true;}
+    private void closeSettingsNow(){picker=false;editing=false;pickSlot=-1;floatEdit=-1;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);fontDrop();invalidate();}
+    // ---- 글꼴 (FontManager, from reikop/veloster-n-dashboard): read when the pane shows, applied as root off the UI thread ----
+    private FontManager fontManager;private FontManager.Snapshot fontSnap;private int fontPick=-1,fontTop;
+    /** fontBusy: a scan or an apply is running; fontTried: this opening of the pane scanned once (a failed scan waits for 새로고침). */
+    private boolean fontBusy,fontLoading,fontTried;
+    private FontManager fonts(){if(fontManager==null)fontManager=new FontManager(activity);return fontManager;}
+    /** The settings closed: the list and the preview typeface go (a bundled font is a few MB), the next opening reads again. */
+    private void fontDrop(){if(!fontBusy){fontSnap=null;fontTried=false;}}
+    private PitRenderer.FontView fontView(){
+        PitRenderer.FontView v=new PitRenderer.FontView();FontManager.Snapshot s=fontSnap;
+        v.busy=fontBusy;v.top=fontTop;v.pick=fontPick;
+        if(s==null)return v;
+        int n=s.entries.size();v.scanned=true;v.names=new String[n];v.details=new String[n];v.usable=new boolean[n];v.faces=new android.graphics.Typeface[n];
+        for(int i=0;i<n;i++){FontManager.Entry e=s.entries.get(i);v.names[i]=e.name;v.details[i]=e.detail;v.usable[i]=e.usable;v.faces[i]=e.regular;}
+        v.current=s.current;v.currentName=s.currentName;v.pending=s.pending;v.root=s.root;v.free=s.free;v.refusal=s.refusal;
+        if(fontPick>=0&&fontPick<n){FontManager.Entry e=s.entries.get(fontPick);v.regular=e.regular;v.bold=e.bold;v.loading=e.needsLoad();}
+        return v;
+    }
+    private void fontScan(){
+        if(fontBusy)return;fontBusy=true;fontTried=true;invalidate();
+        FontManager.Entry was=fontSnap!=null&&fontPick>=0&&fontPick<fontSnap.entries.size()?fontSnap.entries.get(fontPick):null;
+        final String wasKey=was==null?null:was.key();
+        new Thread(new Runnable(){public void run(){FontManager.Snapshot r=null;
+            try{r=fonts().scan();}catch(RuntimeException e){android.util.Log.w("VehicleDash","font scan",e);}
+            final FontManager.Snapshot result=r;
+            activity.runOnUiThread(new Runnable(){public void run(){fontBusy=false;
+                if(!(picker&&editing)){fontDrop();return;}   // closed meanwhile: keep nothing
+                if(result!=null){
+                    int pick=result.current>=0?result.current:0;
+                    for(int i=0;i<result.entries.size();i++)if(result.entries.get(i).key().equals(wasKey))pick=i;
+                    fontSnap=result;fontPick=result.entries.isEmpty()?-1:pick;fontReveal();fontLoadPicked();
+                }else if(!activity.isFinishing())Toast.makeText(activity,UiText.t("글꼴 목록을 읽지 못했습니다"),Toast.LENGTH_SHORT).show();
+                invalidate();}});
+        }},"vn-font-scan").start();
+    }
+    /** A font inside the app loads (from the APK) when its row is picked; one at a time. */
+    private void fontLoadPicked(){
+        final FontManager.Snapshot snap=fontSnap;
+        if(fontLoading||snap==null||fontPick<0||fontPick>=snap.entries.size())return;
+        final FontManager.Entry e=snap.entries.get(fontPick);if(!e.needsLoad())return;
+        fontLoading=true;
+        new Thread(new Runnable(){public void run(){
+            try{fonts().load(snap,e);}catch(RuntimeException x){android.util.Log.w("VehicleDash","font load",x);}
+            activity.runOnUiThread(new Runnable(){public void run(){fontLoading=false;invalidate();fontLoadPicked();}});
+        }},"vn-font-load").start();
+    }
+    private void fontReveal(){int n=fontSnap==null?0:fontSnap.entries.size();
+        if(fontPick>=0&&fontPick<fontTop)fontTop=fontPick;
+        if(fontPick>=fontTop+SettingsLayout.FONT_ROWS)fontTop=fontPick-SettingsLayout.FONT_ROWS+1;
+        fontTop=Math.max(0,Math.min(fontTop,Math.max(0,n-SettingsLayout.FONT_ROWS)));}
+    private void fontAction(int a){
+        int n=fontSnap==null?0:fontSnap.entries.size();
+        if(a==SettingsLayout.FONT_SCAN){fontScan();return;}
+        if(a==SettingsLayout.FONT_UP){fontTop=Math.max(0,fontTop-SettingsLayout.FONT_ROWS);return;}
+        if(a==SettingsLayout.FONT_DOWN){if(fontTop+SettingsLayout.FONT_ROWS<n)fontTop+=SettingsLayout.FONT_ROWS;return;}
+        if(a>=SettingsLayout.FONT_PICK){int k=fontTop+a-SettingsLayout.FONT_PICK;if(k<n){fontPick=k;fontLoadPicked();}return;}
+        if(fontBusy){Toast.makeText(activity,UiText.t("작업 중…"),Toast.LENGTH_SHORT).show();return;}
+        if(a==SettingsLayout.FONT_REBOOT){fontRebootAsk(UiText.t("내비를 재부팅할까요? 화면·음악·PC 연결이 잠시 끊깁니다."));return;}
+        if(a!=SettingsLayout.FONT_APPLY)return;
+        if(fontPick<0||fontPick>=n){Toast.makeText(activity,UiText.t("왼쪽에서 글꼴을 고르세요"),Toast.LENGTH_SHORT).show();return;}
+        if(fontSnap.refusal!=null){new android.app.AlertDialog.Builder(activity).setMessage(UiText.t("이 내비에서는 글꼴을 바꾸지 않습니다")+"\n\n"+fontSnap.refusal).setPositiveButton(UiText.t("확인"),null).show();return;}
+        final FontManager.Entry e=fontSnap.entries.get(fontPick);
+        if(!e.usable){Toast.makeText(activity,UiText.t("이 글꼴은 적용할 수 없습니다"),Toast.LENGTH_SHORT).show();return;}
+        if(fontPick==fontSnap.current){Toast.makeText(activity,UiText.t("이미 설정된 글꼴입니다"),Toast.LENGTH_SHORT).show();return;}
+        StringBuilder m=new StringBuilder(e.name).append(UiText.t(" 글꼴을 내비 기본 글꼴로 바꿉니다."))
+            .append("\n\n").append(UiText.t("루트 권한으로 시스템 글꼴 설정(/system/etc/system_fonts.xml)을 바꾸며, 재부팅해야 반영됩니다. 처음 바꾸기 전 설정은 /data/local/tmp/vn-fonts에 보관됩니다."));
+        if(!e.stock()&&!e.hangul())m.append("\n\n").append(UiText.t("이 글꼴은 한글이 모자라 빠진 글자는 기존 대체 글꼴로 보입니다."));
+        if(e.variable())m.append("\n\n").append(UiText.t("가변 글꼴은 기본 굵기 하나만 쓰입니다."));
+        new android.app.AlertDialog.Builder(activity).setTitle(UiText.t("글꼴 적용")).setMessage(m.toString())
+            .setPositiveButton(UiText.t("적용"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){fontApply(e);}})
+            .setNegativeButton(UiText.t("취소"),null).show();
+    }
+    private void fontApply(final FontManager.Entry e){
+        fontBusy=true;invalidate();
+        new Thread(new Runnable(){public void run(){String r;boolean ok=false;
+            try{r=fonts().apply(e);ok=true;}
+            catch(Exception x){android.util.Log.w("VehicleDash","font apply",x);r=UiText.t("글꼴을 바꾸지 못했습니다: ")+(x.getMessage()!=null?x.getMessage():x.getClass().getSimpleName());}
+            final String answer=r;final boolean done=ok;
+            activity.runOnUiThread(new Runnable(){public void run(){fontBusy=false;fontScan();
+                if(activity.isFinishing())return;
+                if(done)fontRebootAsk(answer);
+                else new android.app.AlertDialog.Builder(activity).setMessage(answer).setPositiveButton(UiText.t("확인"),null).show();}});
+        }},"vn-font-apply").start();
+    }
+    private void fontRebootAsk(String message){
+        new android.app.AlertDialog.Builder(activity).setMessage(message)
+            .setPositiveButton(UiText.t("지금 재부팅"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
+                new Thread(new Runnable(){public void run(){
+                    try{fonts().reboot();}
+                    catch(final RuntimeException x){android.util.Log.w("VehicleDash","reboot",x);
+                        activity.runOnUiThread(new Runnable(){public void run(){if(!activity.isFinishing())new android.app.AlertDialog.Builder(activity)
+                            .setMessage(UiText.t("재부팅하지 못했습니다: ")+x.getClass().getSimpleName()+"\n"+UiText.t("'내 앱' → 강제 재시작으로 재부팅하세요."))
+                            .setPositiveButton(UiText.t("확인"),null).show();}});}
+                }},"vn-reboot").start();}})
+            .setNegativeButton(UiText.t("나중에"),null).show();
+    }
+    /** The back key: true when it left 내 차 / 네온 드라이브 or closed the open settings (the activity stays), false to let it go back as usual. */
+    public static boolean closeSettings(Activity a){VehicleDash d=current.get();if(d==null||d.activity!=a)return false;
+        if(d.overlayUp()){d.exitOverlay.run();return true;}
+        if(!(d.picker&&d.editing))return false;d.closeSettingsNow();return true;}
+    // ---- 내 차 (com.veloster.car3d) and 네온 드라이브 (com.veloster.neondrive): their own views over the whole dashboard, like
+    // upstream's; fed from DATA (PdSignals). Their back button or the back key returns to the screen before. ----
+    private com.veloster.car3d.CarPage carPage;private com.veloster.neondrive.NeonDrivePage neonPage;
+    private com.veloster.neondrive.PdSignals pdSignals;
+    private int overlayBack=ClusterPicker.OVERVIEW,shownScreen=-1;
+    private static boolean ownView(int s){return s==ClusterPicker.CAR3D||s==ClusterPicker.NEON_DRIVE;}
+    private boolean overlayUp(){return carPage!=null&&carPage.view().getParent()!=null||neonPage!=null&&neonPage.view().getParent()!=null;}
+    private final Runnable exitOverlay=new Runnable(){public void run(){screen=overlayBack==screen||ownView(overlayBack)?ClusterPicker.OVERVIEW:overlayBack;showCluster();invalidate();}};
+    /** Shows the current screen's own view while the dashboard is up and in front, and takes the other one away. */
+    private void syncOverlay(){
+        boolean up=resumed&&getVisibility()==VISIBLE;
+        try{
+            if(pdSignals==null)pdSignals=new com.veloster.neondrive.PdSignals(DATA);
+            boolean car=up&&screen==ClusterPicker.CAR3D,neon=up&&screen==ClusterPicker.NEON_DRIVE;
+            if(car&&carPage==null)carPage=new com.veloster.car3d.CarPage(activity,pdSignals,exitOverlay);
+            if(neon&&neonPage==null)neonPage=new com.veloster.neondrive.NeonDrivePage(activity,pdSignals,exitOverlay,mediaState);   // the dashboard's now-playing state: the playing track shows at once
+            if(carPage!=null){if(!car)carPage.stop();overlay(carPage.view(),car);if(car)carPage.start();}
+            if(neonPage!=null){if(!neon)neonPage.stop();overlay(neonPage.view(),neon);if(neon)neonPage.start();}
+        }catch(RuntimeException e){com.veloster.diagnostics.ErrorLog.record("own_view_page",e);android.util.Log.e("VehicleDash","screen "+screen+" unavailable",e);}
+    }
+    private final Runnable syncLater=new Runnable(){public void run(){syncOverlay();}};
+    private void overlay(View v,boolean on){
+        if(!on){if(v.getParent()!=null)((ViewGroup)v.getParent()).removeView(v);return;}
+        if(v.getParent()==null)((FrameLayout)activity.findViewById(android.R.id.content)).addView(v,new FrameLayout.LayoutParams(-1,-1));
+        v.bringToFront();
+    }
+    /** The G sensor for 내 차: {longitudinal (+ accelerating), lateral} in g, NaN when not received. */
+    public static float[] gSensor(){long now=SystemClock.elapsedRealtime();Telemetry.Sample x=DATA.sample(11,now),y=DATA.sample(12,now);
+        return new float[]{y.valid?y.value:Float.NaN,x.valid?x.value:Float.NaN};}
     private void setSlider(int which,float x){
         if(which==SettingsLayout.F_SIZE)FloatPanel.size=SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,SettingsLayout.F_SIZES.length,x);
         else FloatPanel.alpha=SettingsLayout.sliderStop(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,SettingsLayout.F_ALPHAS.length,x);}
@@ -165,6 +315,8 @@ public final class VehicleDash extends View implements Runnable {
     }
     private void showCluster(){
         applyScreen();FloatPanel.screen=screen;
+        if(ownView(screen)&&shownScreen!=screen&&shownScreen>=0&&!ownView(shownScreen))overlayBack=shownScreen;
+        shownScreen=screen;removeCallbacks(syncLater);post(syncLater);   // not inside onDraw (a drive-mode jump changes the screen there)
         activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).putString("cluster_order",orderCsv(order)).apply();
     }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
@@ -213,6 +365,10 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
         catch(ClassCastException e){CarPaint.select("blue");}
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);PlatePixels.wide=p.getString(PlatePixels.WIDE_KEY,"");   // 넓은 번호판 (3D), 좁은 번호판 (pixel cars)
+            if(!p.contains(PlatePixels.NARROW_KEY))p.edit().putString(PlatePixels.NARROW_KEY,PlatePixels.migrate(PlatePixels.wide)).apply();   // once: from the one plate saved before the split
+            PlatePixels.narrow=p.getString(PlatePixels.NARROW_KEY,"");}
+        catch(ClassCastException e){PlatePixels.wide="";PlatePixels.narrow="";}
         try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
         catch(ClassCastException e){Weather.selectSky("auto");}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
@@ -224,7 +380,11 @@ public final class VehicleDash extends View implements Runnable {
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
             hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
             order=ClusterPicker.validOrder(parseOrder(p.getString("cluster_order",null)));
+            // The order is saved on every screen change, so every install has one: a new default replaces it once.
+            if(p.getInt("cluster_order_v",0)<ClusterPicker.ORDER_VERSION){
+                order=ClusterPicker.defaultOrder();p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
+        warmEco();
         applyScreen();
         setVisibility(GONE); }
     /** Hands the saved sound choices to the audio thread. */
@@ -284,6 +444,31 @@ public final class VehicleDash extends View implements Runnable {
             c.getSharedPreferences(SettingsBackup.PREFS,0).edit().putBoolean(SettingsBackup.ASKED,true).commit();return true;
         }catch(Exception e){android.util.Log.w("VehicleDash","settings backup not restored: "+e);return false;}
     }
+    /** 넓은 번호판 (wide: the 3D 내 차 plates, any text up to 10 characters) or 좁은 번호판 (the pixel cars: only what their
+     *  font draws, as wide as their plate): type it, saved in pit_vehicle_ui (so the settings backup keeps it) and shown at
+     *  once; blank = "i30 PD". The 내 차 screen's 번호판 button opens the wide one. after runs on the UI thread once saved. */
+    public static void plateDialog(final android.content.Context c,final boolean wide,final Runnable after){
+        final android.widget.EditText in=new android.widget.EditText(c);
+        in.setSingleLine(true);
+        if(wide)in.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(PlatePixels.WIDE_MAX)});
+        else in.setFilters(new android.text.InputFilter[]{new android.text.InputFilter(){   // drawable characters only, no wider than the plate
+            public CharSequence filter(CharSequence src,int st,int en,android.text.Spanned dst,int ds,int de){
+                String head=dst.subSequence(0,ds).toString(),tail=dst.subSequence(de,dst.length()).toString();StringBuilder b=new StringBuilder();
+                for(int i=st;i<en;i++){char ch=src.charAt(i);if(ch!=' '&&!PlatePixels.drawable(ch))continue;
+                    if(PlatePixels.width(head+b+ch+tail)>PlatePixels.COLS)break;b.append(ch);}
+                return b.length()==en-st?null:b.toString();}}});
+        String cur=wide?PlatePixels.wide:PlatePixels.narrow;
+        in.setText(cur);in.setSelection(in.getText().length());
+        in.setHint(UiText.t(wide?"예: 12가 3456 · 비우면 i30 PD":"예: I30N · 비우면 i30 PD"));
+        android.app.AlertDialog.Builder d=new android.app.AlertDialog.Builder(c).setTitle(UiText.t(wide?"넓은 번호판 (3D)":"좁은 번호판 (도트 차)")).setView(in);
+        if(!wide)d.setMessage(UiText.t("영문·숫자·공백·- 만 · 도트 번호판 폭까지 (숫자 5개 정도)"));
+        d.setPositiveButton(UiText.t("확인"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface di,int w){
+                String t=in.getText().toString().trim().replaceAll("\\s+"," ");if(wide&&t.length()>PlatePixels.WIDE_MAX)t=t.substring(0,PlatePixels.WIDE_MAX).trim();else if(!wide)t=PlatePixels.filter(t);
+                c.getSharedPreferences("pit_vehicle_ui",0).edit().putString(wide?PlatePixels.WIDE_KEY:PlatePixels.NARROW_KEY,t).apply();
+                if(wide)PlatePixels.wide=t;else PlatePixels.narrow=t;
+                if(after!=null)after.run();}})
+            .setNegativeButton(UiText.t("취소"),null).show();
+    }
     /** A fresh install (ASKED not set) that finds a backup asks once whether to put it back; with none there is nothing
      *  to ask. Closing the question without an answer leaves it for the next start. */
     private void backupOffer(){
@@ -306,17 +491,26 @@ public final class VehicleDash extends View implements Runnable {
                 p.edit().putBoolean(SettingsBackup.ASKED,true).apply();
             }}).show();
     }
+    /** Eco's big bitmaps on a background thread, so the first Eco frame does not build them. */
+    private boolean ecoHidden(){return (hidden&(1<<ClusterPicker.ECO))!=0;}
+    /** Eco's big bitmaps, then one off-screen frame of 아케이드 and 신스웨이브 (shown ones only), on a background thread. */
+    private void warmEco(){
+        final boolean eco=!ecoHidden(),arcade=(hidden&(1<<ClusterPicker.ARCADE))==0,neon=(hidden&(1<<ClusterPicker.NEON))==0;final VehicleProfile prof=DATA.profile();
+        new Thread(new Runnable(){public void run(){android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+            if(eco)try{EcoCluster.warm();}catch(RuntimeException e){/* the draw builds them */}
+            if(arcade)renderer.warm(ClusterPicker.ARCADE,prof,SystemClock.elapsedRealtime());
+            if(neon)renderer.warm(ClusterPicker.NEON,prof,SystemClock.elapsedRealtime());}},"screen-warm").start();}
     public static void resumeStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=true;d.artwork.open();d.mediaReceiver.start(a);
-        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}   // let go while out of sight (trim)
-        d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);
+        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}d.warmEco();   // let go while out of sight (trim)
+        d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);d.shownScreen=d.screen;d.syncOverlay();
     }
     /** The dashboard is out of sight (only the floating window is up, or the system asks for memory): let go of the screens'
      *  kept bitmaps. Switching screens keeps them, so that stays smooth. */
     public static void trimStandalone(Activity a){VehicleDash d=current.get();boolean go=d!=null&&d.activity==a&&!d.resumed;
         android.util.Log.i("VehicleDash","trim: "+(go?"screens let go":d==null?"no dashboard":d.activity!=a?"other activity":"still resumed"));
-        if(go){d.renderer.trim();d.invalidate();TaxiZones.release();giveBack();}}   // invalidate: no display list may keep a recycled bitmap
+        if(go){d.renderer.trim();d.invalidate();TaxiZones.release();d.carPage=null;d.neonPage=null;giveBack();}}   // invalidate: no display list may keep a recycled bitmap; 내 차 / 네온 드라이브 are already down (pause)
     /** After a trim: collect now, twice (bitmap finalizers run late), so the let-go pixels leave the heap at once; Dalvik hands
      *  free heap pages back to the system by itself after a collection (Android 4.2 has no VMRuntime.trimHeap to force it).
      *  On the V141 emulator: live heap 9.7 MB -> 5.3 MB, the process 13 MB -> about 9 MB once the pages went back. Off the UI thread. */
@@ -329,9 +523,10 @@ public final class VehicleDash extends View implements Runnable {
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);backupSave(a);
         d.floatEdit=-1;d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
+        d.syncOverlay();
     }
     /** Close the screen list and anything it opened (language chooser). */
-    private void dismissList(){picker=false;editing=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);}   // every close path: a drag cut off by the lock-out must not leave dragTick running
+    private void dismissList(){picker=false;editing=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);fontDrop();}   // every close path: a drag cut off by the lock-out must not leave dragTick running
     private void showDashboard(){setVisibility(VISIBLE);if(entry!=null)entry.setVisibility(GONE);bringToFront();}
     private void close() { entryRequestUntil=0;removeCallbacks(editHold);removeCallbacks(tileHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
     public static void consumeEntryIntent(Activity a){entryIntent(a,a.getIntent());}
@@ -380,6 +575,8 @@ public final class VehicleDash extends View implements Runnable {
         VehicleDash d=current.get();if(d!=null)regulation(d.activity,blocked);
     }
     public static void ignition(boolean on) { DATA.clear(); }
+    /** Road speed now in km/h, NaN when not received (DtcDialog clears codes only when the car is seen standing). */
+    static float speedNow(){Telemetry.Sample s=DATA.sample(7,SystemClock.elapsedRealtime());return s.valid?s.value*Telemetry.speedScale:Float.NaN;}
     public static void rpm(byte[] data) { DATA.rpm(data,SystemClock.elapsedRealtime()); }
     public static void beginComputed(float rpm,float tqi,float acor,float standard,float boost,float ambient) { DATA.beginComputed(rpm,tqi,acor,standard,boost,ambient); }
     public static void computed(float power,float torque,float boostKpa) { DATA.computed(power,torque,boostKpa); }
@@ -609,7 +806,9 @@ public final class VehicleDash extends View implements Runnable {
         }
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);renderer.setScreenDrag(dragRow,dragY);
         renderer.setModeOptions(modeColor,modeScreen);
-        if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);}
+        if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);
+            if(settingsCat==SettingsLayout.FONT&&pickSlot<0){if(fontSnap==null&&!fontBusy&&!fontTried)fontScan();renderer.setFonts(fontView());}
+            if(settingsCat==SettingsLayout.DIAG&&SystemClock.elapsedRealtime()-usbReadAt>2000)usbRefresh();}   // the port can change under us (Factory Test, '내 앱')
         renderer.setLap(lap);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
@@ -717,6 +916,7 @@ public final class VehicleDash extends View implements Runnable {
                 return true;
             }
             if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){floatTap(x,y);invalidate();return true;}
+            if(settingsCat==SettingsLayout.FONT&&pickSlot<0){int t=SettingsLayout.fontHit(x,y);if(t>=0&&t==SettingsLayout.fontHit(downX,downY))fontAction(t);invalidate();return true;}
             int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat;float paneSc=SettingsLayout.rowScroll(pane)?settingsScroll:0;
             int i=SettingsLayout.item(pane,x,y,paneSc);
             if(i<0||i!=SettingsLayout.item(pane,downX,downY,paneSc))return true;
@@ -730,6 +930,7 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.THEME:Theme.select(Theme.IDS[i]);e.putString("theme",Theme.current().id);break;
                 case SettingsLayout.PAINT:
                     if(i==CarPaint.IDS.length){Weather.nextSky();e.putString("sky_8bit",Weather.skyId());break;}   // the sky tile cycles 자동 -> 맑음 -> 흐림
+                    if(i>CarPaint.IDS.length){plateDialog(activity,i==SettingsLayout.PAINT_WIDE_PLATE,new Runnable(){public void run(){invalidate();}});break;}   // the two plate rows
                     CarPaint.select(SettingsLayout.PAINT_ORDER[i]);e.putString("car_paint",CarPaint.id());break;
                 case SettingsLayout.MODE:
                     if(i==SettingsLayout.MODE_COLOR)modeColor=!modeColor;
@@ -785,6 +986,8 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}
                     if(i==4)break;   // the status row: nothing to tap
+                    if(i==5){usbAsk();break;}
+                    if(i==6){renderer.usbAtBoot=!renderer.usbAtBoot;e.putBoolean(com.veloster.dashboard.BootReceiver.USB_AT_BOOT,renderer.usbAtBoot);break;}
                     if(i==3){   // the hub app ('내 앱'); a plain launch, nothing is changed
                         android.content.Intent hub=activity.getPackageManager().getLaunchIntentForPackage("com.veloster.carplayhub");
                         if(hub==null)Toast.makeText(activity,UiText.t("'내 앱'이 설치돼 있지 않습니다."),Toast.LENGTH_SHORT).show();

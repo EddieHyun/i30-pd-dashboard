@@ -68,7 +68,8 @@ public final class TabsPreview {
         race(out,"4c_race_diesel_dpf",rec,model,now/6000*6000,VehicleProfile.DIESEL_DCT,-1);race(out,"4c_race_diesel_dpf_avg",rec,model,now/6000*6000+3000,VehicleProfile.DIESEL_DCT,-1);
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         {DriveStats d=rec.stats();float[] keep={d.maxLat,d.maxDecel,d.maxBoost,d.maxRpm,d.maxSpeed,d.maxClutchOdd,d.maxClutchEven};   // the car photo 2026-11-04: six cells, 6242 rpm ran into the next one
-         d.maxLat=1.12f;d.maxDecel=1.08f;d.maxBoost=1.52f;d.maxRpm=6742;d.maxSpeed=236;d.maxClutchOdd=196;d.maxClutchEven=102;save(out,"4d_records_full",rec,model,now,false,false);
+         d.maxLat=1.12f;d.maxDecel=1.08f;d.maxBoost=1.52f;d.maxRpm=6742;d.maxSpeed=236;d.maxClutchOdd=196;d.maxClutchEven=102;
+         save(out,"4d_records_full",rec,model,now,false,false);
          d.maxLat=keep[0];d.maxDecel=keep[1];d.maxBoost=keep[2];d.maxRpm=keep[3];d.maxSpeed=keep[4];d.maxClutchOdd=keep[5];d.maxClutchEven=keep[6];}
         model.obd(0x46,new byte[]{(byte)58},now);model.obd(0x2f,new byte[]{(byte)158},now);   // ambient 18 C, fuel 62 % (the replayed log has neither; the classic tiles show them)
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
@@ -76,7 +77,7 @@ public final class TabsPreview {
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);rec.setPicker(false,false,0);
         {   // trim (the dashboard out of sight): every screen with kept bitmaps draws the same after letting go of them
-            int[] pages=new int[layouts.length+3];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;pages[layouts.length+2]=PitRenderer.PAGE_CLASSIC;
+            int[] pages=new int[layouts.length+6];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;for(int i=0;i<3;i++)pages[layouts.length+2+i]=PitRenderer.PAGE_TACHO+1+i;pages[layouts.length+5]=PitRenderer.PAGE_CLASSIC;
             int bad=0;StringBuilder why=new StringBuilder();
             for(int pg:pages){BufferedImage[] im=new BufferedImage[2];
                 for(int m=0;m<2;m++){if(m==1)rec.trim();rec.setPage(pg);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
@@ -107,10 +108,28 @@ public final class TabsPreview {
         int[] tl={9,11,13,8,10,6,5};String[] tn={"night","engine","warp","gcircle","drag","8bit","hud"};
         for(int ti=0;ti<tl.length;ti++){rec.setPage(PitRenderer.PAGE_CLASSIC+tl[ti]);save(out,"z_theme_"+tn[ti]+"_copper",rec,model,now,false,false);}
         Theme.select(System.getProperty("preview.theme","n"));   // back to the theme this run renders in
-        String[] cats={"screens","mode","float","theme","paint","lang","rpm","sound","fx","diag"};   // settings (the gear), one shot per category, in SettingsLayout order
+        String[] cats={"screens","mode","float","theme","paint","lang","font","rpm","sound","fx","diag"};   // settings (the gear), one shot per category, in SettingsLayout order
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
+        PlatePixels.wide="12가 3456";PlatePixels.narrow="I30N";   // 차량 색 with both plates set by the owner
+        rec.setSettings(SettingsLayout.PAINT,"auto",-1,targets);save(out,"9_settings_paint_plates",rec,model,now,false,false);PlatePixels.wide="";PlatePixels.narrow="";
+        {   // 글꼴: the stock row, the ten fonts inside the app (each name in its own face), one picked; the next page; a refused head unit
+            java.io.File fd=new java.io.File(System.getProperty("preview.root",""),"apps/dashboard/assets/fonts");
+            int n=1+BundledFonts.FONTS.length;PitRenderer.FontView v=new PitRenderer.FontView();
+            v.names=new String[n];v.details=new String[n];v.usable=new boolean[n];v.faces=new android.graphics.Typeface[n];
+            v.names[0]="순정 글꼴 (Mobis · Roboto)";v.details[0]="공장 출고 설정";v.usable[0]=true;
+            for(int i=0;i<BundledFonts.FONTS.length;i++){BundledFonts.Font b=BundledFonts.FONTS[i];v.names[i+1]=b.name;v.usable[i+1]=true;
+                v.details[i+1]="앱에 포함 · "+(b.kind==BundledFonts.HANDWRITING?"손글씨":b.kind==BundledFonts.MYEONGJO?"명조":"고딕")+" · "+(b.bold!=null?"R·B":"R")+" · 한글 전체"+String.format(java.util.Locale.US," · %.1f MB",b.bytes/1048576.0);
+                v.faces[i+1]=android.graphics.Typeface.createFromFile(new java.io.File(fd,b.regular));}
+            v.scanned=true;v.current=0;v.pick=2;v.currentName=v.names[0];v.free=40265318L;v.root=true;
+            v.regular=v.faces[2];v.bold=android.graphics.Typeface.createFromFile(new java.io.File(fd,BundledFonts.FONTS[1].bold));
+            rec.setSettings(SettingsLayout.FONT,"auto",-1,targets);rec.setFonts(v);save(out,"9_settings_font",rec,model,now,false,false);
+            v.top=6;v.pick=8;v.regular=v.faces[8];v.bold=null;v.pending=true;v.busy=true;save(out,"9_settings_font_page2",rec,model,now,false,false);
+            v.top=0;v.pick=0;v.regular=null;v.loading=false;v.busy=false;v.pending=false;v.refusal="확인하지 않은 amossu입니다 (0123456789ab…)";save(out,"9_settings_font_refused",rec,model,now,false,false);
+            v.refusal=null;v.pick=1;v.regular=v.faces[1];v.bold=android.graphics.Typeface.createFromFile(new java.io.File(fd,BundledFonts.FONTS[0].bold));
+            com.veloster.i18n.UiText.configure("en","ko");save(out,"9_settings_font_en",rec,model,now,false,false);com.veloster.i18n.UiText.configure("ko","ko");
+        }
         {   // 플로팅 전체 모양 시안: FORMS 18개를 개요 배경 위에 자동 칸으로 (design overhaul reference)
             int[] FG=FloatPanel.FORMS;
             String[] fs={"card","strip","side","tick","fills","round","dial","twin","bars","pill","gearbox","wedge","shift","vcap","vrpm","tower","hero","diag","music"};
@@ -172,7 +191,7 @@ public final class TabsPreview {
             FloatPanel.music(null,null);
         }
         com.veloster.i18n.UiText.configure("en","ko");   // English: the longer words must still fit
-        for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
+        for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND,SettingsLayout.PAINT}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
         com.veloster.i18n.UiText.configure("ko","ko");
         rec.setSettings(SettingsLayout.SOUND,"auto",-1,targets);rec.setOrder(null,80);save(out,"9_settings_sound_scrolled",rec,model,now,false,false);   // hints above and below
         rec.setOrder(null,SettingsLayout.maxPaneScroll(SettingsLayout.SOUND));save(out,"9_settings_sound_end",rec,model,now,false,false);   // the last rows
@@ -387,6 +406,13 @@ public final class TabsPreview {
                 ImageIO.write(img,"png",new File(out,pass==0?"9g_cluster_8bit_music.png":pass==1?"9g_cluster_8bit_music_en.png":pass==2?"9g_cluster_8bit_music_scroll.png":pass==3?"9g_cluster_8bit_chase_music.png":"9g_cluster_8bit_chase_music_nocover.png"));}
             ClusterKit.artwork=null;
         }
+        for(String plate:new String[]{"","I30N","N-123"}){   // the 좁은 번호판 on the Arcade car: blank = "i30 PD", two of the owner's
+            PlatePixels.narrow=plate;
+            BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+            new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+            new PixelCluster(true).frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);
+            ImageIO.write(img,"png",new File(out,"9g_cluster_8bit_chase_plate_"+(plate.isEmpty()?"default":plate)+".png"));
+            PlatePixels.narrow="";}
         {   // 앞차 피하기 on the Arcade view: parked in P, brake held -> countdown, then playing (wheel right), a crash, game over
             PixelCluster pk=new PixelCluster(true);long t=now;Telemetry.Sample[] q=model.snapshot(now);ClusterKit.artwork=null;
             q[7]=new Telemetry.Sample(0,true,false,true,false,0);q[8]=new Telemetry.Sample(0,false,false,true,false,0);q[Telemetry.GEAR_SELECTOR]=new Telemetry.Sample(0,true,false,true,false,0);
@@ -518,22 +544,24 @@ public final class TabsPreview {
              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),pf,now+i*1000,null);
              ImageIO.write(img,"png",new File(out,tcn[i]+".png"));}
         }
-        {   // 아날로그, 신스웨이브 (the screens after RPM): the replay, no data, every dial look, the shift-point glitch
+        {   // 아날로그, 네온 (the screens after RPM): the replay through PitRenderer, set moments, and no data at all
          String[] mn={"9t_cluster_analog","9u_cluster_neon"};
-         for(int i=0;i<2;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}
+         for(int i=0;i<2;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}   // a few frames: the needles ease in
          for(int i=0;i<2;i++){PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(PitRenderer.PAGE_TACHO+1+i);save(out,mn[i]+"_nodata",e,new Telemetry(),now,false,false);}
          int[] ix={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU};
+         // 네온: 300 rpm before the shift target (the glitch), and overheating at the target
+         for(int n=0;n<2;n++){NeonCluster k=new NeonCluster();k.shiftTarget=6000;
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{118,n==0?5700:6050,3,100,0,0.1f,0.4f,4,n==0?96:116,1.3f,104});
+              BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+n*70,null);
+              ImageIO.write(img,"png",new File(out,n==0?"9u_neon_glitch.png":"9u_neon_hot.png"));}
+         // 아날로그: every dial look (a tap steps through them), the needles eased in
          for(int s=0;s<AnalogCluster.STYLE_NAMES.length;s++){AnalogCluster.style=s;AnalogCluster k=new AnalogCluster();BufferedImage img=null;
               Telemetry.Sample[] q=with(model,now,ix,new float[]{96,4300,4,55,0,0,0,0,90,0.8f,98});
               for(int f=0;f<40;f++){img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
                   new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+f*50L,null);}
               ImageIO.write(img,"png",new File(out,"9t_analog_style"+s+".png"));}
          AnalogCluster.style=0;
-         for(int n=0;n<2;n++){NeonCluster k=new NeonCluster();k.shiftTarget=6000;
-              Telemetry.Sample[] q=with(model,now,ix,new float[]{118,n==0?5700:6050,3,100,0,0.1f,0.4f,4,n==0?96:116,1.3f,104});
-              BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
-              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+n*70,null);
-              ImageIO.write(img,"png",new File(out,n==0?"9u_neon_glitch.png":"9u_neon_hot.png"));}
          rec.setPage(PitRenderer.PAGE_CLASSIC);
         }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
@@ -554,6 +582,8 @@ public final class TabsPreview {
                 img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);c=new android.graphics.Canvas(img.createGraphics());bgR.draw(c,800,480,false,model,now,0,false,null);c.drawRect(0,53,800,480,bg);
                 new PerformanceRenderer().draw(c,q,null,now,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_match.png"));}}
     }
+    /** The snapshot with some signals set (received, fresh). */
+    private static Telemetry.Sample[] with(Telemetry m,long now,int[] idx,float[] val){Telemetry.Sample[] q=m.snapshot(now);for(int i=0;i<idx.length;i++)q[idx[i]]=new Telemetry.Sample(val[i],true,false,true,false,0);return q;}
     private static void feed(Telemetry model,String hex,long now){
         byte[] b=new byte[hex.length()/2];
         for(int i=0;i<b.length;i++)b[i]=(byte)Integer.parseInt(hex.substring(i*2,i*2+2),16);
@@ -633,5 +663,4 @@ public final class TabsPreview {
         q[9]=new Telemetry.Sample(r[2],true,false,true,false,0);q[0]=new Telemetry.Sample(r[0]<3?780:900+r[0]*28,true,false,true,false,0);
         q[8]=new Telemetry.Sample(r[0]<3?0:r[0]<18?1:r[0]<30?2:r[0]<45?3:r[0]<60?4:5,true,false,true,false,0);
         q[Telemetry.DPF_REGEN]=new Telemetry.Sample(regen?1:0,true,false,true,false,0);return q;}
-    private static Telemetry.Sample[] with(Telemetry m,long now,int[] idx,float[] val){Telemetry.Sample[] q=m.snapshot(now);for(int i=0;i<idx.length;i++)q[idx[i]]=new Telemetry.Sample(val[i],true,false,true,false,0);return q;}
 }

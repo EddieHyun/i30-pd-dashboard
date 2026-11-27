@@ -46,6 +46,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/RoadJolt.java",
                ROOT / "shared/src/com/veloster/vehicle/Weather.java",
                ROOT / "shared/src/com/veloster/vehicle/ArcadeCarFrames.java",
+               ROOT / "shared/src/com/veloster/vehicle/PlatePixels.java",
                ROOT / "shared/src/com/veloster/vehicle/EngineSynth.java",
                ROOT / "shared/src/com/veloster/vehicle/SpeedChime.java",
                ROOT / "shared/src/com/veloster/vehicle/ObdSchedule.java",
@@ -58,10 +59,18 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/SettingsBackup.java",
                ROOT / "shared/src/com/veloster/vehicle/Glide.java",
                ROOT / "shared/src/com/veloster/vehicle/SoundYield.java",
+               ROOT / "shared/src/com/veloster/vehicle/FontFile.java",
+               ROOT / "shared/src/com/veloster/vehicle/SystemFonts.java",
+               ROOT / "shared/src/com/veloster/vehicle/BundledFonts.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "shared/src/com/veloster/diagnostics/ErrorLog.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]
     sources += [hub / (name + ".java") for name in ("RadioTrial", "BluetoothSession", "RebootRequest", "QuickEntryPolicy")]
+    # 네온 드라이브 and 내 차 (ported from upstream): the signals, the model, the i30 sprite; the mesh reader and lamp state.
+    neon = ROOT / "apps/neondrive/src/com/veloster/neondrive"
+    sources += [neon / (name + ".java") for name in ("DriveSignals", "PdSignals", "DriveModel", "CarSprite", "Theme", "SolarClock", "PixelFont")]
+    sources += [ROOT / "apps/dashboard/src/com/veloster/car3d" / (name + ".java") for name in ("CarModel", "CarState", "CarScene", "CarPlate")]
+    sources += sorted((ROOT / "i30pd_port/app/preview/android/graphics").glob("*.java"))   # CarPlate draws with the preview's Java2D stand-ins
     tests = sorted((ROOT / "tests").glob("*Test.java"))
     sources += tests
     with tempfile.TemporaryDirectory(prefix="vn-public-tests-") as temporary:
@@ -69,7 +78,7 @@ def main():
                         *map(str, sources)], check=True)
         for test in tests:
             cls = {"HscanFrameDecoderTest": "com.veloster.dashboard.", "ArcadeGameTest": "com.veloster.vehicle.", "SoundYieldTest": "com.veloster.vehicle."}.get(test.stem, "") + test.stem   # tests of package-private classes
-            subprocess.run([str(java), "-ea", "-cp", temporary, cls], check=True, cwd=ROOT)   # tests read repo files by relative path
+            subprocess.run([str(java), "-ea", "-Dvn.root=" + str(ROOT), "-cp", temporary, cls], check=True, cwd=ROOT)   # tests read repo files by relative path
     print("PASS: " + str(len(tests)) + " synthetic host test programs. Vehicle operation is outside this scope.")
 
 

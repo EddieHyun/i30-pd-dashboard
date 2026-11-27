@@ -11,7 +11,7 @@ public class Paint {
     int color=0xff000000;float width,size=12;Style style=Style.FILL;Cap cap=Cap.BUTT;Align align=Align.LEFT;
     Shader shader;boolean bold,mono;float scaleX=1,skewX=0;
     int flags;
-    public static final int FILTER_BITMAP_FLAG=2;
+    public static final int ANTI_ALIAS_FLAG=1,FILTER_BITMAP_FLAG=2;
     public Paint(int flags){this.flags=flags;}
     public void setColor(int c){color=c;}
     public void setStyle(Style s){style=s;}
@@ -22,6 +22,7 @@ public class Paint {
     public Shader setShader(Shader s){shader=s;return s;}
     Font file;
     public Typeface setTypeface(Typeface t){bold=t!=null&&t.bold;mono=t!=null&&t.mono;file=t==null?null:t.file;return t;}
+    public void setFakeBoldText(boolean v){}   // the 글꼴 preview's bold for a font without one: not drawn here
     public void setTextScaleX(float v){scaleX=v;}
     public void setTextSkewX(float v){skewX=v;}
     public float measureText(String s){return Canvas.measure(this,s);}

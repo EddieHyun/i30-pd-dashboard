@@ -66,6 +66,20 @@ final class PixelCluster extends ClusterKit {
     private final Bitmap[] sideCar=new Bitmap[48],cityStrip=new Bitmap[3],hillStrip=new Bitmap[3],heartBmp=new Bitmap[9];
     private Bitmap beam,highBeam;
     private float pxScale=4,pxTop=52;
+    private static final int BD_M=8;private Bitmap backdrop;private Canvas backdropCanvas;
+    /** The backdrop (sky to speed lines, ~400 one-pixel rects a frame) goes into a scene-scale bitmap, then one 4x nearest
+     *  blit: every rect is snapped to the scene grid, so it is the same picture with one GPU draw instead of ~400 (Arcade drew
+     *  36-56 ms a frame in the car, 2026-11-27). 8 scene px of margin each side and 4 below: a crash shake (up to 7 px) shows
+     *  what lies past the edges, as before; cleared to transparent, so uncovered margin shows the page under it as before.
+     *  Cars, traffic and weather stay on the screen canvas. */
+    private Canvas backdropBegin(){
+        if(backdrop==null){backdrop=bitmap(200+2*BD_M,108+4);backdropCanvas=new Canvas(backdrop);backdropCanvas.translate(BD_M,0);}
+        backdrop.eraseColor(0);pxScale=1;pxTop=0;return backdropCanvas;
+    }
+    private void backdropEnd(Canvas screen){
+        pxScale=4;pxTop=52;
+        blit(screen,backdrop,0,0,backdrop.getWidth(),backdrop.getHeight(),-BD_M*pxScale,pxTop,(backdrop.getWidth()-BD_M)*pxScale,pxTop+backdrop.getHeight()*pxScale);
+    }   // Arcade backdrop at scene scale (chaseScene)
     private interface Art{void paint(Canvas c);}
     /** Paints art once into a bitmap at 1 pixel per scene pixel. */
     private Bitmap bake(int w,int h,Art a){Bitmap b=bitmap(w,h);float s=pxScale,t=pxTop;pxScale=1;pxTop=0;a.paint(new Canvas(b));pxScale=s;pxTop=t;return b;}
@@ -155,7 +169,7 @@ final class PixelCluster extends ClusterKit {
             px(c,runX,runY-runH+1,1,runH,col);
         }
     }
-    private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
+    private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*pxScale,pxTop+yi*pxScale,(xi+b.getWidth())*pxScale,pxTop+(yi+b.getHeight())*pxScale);}
     /** Repeats a horizontal strip across the 200-pixel scene, scrolled by off. */
     private void strip(Canvas c,Bitmap b,float off,float y){int w=b.getWidth();float o=((off%w)+w)%w;for(float x=-o;x<200;x+=w)put(c,b,x,y);}
     private int phase;
@@ -355,6 +369,7 @@ final class PixelCluster extends ClusterKit {
 
     // ---- side view ------------------------------------------------------------------------------------------
     private void sideScene(Canvas c,float v,boolean brake,boolean left,float boost,float rpm){
+        final Canvas screen=c;c=backdropBegin();   // sky to speed lines: one bitmap, one blit (backdropBegin)
         int[] sky=SKY_SIDE[phase];
         for(int i=0;i<sky.length;i++)px(c,0,i*9,200,i==sky.length-1?58-i*9:9,sky[i]);   // the last band reaches the verge: no gap between buildings
         boolean clear=!Weather.overcast(wx);
@@ -372,6 +387,7 @@ final class PixelCluster extends ClusterKit {
         int off=(int)(scroll*0.9f)%24;for(int x=-off;x<200;x+=24)px(c,x,75,12,2,0xfff5f5ff);
         boolean sport=mode==SPORT;
         if(v>(sport?30:60))for(int i=0;i<(sport?6:5);i++){float x=200-((scroll*2+i*53)%220);px(c,x,sport?63+i*4:64+i*5,(8+v/20)*(sport?1.25f:1),1,0xff6a6a7a);}
+        c=screen;backdropEnd(c);
         float cx=20,cy=56+(!Float.isNaN(rpm)&&rpm>prof.redline-1000?(int)Math.round(Math.sin(now/25.0)):0);
         // headlight beam ahead, tail glow behind
         if(lamps){if(beam==null)beam=bake(56,18,new Art(){public void paint(Canvas b){
@@ -421,6 +437,7 @@ final class PixelCluster extends ClusterKit {
     }
     private final Bitmap[] cityChase=new Bitmap[3];
     @Override void trim(){
+        backdrop=recycle(backdrop);backdropCanvas=null;
         recycle(sideCar);recycle(cityStrip);recycle(hillStrip);recycle(heartBmp);recycle(cityChase);beam=recycle(beam);highBeam=recycle(highBeam);
         recycle(ditherCache);recycle(textCache);recycle(arcadeCar);plateText=recycle(plateText);recycle(trafficCar);
     }
@@ -455,6 +472,7 @@ final class PixelCluster extends ClusterKit {
     // ---- chase view -----------------------------------------------------------------------------------------
     private void chaseScene(Canvas c,float lat,float lon,float bump,boolean brake,boolean left,boolean right,float boost,float rpm){
         int hz=Math.round(46-lon*7+bump),bottom=107;
+        final Canvas screen=c;c=backdropBegin();   // sky to speed lines: one bitmap, one blit (backdropBegin)
         int[] sky=SKY_CHASE[phase];float bh=hz/(float)sky.length;
         for(int i=0;i<sky.length;i++)px(c,0,i*bh,200,bh+1,sky[i]);
         boolean clear=!Weather.overcast(wx);
@@ -508,6 +526,7 @@ final class PixelCluster extends ClusterKit {
             float t=((now/40+i*11)%36)/36f,dx=i%2==0?-1:1,dy=0.18f+(i/2)*0.22f,n=(float)Math.hypot(dx,dy),r=16+t*t*140,len=2+t*12;
             int col=t<0.2f||t>0.8f?0xff5a5a6a:0xff9a9eaa;   // dim at both ends instead of a fade
             for(int j=0;j<len;j++)px(c,100+dx/n*(r+j),hz+dy/n*(r+j),1,1,col);}
+        c=screen;backdropEnd(c);
         if(game.on()){traffic(c,hz,bottom,rowX,rowW);flying(c,hz,bottom,rowX,rowW);}
         rear(c,lat,bump,brake,left,right,boost,rpm);
         precip(c,frameDt,hz);
@@ -583,10 +602,11 @@ final class PixelCluster extends ClusterKit {
     }
     /** Plate box per frame {x0,x1,y0,y1} from the frames' plate codes (20 rim, 21 face). */
     private static int[][] plateBox;
-    /** "i30 PD" in a 3 x 5 font, 4 columns a glyph (3 for the space). */
-    private static final String[] PLATE={"010.111.111...110.110","000.001.101...101.101","010.011.101...110.101","010.001.101...100.101","010.111.111...100.110"};
     private static Bitmap plateText;
-    /** The plate text at 2 screen px a font pixel (half a scene pixel, like the HUD font), centred on the frame's plate. */
+    /** The text plateText shows. */
+    private static String plateShown;
+    /** The 좁은 번호판 (PlatePixels, "i30 PD" unless set) at 2 screen px a font pixel (half a scene pixel, like the HUD
+     *  font), centred on the frame's plate. Baked again only when the text changes. */
     private void plate(Canvas c,int fi,float x,float y){
         if(plateBox==null){int[][] pb=new int[ArcadeCarFrames.FRAMES.length][];
             for(int i=0;i<pb.length;i++){int[] b={99,-1,99,-1};
@@ -594,14 +614,16 @@ final class PixelCluster extends ClusterKit {
                     if(k==20||k==21){b[0]=Math.min(b[0],xx);b[1]=Math.max(b[1],xx);b[2]=Math.min(b[2],yy);b[3]=Math.max(b[3],yy);}}
                 pb[i]=b;}
             plateBox=pb;}
-        if(plateText==null)plateText=bake(PLATE[0].length(),5,new Art(){public void paint(Canvas b){
-            for(int r=0;r<5;r++)for(int k=0;k<PLATE[r].length();k++)if(PLATE[r].charAt(k)=='1')px(b,k,r,1,1,0xff1c2532);}});
+        String s=PlatePixels.shown(PlatePixels.narrow);
+        if(plateText==null||!s.equals(plateShown)){plateShown=s;   // the old one (20 x 5) is left to the GC: a display list may still hold it
+            int pw=Math.max(1,PlatePixels.width(s));plateText=bitmap(pw,5);plateText.setPixels(PlatePixels.pixels(s,0xff1c2532),0,pw,0,0,pw,5);}
         int[] b=plateBox[fi];if(b[1]<0)return;
         float cx=(Math.round(x)+(b[0]+b[1]+1)/2f)*4+4,cy=52+(Math.round(y)+(b[2]+b[3]+1)/2f)*4;
         int w=plateText.getWidth()*2;float l=Math.round(cx-w/2f),t=Math.round(cy-5);
         float x0=(Math.round(x)+b[0])*4,x1=(Math.round(x)+b[1]+1)*4,y0=52+(Math.round(y)+b[2])*4,y1=52+(Math.round(y)+b[3]+1)*4;
         fill(c,x0,y0,x1,y0+2,0xff2a2d33);fill(c,x0,y1-2,x1,y1,0xff2a2d33);fill(c,x0,y0,x0+2,y1,0xff2a2d33);fill(c,x1-2,y0,x1,y1,0xff2a2d33);   // a half-pixel dark rim
         fill(c,x0+2,y0+2,x0+10,y1-2,0xff2a5bb0);   // the Korean plate's blue band on the left (text shifted 4 px right)
+        fill(c,x0+10,y0+2,x1-2,y1-2,0xffe8e8ec);   // the face whole: turned frames tuck the bottom row under the bumper
         blit(c,plateText,0,0,plateText.getWidth(),5,l,t,l+w,t+10);
     }
     /** Exhaust smoke by age (0..1): pale, then darker; gone after two thirds instead of fading out. */
@@ -624,20 +646,8 @@ final class PixelCluster extends ClusterKit {
                 if(cc!=col||k==0){if(col!=0)px(c,x-run,y,run,1,col);col=k==0?0:cc;run=0;}
                 if(k!=0)run++;}}
     }
-    /** A frame code's colour: paint shades from the CarPaint, lamps as the hand-drawn rear lit them, amber for a turn signal. */
-    private int arcadeColour(int code,boolean brake,boolean left,boolean right,boolean lp){
-        int[] e=ArcadeCarFrames.CODES[code-1];
-        if(e[0]==4){if(e[1]<0?left:right)return AMBER;e=ArcadeCarFrames.CODES[e[2]-1];}
-        if(e[0]==1)return e[1]==0?B:e[1]==1?BH:e[1]==2?BD:BS;
-        if(e[0]==2)return code==20||code==21?0xffe8e8ec:e[1];   // the plate face white (plate() adds the rim and text)
-        switch(e[1]){   // tail, LED line, high stop lamp, reflector, clear lens
-            case 0:return brake?0xffff3a2a:0xff5a0c14;
-            case 1:return brake?0xffffd0c4:lp?0xffe0323c:0xff7a1a22;
-            case 2:return brake?0xffff4a3a:0xffa01818;
-            case 3:return brake?0xffff3030:0xffa01818;
-            default:return 0xff9a9496;
-        }
-    }
+    /** A frame code's colour (ArcadeCarFrames.colour, shared with Neon Drive's i30). */
+    private int arcadeColour(int code,boolean brake,boolean left,boolean right,boolean lp){return ArcadeCarFrames.colour(code,B,BH,BD,BS,brake,left,right,lp);}
 
     // ---- HUD (both views) -----------------------------------------------------------------------------------
     private void hud(Canvas c,String g,float rpm,float boost,float v){

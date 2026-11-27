@@ -49,8 +49,19 @@ abstract class ClusterKit {
     protected boolean themed;
 
     final void frame(Canvas c,Telemetry.Sample[] samples,Telemetry m,DriveStats stats,VehicleProfile profile,long frameTime,MediaState.Snapshot track){
+        synchronized(drawLock){
         music=track;s=samples;model=m;st=stats;if(profile!=null)prof=profile;now=frameTime;
-        c.save();c.clipRect(0,52,800,480);draw(c);c.restore();   // never paint over the header
+        c.save();c.clipRect(0,52,800,480);draw(c);c.restore();}   // never paint over the header
+    }
+    private final Object drawLock=new Object();
+    /** One frame, without data, into a throwaway bitmap on a background thread (VehicleDash): the first frame on screen then
+     *  finds this screen's cached art made and its code warm (아케이드 froze 1.3-1.8 s, 신스웨이브 0.5 s on first sight in the
+     *  car, 2026-11-27). frame() is serialised with it, so opening the screen meanwhile only waits for it. now: the dashboard's time base (elapsedRealtime). */
+    final void warm(VehicleProfile profile,long now){
+        Bitmap b=bitmap(800,480);
+        try{frame(new Canvas(b),new Telemetry.Sample[0],null,null,profile,now,null);}
+        catch(RuntimeException e){/* trimmed meanwhile: the screen makes it on sight */}
+        finally{b.recycle();}
     }
     /** Every dashboard frame on every page (ClusterRenderer.tick), so running totals keep counting off-screen. */
     final void background(Telemetry.Sample[] samples,long frameTime){s=samples;now=frameTime;tick();}
@@ -66,7 +77,19 @@ abstract class ClusterKit {
 
     /** Display text in the selected language (Korean source strings, translations/en.json). */
     protected static String t(String ko){return com.veloster.i18n.UiText.t(ko);}
-    protected int col(int c){return themed?Theme.current().map(c):c;}
+    /** Fixed-palette screens: their own accent. Other themes recolour the palette around it (Theme.tint); N keeps it. */
+    protected int tintKey;
+    /** Colours tint leaves alone: warnings, ok / caution, per-gear inks. The theme's danger and accent and the drive-mode
+     *  accent always stay. */
+    protected int[] keep={};
+    protected int col(int c){
+        if(themed)return Theme.current().map(c);
+        if(tintKey==0)return c;
+        Theme t=Theme.current();int rgb=c|0xff000000;
+        if(rgb==(t.danger|0xff000000)||rgb==(t.accent|0xff000000)||rgb==(Theme.modeAccent()|0xff000000))return c;
+        for(int k:keep)if((k|0xff000000)==rgb)return c;
+        return t.tint(c,tintKey);
+    }
     protected static int danger(){return Theme.current().danger;}
     protected float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
     protected static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}

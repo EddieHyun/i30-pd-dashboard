@@ -7,18 +7,22 @@ import android.content.IntentFilter;
 import android.os.SystemClock;
 
 /** Passive subscription to the same OEM broadcasts consumed by the home widget. */
-final class MediaReceiver extends BroadcastReceiver {
+public final class MediaReceiver extends BroadcastReceiver {
     private static final String MODE_CHANGED="com.hkmc.intent.action.MODE_CHANGED";
     private final MediaState state;
     private Context registered;
-    MediaReceiver(MediaState state){this.state=state;}
-    void start(Context context){
+    public MediaReceiver(MediaState state){this.state=state;}
+    public void start(Context context){
         if(registered!=null)return;
         IntentFilter filter=new IntentFilter();for(String action:MediaState.ACTIONS)filter.addAction(action);
         filter.addAction(MODE_CHANGED);
         try{
             context=context.getApplicationContext();   // the floating window keeps it after the activity is gone
-            context.registerReceiver(this,filter);registered=context;
+            Intent sticky=context.registerReceiver(this,filter);registered=context;
+            // If a producer sent its widget update sticky, the last one comes back here: show the current track at once
+            // (upstream 51680d7; whether the OEM producers use sticky broadcasts is unverified, for normal ones this is null).
+            if(sticky!=null)onReceive(context,sticky);
+            for(String action:MediaState.ACTIONS){Intent last=context.registerReceiver(null,new IntentFilter(action));if(last!=null&&last!=sticky)onReceive(context,last);}
             try{
                 Class<?> type=Class.forName("com.hkmc.mode.ModeManager");
                 Object manager=type.getConstructor(Context.class).newInstance(context);
@@ -27,7 +31,7 @@ final class MediaReceiver extends BroadcastReceiver {
         }
         catch(RuntimeException e){android.util.Log.e("VehicleDash","Media receiver unavailable",e);}
     }
-    void stop(){
+    public void stop(){
         if(registered==null)return;
         try{registered.unregisterReceiver(this);}
         catch(RuntimeException e){android.util.Log.e("VehicleDash","Media receiver detach failed",e);}

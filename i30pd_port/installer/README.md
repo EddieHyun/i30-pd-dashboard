@@ -16,6 +16,25 @@
 3. 콘솔 안내대로 차 화면에서 엔지니어 모드 · Factory Test(`0A 01` → `65 01` → `0A 02`)를 하고 USB 연결 → Enter.
 4. 자동으로 차(pd_kr)를 찾아 앱 2개를 설치하고 '내 앱' 을 띄운다. 끝나면 '내 앱'에서 **바로가기 버튼 → 버튼 + 알림 → 저장**.
 
+## 창 설치기 (`창 설치기.cmd` + `gui.ps1`, 맥 `창 설치기.command` + `gui.js`)
+
+원작(벨로스터 N) `installer/gui.ps1` · `installer/mac/gui.js`를 옮겨 고친 것. 창 하나에서 단추를 누르면 같은 폴더의 콘솔 설치기를 숨은 창에서 `-Gui`(맥 `--gui`)로 돌리고 출력을 줄 단위로 기록 칸에 보여 준다. 설치 규칙은 모두 `install.ps1` / `설치.command`에 있고 창은 화면만 맡는다. 콘솔 설치기는 그대로 둔다(번호로 고르고 싶은 사람, 시험).
+
+| 콘솔 | 창 |
+|---|---|
+| 번호 1) 안정화 · 2) 테스트 | [받을 버전] 라디오 + [설치] (`-Channel stable\|test`) |
+| 번호 3) 진단 기록 · `진단기록.cmd` | [진단 기록] (`-Diag`), 끝나면 [파일 보기] |
+| 번호 4) · 5) 시동 안내 화면 | [시동 안내 화면 (고급)]의 [4번: 10초 → 1초] · [5번: 원래대로] (`-BootFast` · `-BootFastRemove`) |
+| `삭제.cmd` | [삭제] (`-Uninstall`). 창에서는 잘못 누르기 쉬워 한 번 먼저 묻는다 |
+| 그 밖의 [Y/n] 질문 | 설치기가 `@@ASK`를 내면 예/아니오 창(바로 앞에 찍힌 안내 줄을 함께 보여 줌) |
+| 시작할 때 새 설치기 묻기 | 창이 뜰 때 `-CheckUpdate`가 `@@UPDATE <버전>`을 내면 [업데이트] 단추 → `-Gui -Update`가 이 폴더의 파일을 바꾸고 `@@OPEN <새 창 설치기>` → 창이 그것을 열고 닫힌다 |
+
+- `-Gui` 상태 줄: `@@STEP <제목>` `@@WAIT <초> <안내>` `@@ASK <질문>`(표준 입력에서 y/n 한 줄) `@@FILE <경로>` `@@DONE ok|fail <내용>`. `-Gui`는 번호·Enter를 묻지 않고(채널이 없으면 안정화) 차를 5분까지 기다리며, 시작할 때의 새 설치기 확인을 건너뛴다(창의 [업데이트]가 맡음). 질문의 답은 묻는 때에만 ASCII 바이트로 쓴다(원작 a2f08a1: 미리 쓰면 adb가 읽어 갈 수 있고, UTF-8 콘솔에서는 BOM이 붙는다).
+- **Windows**: `창 설치기.cmd`는 한 줄로 `powershell -STA -WindowStyle Hidden -File gui.ps1`을 부른다. cmd 창은 PowerShell이 뜨자마자 숨기므로 아주 잠깐만 깜빡인다(.cmd로는 이보다 줄일 수 없다. .vbs는 백신·Windows 정책에 막히기 쉬워 쓰지 않음). 한 줄로 둔 것은 [업데이트]가 실행 중인 .cmd를 바꿔도 cmd가 파일을 다시 읽지 않게 하려는 것. `gui.ps1`은 Windows 기본 PowerShell 5.1 + WinForms, 맑은 고딕, UTF-8 BOM + CRLF.
+- **맥**: 설치기 ZIP은 Windows에서 만들고 `osacompile`은 맥에만 있어 `.app`을 미리 넣을 수 없다. 그래서 `창 설치기.command`가 처음 열 때(매번) 맥 기본 `osacompile -l JavaScript -s`로 `gui.js`를 같은 폴더의 `i30 PD 설치.app`으로 만들어 연다(1초 안팎). 그 맥에서 만든 앱이라 격리 표시가 없어 Gatekeeper가 앱을 다시 묻지 않고, 맥용 CI·서명이 필요 없다. 업데이트로 `gui.js`가 바뀌면 `@@OPEN`이 `창 설치기.command`를 가리켜 앱을 새로 만든다. 앱은 자기 옆의 `설치.command`를 돌린다(폴더 밖으로 옮기면 못 찾는다). 맥 창은 실제 맥에서 아직 확인하지 못했다.
+- **리눅스**: 창 없음(콘솔만). 리눅스 ZIP은 그대로.
+- 시험: `bash test/run.sh win|mac|linux`가 `-Gui`/`--gui` 줄(차 기다리기 · 진단 파일 · 질문 예/아니오(맥·리눅스, 표준 입력) · 창 업데이트)을 보고, Windows에서는 `gui.ps1` 창을 실제로 띄워(환경 변수 `VN_GUI_SMOKE`·`VN_GUI_AUTORUN`·`VN_GUI_ANSWER`·`VN_GUI_ARGS`) 열림·기록 칸 높이·설치·질문 아니오/예·삭제·[업데이트]를 가짜 adb로 확인한다.
+
 ## 지우기 (원래대로)
 
 **`삭제.cmd` 더블클릭**(맥은 `삭제.command`). 설치 때처럼 차 화면에서 엔지니어 모드 · Factory Test 를 하고 USB 를 연결하면 대시보드 · '내 앱' 두 앱을 지운다. 가장자리 버튼 · 알림 · 기록도 앱과 함께 사라진다. 순정 시스템 파일과 설정은 설치 때도 건드리지 않으므로 두 앱만 지우면 설치 전 상태다. USB 디버깅은 재시동하면 저절로 꺼진다.
@@ -67,7 +86,7 @@
 - **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 문제를 알릴 때 이 파일을 함께 보내 달라고 안내하고 기록 폴더를 열어 준다.
 - **진단 기록.** `진단기록.cmd`(= `설치.cmd -Diag`, 맥 `진단기록.command` = `--diag`) 또는 버전 메뉴의 `3)`. 차에 연결해 **읽기만** 한다: 정해 둔 속성, 두 앱의 `dumpsys package` 중 버전·경로·설치 시각 줄, `logcat -d -v time -s VehicleDash VNCarPlayHub VNQuickEntry NDashboard DtcDialog AndroidRuntime:E PackageManager:I`의 마지막 3000줄, 이번 실행 기록. MAC·휴대폰 번호·메일 주소·adb 기기 번호를 가린 뒤 바탕화면 `i30pd_진단기록_<시각>.txt`(UTF-8)로 저장하고 그 파일을 탐색기/Finder에서 보여 준다. 전체 logcat은 블루투스 폰 이름·번호·연락처가 섞여 넣지 않는다.
 - **같은 버전 건너뛰기.** 설치 전에 `pm path`로 차의 APK를 `adb pull`해 받은 파일과 해시(맥 `cmp`)를 비교하고, 같으면 그 앱은 설치하지 않는다(내비는 설치한 APK를 바이트 그대로 보관한다). 비교에 실패하면 그냥 설치한다.
-- **새 설치기 알림.** 시작할 때 `raw.githubusercontent.com`의 `main`(테스트를 고르면 `beta`도) `install.ps1`/`설치.command`에서 설치기 버전을 읽어, 더 새것이면 알리고 그대로 계속한다(5초 제한, 실패는 기록에만).
+- **새 설치기 (스스로 업데이트).** 시작할 때 이 설치기가 나온 릴리스(`InstallerChannel`/`INSTALLER_CHANNEL`: `stable` = 최신 정식 릴리스, `test` = `test` 사전 배포)의 설치기 ZIP(`i30pd-installer-windows/mac/linux.zip`)을 받는다. GitHub 릴리스 정보의 크기·SHA-256과 맞고, 풀어서 설치기 스크립트가 있을 때만 그 안의 설치기 버전과 비교한다. 더 새것이면 "새 설치기가 나왔습니다"라고 묻고, 예면 이 폴더의 같은 이름 파일만 바꾼 뒤(platform-tools·APK는 그대로) 같은 인자로 다시 시작한다. 아니오·인터넷 없음·확인 실패면 지금 설치기로 계속한다(설치를 막지 않음). 토큰 없이 공개 주소만 쓴다.
 - **디버깅용 기록.** 원격으로 원인을 가를 수 있게 기록 파일에 더 남긴다.
   - 환경: Windows·PowerShell(맥은 macOS·CPU), adb 버전.
   - Windows는 USB 장치 목록 전체를 바뀔 때마다 시각과 함께 남긴다(케이블을 꽂는 순간 무엇이 나타났는지 보이게).
@@ -84,11 +103,25 @@
 
 > **한글 깨짐 주의 (유지보수용):** `install.ps1` 은 **UTF-8 BOM** 으로 저장해야 한다. Windows PowerShell 5.1 은 BOM 없는 UTF-8 을 ANSI 로 읽어 한글이 깨지고 파싱이 깨진다. 편집 후 첫 3바이트가 `EF BB BF` 인지 확인(`설치.cmd` 는 ASCII 라 BOM 불필요).
 
+## 시동 안내 화면 1초 (4·5번, `-BootFast` / `-BootFastRemove`, 맥·리눅스 `--boot-fast` / `--boot-fast-remove`)
+
+순정 SystemUI를 그 차의 원본으로 그 PC에서 고쳐 설치한다(현대 코드라 완성본은 배포하지 않음, [`../consent_fast/README.md`](../consent_fast/README.md)).
+1. `pm path com.android.systemui`: 이미 `/data/app`(versionCode 18)이면 "이미 설치", 다른 업데이트면 멈춤.
+2. `/system/app/HKMC_SystemUI.apk`·`.odex`를 받아 SHA-256이 확인된 빌드(V141)인지 본다. 아니면 지우고 종료 코드 3(차는 그대로).
+3. `/system/framework`의 odex 11개를 받는다.
+4. Java 11+를 찾고(설치기 폴더의 `jre17` → PATH) 없으면 Eclipse Temurin 17 JRE를 해시 확인 후 받는다(Windows x64, macOS x64·arm64, 리눅스 x64·aarch64).
+   도구(baksmali·smali·apksig·AOSP 테스트 키)는 해시 고정, 빌더 `i30pd-consent-fast.jar`는 공개 릴리스(안정화, 없으면 test)에서 받는다.
+5. 빌더 실행 → push → `pm install -r` → `/data/app`·versionCode 18 확인. 받은 원본과 결과 APK는 성공·실패 모두 PC에서 지운다.
+- 되돌리기는 `adb uninstall com.android.systemui`(업데이트만 지움). `삭제`도 깔려 있으면 함께 되돌릴지 묻는다(`-Yes`면 되돌림).
+- 시험 인자: `-JavaPath <java>` `-ToolDir <도구 폴더>`(맥·리눅스 `--java` `--tool-dir`). `test/run.sh`는 `BOOT_CAP`(실제 원본 캡처)·`BOOT_TOOLS`·`BOOT_JAVA`가 있으면 설치·이미 설치·삭제 시 되돌림·모르는 빌드·되돌리기를 시험한다.
+
 ## 배포 (관리자)
 
 exe 가 아니므로 빌드 단계가 없다. APK 는 **공개 배포 레포 [`sung9155/i30-pd-dashboard`](https://github.com/sung9155/i30-pd-dashboard) 의 릴리스**로 나간다(소스 레포는 비공개라도 됨).
 
 **릴리스 낼 때** — `i30pd_port/app/` 의 `dashboard-i30pd-platform.apk` · `myapps-i30pd-platform.apk` 를 릴리스 에셋으로 올린다. 파일명을 그대로 두면 안정화는 `releases/latest/download/...`(최신 정식 릴리스), 테스트는 `releases/download/test/...`(`test` 사전 배포)를 받는다. (예전 `i30pd-installer.exe` 에셋은 더 안 쓰니 새 릴리스엔 빼도 된다.)
+
+**설치기 ZIP** — `python scripts/release.py installers stable --out DIR`(테스트 배포는 `test`)이 ZIP 3개를 만들고 채널을 스크립트에 적는다. 정식은 그 릴리스에, 테스트는 `gh release upload test DIR/*.zip --clobber`로 올린다. 손으로 묶으면 채널이 `stable`로 남아, 테스트 ZIP 사용자도 정식 릴리스만 보게 된다. 설치기를 고칠 때마다 설치기 버전(날짜)을 올려야 업데이트가 뜬다.
 
 **차주에게 주는 것** — 두 가지:
 
@@ -121,5 +154,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -AdbPath <가짜
 - `-Uninstall`: 두 앱 삭제.
 - `-Diag`: 진단 기록 파일만 만든다(차에는 쓰지 않음).
 - 종료 코드: 0 = 성공, 1 = 취소/설치 실패, 2 = ADB/APK 없음.
+- `I30PD_API`(환경 변수): 릴리스 API 주소를 바꾼다. `test/run.sh`는 `test/fakerelease.py`(가짜 릴리스 서버)에 붙여 업데이트를 시험한다: 같은 버전이면 조용함, 인터넷 없음이면 계속, 다른 채널의 새 설치기는 안 봄, SHA-256이 다르면 쓰지 않고 계속, 새 설치기면 바꾸고 다시 시작.
 
 가짜 adb 는 `devices -l`(pd_kr 한 줄), `getprop`, `install`(`Success`), `uninstall` 에 정해진 출력을 내는 `.cmd` 면 된다. 정상 설치 · 삭제 · 서명 충돌 재설치, **그리고 `file://` 서버에서 APK 받아 설치하는 흐름** 과 비공개 레포 404 시 안내 메시지를 이 방식으로 확인했다(실차 설치는 아직 이 스크립트로 해 보지 않았다).

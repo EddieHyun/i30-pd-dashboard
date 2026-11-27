@@ -26,7 +26,7 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 ## 아케이드 화면의 차 그림
 
-8비트 아케이드 화면의 i30 N 뒷모습(`ArcadeCarFrames`)은 Sketchfab의 3D 모델 [hyundai i30 n](https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f)(amogusstrikesback2, CC BY 표시)을 13개 각도로 그린 뒤 앱 팔레트의 도트 표(각도마다 81×41칸)로 줄인 것입니다. 모델 파일과 텍스처는 이 레포와 APK에 넣지 않았습니다. 모델 설명에 따르면 게임에서 가져온 모델이라 원래 권리자가 따로 있을 수 있습니다. 권리자가 요청하면 이 그림을 빼겠습니다.
+8비트 아케이드 화면의 i30 N 뒷모습(`ArcadeCarFrames`)은 Sketchfab의 3D 모델 [hyundai i30 n](https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f)(amogusstrikesback2, CC BY 표시)을 13개 각도로 그린 뒤 앱 팔레트의 도트 표(각도마다 81×41칸)로 줄인 것입니다. 이 화면에는 모델 파일과 텍스처를 넣지 않았습니다(내 차 화면이 쓰는 변환본은 아래 "내 차 화면의 3D 모델"). 모델 설명에 따르면 게임에서 가져온 모델이라 원래 권리자가 따로 있을 수 있습니다. 권리자가 요청하면 이 그림을 빼겠습니다.
 
 ## 람다 화면 글꼴
 
@@ -40,6 +40,23 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 `SoundYield`(안내·통화 양보, 속도 따라 키우기)는 [jihoon-seo/de22ev-ves](https://github.com/jihoon-seo/de22ev-ves)(`0561cae`, MIT, Copyright (c) 2026 Jihoon Seo)의 `AudioPolicy`·`SharedChannel`·`GainEnvelope.speedBoost`를 옮긴 것입니다. 마이컴 리스너 번호와 스트림 종류는 우리 펌웨어(V141)에 맞게 바꿨고, 출력 필터와 EV 엔진 모델은 뺐습니다. 위 MIT 허가 문구가 이 파일들에도 적용됩니다.
 
+## 설정 → 글꼴
+
+글꼴 관리(`FontFile`·`SystemFonts`·`BundledFonts`·`FontManager`, `tests/SystemFontsTest.java`, [`docs/FONTS.md`](docs/FONTS.md))는 원작 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)(`3e86fea`·`abccbd4`, MIT)의 것을 옮겼습니다. 화면은 이 레포의 설정 모양으로 다시 그렸고, i30 PD에서만·확인한 amossu와 system_fonts.xml에서만 바꾸도록 막는 검사를 더했습니다.
+
+앱 포함 글꼴(`apps/dashboard/assets/fonts/`, 글꼴 데이터는 고치지 않음, 원작과 같은 파일): SIL Open Font License 1.1(전문은 같은 폴더의 `OFL-*.txt`) — Asta Sans, Copyright 2024 The Asta Sans Project Authors([42dot/Asta-Sans](https://github.com/42dot/Asta-Sans) `fonts/ttf/`, 커밋 `69ecccd`); 프리텐다드, Copyright (c) 2021 Kil Hyung-jin, Reserved Font Name Pretendard([orioncactus/pretendard](https://github.com/orioncactus/pretendard), npm 1.3.9); 나눔스퀘어 네오, Copyright 2022 NAVER Corp.([네이버 글꼴 모음](https://hangeul.naver.com/font) 배포 zip); 나눔손글씨 펜·붓, Copyright (c) 2010 NHN Corporation, Reserved Font Name Nanum 외([google/fonts](https://github.com/google/fonts) `ofl/`); 서툰이야기(Poor Story), Copyright (c) YoonDesign Inc.(google/fonts `ofl/poorstory`). 그 밖의 조건(원문은 `LICENSE-*.txt`) — 부산단디고딕·명조·손글씨, Copyright © Busan Metropolitan City([부산시 누리집](https://www.busan.go.kr/bhbusan), 부산시 전용서체 조건: 무료 사용, 판매·배포 대가 청구 금지); 이서윤체, Copyright (c) 2021 Heungkuk Life Insurance Co., Ltd.([산돌구름](https://www.sandollcloud.com/free-font/17229/LeeSeoyun), 무료·상업 사용 가능, 판매·수정 재배포 금지). 이 두 조건은 앱에 함께 넣는 무료 배포를 명시적으로 다루지 않으며, 파일은 이름만 영문으로 바꿨습니다. 권리자가 요청하면 그 글꼴을 빼겠습니다.
+
+## 네온 드라이브 · 내 차
+
+네온 드라이브(`apps/neondrive/src/`: `DriveSignals`·`DriveModel`·`NeonRenderer`·`NeonView`·`RoadRenderer`·`PixelFont`·`SolarClock`·`Theme`, `tests/NeonDriveTest.java`, `tests/neondrive-preview/`)와 내 차(`apps/dashboard/src/com/veloster/car3d/`, `tests/Car3DTest.java`, `scripts/car3d_model.py`·`scripts/car3d_backdrops.py`)는 원작 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)(`7de6571`, MIT)의 것을 옮겼습니다. i30 PD에서는 원작의 벨로스터 N hscand 해석 대신 계기판의 `Telemetry` 값을 쓰고(`PdSignals`), 네온 드라이브의 차는 원작의 AI 생성 벨로스터 N 그림 대신 아케이드 화면의 i30 N(`ArcadeCarFrames`, 위 "아케이드 화면의 차 그림")으로 그리며, 차 색은 계기판의 차량 색을 따릅니다. 따로 실행하는 네온 드라이브 앱은 넣지 않았습니다.
+
+### 내 차 화면의 3D 모델 (CC BY 4.0)
+
+계기판 `내 차` 화면의 차 모델 `apps/dashboard/assets/car3d/`(`i30n.bin`·`lamp_base.png`·`lamp_glow.png`)은 아케이드·에코 화면과 같은 3D 모델을 `scripts/car3d_model.py`로 변환한 2차 저작물입니다.
+
+This work is based on "hyundai i30 n" (https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f) by amogusstrikesback2 (https://sketchfab.com/amogusstrikesback2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+바꾼 점: 전조등 빛줄기·렌즈 플레어 판·테일램프 그림 판 제거, 앞뒤 번호판을 앱이 그리는 판으로(빈 판 또는 사용자가 넣은 글자, 앞 번호판 가장자리는 그릴 검정), 차체·타이어·휠 텍스처를 정점 색으로 굽기, 도장 면 표시(앱이 차량 색으로 칠함), 바퀴·캘리퍼 분리, 램프 분류(테일램프 렌즈를 잘게 나눔), 방향지시등·미등·보조 제동등 빛 색 바꿈. 램프·크롬 부품 텍스처만 그림으로 남겼습니다. 이 파일들은 MIT가 아니라 CC BY 4.0을 따르며 조건은 같은 폴더의 `LICENSE.txt`에 있고, 화면에도 모델 이름·작성자·라이선스를 표시합니다. 변환 스크립트 자체는 MIT입니다. 아케이드 화면과 같은 사정(게임에서 가져온 모델일 수 있음)이 있어 권리자가 요청하면 빼겠습니다. 비공식 모델이며 현대자동차가 만들거나 승인한 것이 아닙니다. 같은 폴더의 배경 파노라마 `bg_*.jpg`는 `scripts/car3d_backdrops.py`가 절차적으로 그린 것(사진·외부 그림 없음)으로 MIT입니다.
 
 ## 이 레포에 넣지 않은 것
 
