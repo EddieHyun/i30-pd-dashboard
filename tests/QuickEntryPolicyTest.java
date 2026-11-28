@@ -50,6 +50,18 @@ public final class QuickEntryPolicyTest {
         check(QuickEntryPolicy.starToggle(true,false,other,stock,true)==null&&QuickEntryPolicy.starToggle(true,false,QuickEntryPolicy.STAR_NONE,stock,true)==null,
             "the user picked another function meanwhile: left alone");
         check(QuickEntryPolicy.starToggle(true,false,ours,stock,true)==null,"already ours: nothing to do");
-        System.out.println("PASS: quick-entry opt-in restore, lock/screen visibility, drag bounds, rotation position, star key restore and toggle");
+        // MODE 버튼 → 계기판: the stock list has to be empty; the app only from the dashboard; one press acted on once
+        check(QuickEntryPolicy.modeListBlocks(new int[]{116,115})&&!QuickEntryPolicy.modeListBlocks(new int[0])&&!QuickEntryPolicy.modeListBlocks(null),"sources in the stock MODE list block; empty works; unread is not known to block");
+        check(QuickEntryPolicy.modeNames(new int[]{116,115}).equals("[Android Auto, CarPlay]")&&QuickEntryPolicy.modeNames(new int[]{0x36,0x99}).equals("[Bluetooth Audio, 0x99]")&&QuickEntryPolicy.modeNames(new int[0]).equals("[]")&&QuickEntryPolicy.modeNames(null).equals("?"),"the stock list by name, an unknown number as it is");
+        check(QuickEntryPolicy.modeOnDashboard(1000,1000+QuickEntryPolicy.MODE_SHOWN_FOR)&&!QuickEntryPolicy.modeOnDashboard(26000,25000)&&!QuickEntryPolicy.modeOnDashboard(5,0),"on the dashboard only while its signal is fresh; never after it left");
+        check(QuickEntryPolicy.modeSamePress(2340658,2340658,9000,100)&&!QuickEntryPolicy.modeSamePress(2340700,2340658,5010,5000),"same time stamp = the same press, however far apart; another stamp = another press, however close");
+        check(QuickEntryPolicy.modeSamePress(-1,2340658,5100,5000)&&!QuickEntryPolicy.modeSamePress(-1,-1,5400,5000)&&!QuickEntryPolicy.modeSamePress(2340658,-1,5400,5000),"without a stamp: within 300 ms is the same press");
+        // a held MODE: running state 1 in the broadcast (2 for the short press); it opens My Apps only with its option on
+        check(QuickEntryPolicy.modeHeld(1)&&!QuickEntryPolicy.modeHeld(2)&&!QuickEntryPolicy.modeHeld(-1)&&!QuickEntryPolicy.modeHeld(0),"held is running state 1; 2, none and anything else are a short press");
+        check(QuickEntryPolicy.modeOpens(true,true,false)==QuickEntryPolicy.MODE_HUB&&QuickEntryPolicy.modeOpens(true,true,true)==QuickEntryPolicy.MODE_HUB,"held with the option on: My Apps, from the dashboard too");
+        check(QuickEntryPolicy.modeOpens(true,false,false)==QuickEntryPolicy.MODE_DASHBOARD&&QuickEntryPolicy.modeOpens(true,false,true)==QuickEntryPolicy.MODE_APP,"held with the option off: as a short press");
+        check(QuickEntryPolicy.modeOpens(false,true,false)==QuickEntryPolicy.MODE_DASHBOARD&&QuickEntryPolicy.modeOpens(false,true,true)==QuickEntryPolicy.MODE_APP&&QuickEntryPolicy.modeOpens(false,false,true)==QuickEntryPolicy.MODE_APP,"short: the dashboard, or the picked app from the dashboard, whatever the option");
+        check(QuickEntryPolicy.modeProjection("com.daudio.app.dipo")&&QuickEntryPolicy.modeProjection("com.example.AndroidAuto")&&!QuickEntryPolicy.modeProjection("com.android.settings")&&!QuickEntryPolicy.modeProjection(null),"phone projection apps by name");
+        System.out.println("PASS: quick-entry opt-in restore, lock/screen visibility, drag bounds, rotation position, star key restore and toggle, MODE key list check and press");
     }
 }

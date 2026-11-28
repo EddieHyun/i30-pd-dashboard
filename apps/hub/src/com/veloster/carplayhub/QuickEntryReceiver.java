@@ -12,6 +12,7 @@ public final class QuickEntryReceiver extends BroadcastReceiver {
                 ||"android.intent.action.QUICKBOOT_POWERON".equals(action)){
             QuickEntryService.restore(context);
             StarKey.dashboard(context,false);   // ☆ toggle: a ☆ left on its stock function when the head unit went off is ours again
+            ModeKey.start(context);             // MODE 버튼 → 계기판: left on, it listens again after boot
         }
         // consent skip hidden: ConsentSkip.onWake not sent (did not work in the car)
     }

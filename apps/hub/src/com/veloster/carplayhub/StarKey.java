@@ -22,10 +22,13 @@ import android.util.Log;
 public final class StarKey extends BroadcastReceiver {
     public void onReceive(Context context,Intent intent){
         String action=intent==null?null:intent.getAction();
+        ModeKey.start(context);   // MODE 버튼 → 계기판: a process brought back by the dashboard's signal listens again
         if(QuickEntryPolicy.STAR_ACTION.equals(action)){
             try{context.startActivity(QuickEntryService.dashboardIntent());}catch(RuntimeException e){Log.w("VNCarPlayHub","star key: dashboard not opened",e);}
-        }else if(QuickEntryService.HIDE_ACTION.equals(action)&&"dashboard".equals(intent.getStringExtra("from")))
+        }else if(QuickEntryService.HIDE_ACTION.equals(action)&&"dashboard".equals(intent.getStringExtra("from"))){
             dashboard(context,intent.getBooleanExtra("hide",false));
+            ModeKey.dashboard(intent.getBooleanExtra("hide",false));   // MODE 버튼 → 계기판: on the dashboard MODE opens the picked app
+        }
     }
     private static SharedPreferences prefs(Context context){return context.getSharedPreferences("star_key",Context.MODE_PRIVATE);}
     static boolean toggle(Context context){return prefs(context).getBoolean("toggle",false);}
